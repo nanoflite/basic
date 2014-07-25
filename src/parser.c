@@ -9,9 +9,9 @@
 #include "tokenizer.h"
 
 /*
-  expression = ["+"|"-"] term {("+"|"-") term} .
+  expression = ["+"|"-"] term {("+"|"-"|"OR") term} .
 
-  term = factor {("*"|"/") factor} .
+  term = factor {( "*" | "/" ) factor} .
 
   factor = 
     func "(" expression ")" 
@@ -21,21 +21,20 @@
   func =
     ABS   v
     | AND 
-    | ATN 
+    | ATN v
     | COS v 
-    | EXP 
+    | EXP v
     | INT v
-    | LOG 
+    | LOG v
     | NOT 
-    | OR 
+    | OR  v
     | RND v
-    | SGN 
+    | SGN v
     | SIN v
     | SQR v
     | TAN v
 */
 
-typedef float (*function)(float number);
 
 static float
 _abs(float n)
@@ -90,6 +89,15 @@ _sgn(float n)
   }
 }
 
+static float
+_or(float a, float b)
+{
+  printf("or: %f | %f\n", a, b);
+  return (float) ( (int) a | (int) b );
+}
+
+typedef float (*function)(float number);
+
 typedef struct
 {
   token _token;
@@ -106,8 +114,27 @@ token_to_function token_to_functions[] =
   { T_FUNC_TAN, tanf },
   { T_FUNC_SQR, _sqr },
   { T_FUNC_SGN, _sgn },
+  { T_FUNC_LOG, logf },
+  { T_FUNC_EXP, expf },
+  { T_FUNC_ATN, atanf },
   { T_EOF, NULL }
 };
+
+/*
+typedef float (*operation)(float a, float b);
+
+typedef struct
+{
+  token _token;
+  operation _operation;
+} token_to_operation;
+
+token_to_operation token_to_operations[] =
+{
+  { T_OP_OR, _or },
+  { T_EOF, NULL }
+};
+*/
 
 token sym;
 
@@ -233,7 +260,7 @@ expression(void)
   if (operator == T_MINUS) {
     t1 = -1 * t1;
   }
-  while ( sym == T_PLUS || sym == T_MINUS) {
+  while ( sym == T_PLUS || sym == T_MINUS || sym == T_OP_OR ) {
     operator = sym; 
     get_sym();
     float t2 = term();
@@ -243,6 +270,9 @@ expression(void)
         break;
       case T_MINUS:
         t1 = t1 - t2;
+        break;
+      case T_OP_OR:
+        t1 = _or( t1, t2 );
         break;
       default:
         error("experssion: oops");

@@ -17,6 +17,10 @@ typedef enum {
   T_FUNC_TAN,
   T_FUNC_SQR,
   T_FUNC_SGN,
+  T_FUNC_LOG,
+  T_FUNC_EXP,
+  T_FUNC_ATN,
+  T_OP_OR,
   T_ERROR,
   T_EOF
 } token;
