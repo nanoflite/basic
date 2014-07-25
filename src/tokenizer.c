@@ -35,6 +35,9 @@ keyword_to_token keyword_to_tokens[] =
   { "COS", T_FUNC_COS },
   { "RND", T_FUNC_RND },
   { "INT", T_FUNC_INT },
+  { "TAN", T_FUNC_TAN },
+  { "SQR", T_FUNC_SQR },
+  { "SGN", T_FUNC_SGN },
   { NULL, T_EOF }
 };
 

@@ -14,6 +14,9 @@ typedef enum {
   T_FUNC_COS,
   T_FUNC_RND,
   T_FUNC_INT,
+  T_FUNC_TAN,
+  T_FUNC_SQR,
+  T_FUNC_SGN,
   T_ERROR,
   T_EOF
 } token;

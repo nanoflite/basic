@@ -31,8 +31,8 @@
     | RND v
     | SGN 
     | SIN v
-    | SQR 
-    | TAN 
+    | SQR v
+    | TAN v
 */
 
 typedef float (*function)(float number);
@@ -72,6 +72,24 @@ _int(float n)
   return 1.0 * i;
 }
 
+static float
+_sqr(float n)
+{
+  return (float) sqrt( (double) n );
+}
+
+static float
+_sgn(float n)
+{
+  if (n < 0) {
+    return -1.0;
+  } else if (n > 0) {
+    return 1.0;
+  } else {
+    return 0.0;
+  }
+}
+
 typedef struct
 {
   token _token;
@@ -85,6 +103,9 @@ token_to_function token_to_functions[] =
   { T_FUNC_COS, cosf },
   { T_FUNC_RND, _rnd },
   { T_FUNC_INT, _int },
+  { T_FUNC_TAN, tanf },
+  { T_FUNC_SQR, _sqr },
+  { T_FUNC_SGN, _sgn },
   { T_EOF, NULL }
 };
 
