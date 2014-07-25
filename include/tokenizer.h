@@ -20,7 +20,9 @@ typedef enum {
   T_FUNC_LOG,
   T_FUNC_EXP,
   T_FUNC_ATN,
+  T_FUNC_NOT,
   T_OP_OR,
+  T_OP_AND,
   T_ERROR,
   T_EOF
 } token;
