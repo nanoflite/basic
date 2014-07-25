@@ -11,7 +11,7 @@
 /*
   expression = ["+"|"-"] term {("+"|"-"|"OR") term} .
 
-  term = factor {( "*" | "/" ) factor} .
+  term = factor {( "*" | "/" | "AND" ) factor} .
 
   factor = 
     func "(" expression ")" 
@@ -19,20 +19,20 @@
     | "(" expression ")" .
 
   func =
-    ABS   v
-    | AND 
-    | ATN v
-    | COS v 
-    | EXP v
-    | INT v
-    | LOG v
-    | NOT 
-    | OR  v
-    | RND v
-    | SGN v
-    | SIN v
-    | SQR v
-    | TAN v
+    ABS
+    | AND
+    | ATN
+    | COS
+    | EXP
+    | INT
+    | LOG
+    | NOT
+    | OR
+    | RND
+    | SGN
+    | SIN
+    | SQR
+    | TAN
 */
 
 
@@ -92,8 +92,19 @@ _sgn(float n)
 static float
 _or(float a, float b)
 {
-  printf("or: %f | %f\n", a, b);
   return (float) ( (int) a | (int) b );
+}
+
+static float
+_and(float a, float b)
+{
+  return (float) ( (int) a & (int) b );
+}
+
+static float
+_not(float number)
+{
+  return (float) ( ~ (int) number );
 }
 
 typedef float (*function)(float number);
@@ -117,6 +128,7 @@ token_to_function token_to_functions[] =
   { T_FUNC_LOG, logf },
   { T_FUNC_EXP, expf },
   { T_FUNC_ATN, atanf },
+  { T_FUNC_NOT, _not },
   { T_EOF, NULL }
 };
 
@@ -230,7 +242,7 @@ static float
 term(void)
 {
   float f1 = factor();
-  while (sym == T_MULTIPLY || sym == T_DIVIDE) {
+  while (sym == T_MULTIPLY || sym == T_DIVIDE || sym == T_OP_AND) {
     token operator = sym;
     get_sym();
     float f2 = factor();
@@ -240,6 +252,9 @@ term(void)
         break;
       case T_DIVIDE:
         f1 = f1 / f2;
+        break;
+      case T_OP_AND:
+        f1 = _and( f1, f2 );
         break;
       default:
         error("term: oops");    

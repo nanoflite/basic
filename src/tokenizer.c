@@ -43,8 +43,10 @@ keyword_to_token keyword_to_tokens[] =
   { "LOG", T_FUNC_LOG },
   { "EXP", T_FUNC_EXP },
   { "ATN", T_FUNC_ATN },
-  { "OR", T_OP_OR },
-  { NULL, T_EOF }
+  { "NOT", T_FUNC_NOT },
+  { "OR",  T_OP_OR },
+  { "AND", T_OP_AND },
+  { NULL,  T_EOF }
 
 };
 
