@@ -132,23 +132,8 @@ token_to_function token_to_functions[] =
   { T_EOF, NULL }
 };
 
-/*
-typedef float (*operation)(float a, float b);
-
-typedef struct
-{
-  token _token;
-  operation _operation;
-} token_to_operation;
-
-token_to_operation token_to_operations[] =
-{
-  { T_OP_OR, _or },
-  { T_EOF, NULL }
-};
-*/
-
 token sym;
+const char *last_error;
 
 static float expression(void);
 
@@ -162,7 +147,7 @@ get_sym(void)
 static void
 error(const char *error_msg)
 {
-  printf("ERROR: %s\n", error_msg);  
+  last_error = error_msg;
 }
 
 static bool
@@ -298,9 +283,12 @@ expression(void)
 
 float evaluate(char *expression_string)
 {
+  last_error = NULL;
   tokenizer_init( expression_string );
   get_sym();
-  return expression();
+  float result =  expression();
+  expect(T_EOF);
+  return result;
 }
 
 void evaluate_print(char *line)
@@ -315,4 +303,9 @@ void evaluate_print_func_param( char *func, float param)
     asprintf(&e, "%s(%f)", func, param);
     evaluate_print(e);
     free(e);
+}
+
+const char *evaluate_last_error(void)
+{
+  return last_error;
 }

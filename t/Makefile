@@ -1,5 +1,6 @@
 root = ..
 
+CC = gcc-4.8
 SOURCES = main.c $(wildcard test_*.c)
 
 _OBJECTS = $(patsubst %.c,%.o,$(SOURCES))

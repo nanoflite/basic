@@ -119,7 +119,7 @@ token tokenizer_get_next_token(void)
       break;
     }
     if (strncmp(tokenizer_p, ktt._keyword, strlen(ktt._keyword)) == 0) {
-      printf("%s\n",ktt._keyword);
+      // printf("%s\n",ktt._keyword);
       tokenizer_next_p = tokenizer_p + strlen(ktt._keyword);
       tokenizer_p = tokenizer_next_p;
       return ktt._token;

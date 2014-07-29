@@ -41,7 +41,10 @@ int main(int argc, char *argv[])
     if (strcmp(input, "quit") == 0) {
       break;
     }
-    evaluate_print(input); 
+    evaluate_print(input);
+    if (evaluate_last_error()) {
+      printf("ERROR: %s\n", evaluate_last_error());
+    }
   }
   
   puts("");
