@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-// relative comapre...
+// relative compare...
 bool
 compare_float_relative_epsilon(float f1, float f2, float max_relative_error)
 {

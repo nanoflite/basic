@@ -275,7 +275,7 @@ expression(void)
         t1 = _or( t1, t2 );
         break;
       default:
-        error("experssion: oops");
+        error("expression: oops");
     }
   }
   return t1;
