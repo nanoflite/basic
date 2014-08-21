@@ -16,7 +16,7 @@ readline_gets ()
     line_read = (char *) NULL;
   }
 
-  line_read = readline ("expression> ");
+  line_read = readline ("");
 
   if (line_read && *line_read) {
     add_history (line_read);
@@ -28,23 +28,28 @@ readline_gets ()
 int main(int argc, char *argv[])
 {
 
-  puts("                                   _             ");
-  puts("  _____  ___ __  _ __ ___  ___ ___(_) ___  _ __  ");
-  puts(" / _ \\ \\/ / '_ \\| '__/ _ \\/ __/ __| |/ _ \\| '_ \\ ");
-  puts("|  __/>  <| |_) | | |  __/\\__ \\__ \\ | (_) | | | |");
-  puts(" \\___/_/\\_\\ .__/|_|  \\___||___/___/_|\\___/|_| |_|");
-  puts("          |_|                                    ");
-  puts("                    (c) 2014 Johan Van den Brande");
+  puts(" _               _      ");
+  puts("| |__   __ _ ___(_) ___ ");
+  puts("| '_ \\ / _` / __| |/ __|");
+  puts("| |_) | (_| \\__ \\ | (__ ");
+  puts("|_.__/ \\__,_|___/_|\\___|");
+  puts("(c) 2014 Johan Van den Brande");
+
+  basic_init();
 
   char *input;
   while ((input = readline_gets()) != NULL ) {
+
     if (strcmp(input, "quit") == 0) {
       break;
     }
-    evaluate_print(input);
+    
+    basic_eval(input);
+    
     if (evaluate_last_error()) {
       printf("ERROR: %s\n", evaluate_last_error());
     }
+
   }
   
   puts("");

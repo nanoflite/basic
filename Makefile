@@ -1,4 +1,4 @@
-TARGET = expression
+TARGET = basic
 
 BUILD_FOLDER = build
 
@@ -56,4 +56,8 @@ run: all
 	@ ./build/$(TARGET)
 
 test: all
-	@ make -C ./t run	
+	@ make -C ./t run
+
+debug: all
+	@ echo "-- Debugging $(TARGET)"
+	@ echo "run" | gdb ./build/$(TARGET)

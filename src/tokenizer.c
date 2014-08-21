@@ -20,6 +20,11 @@ char_to_token char_to_tokens[] =
   { '/', T_DIVIDE },
   { '(', T_LEFT_BANANA },
   { ')', T_RIGHT_BANANA },
+  { ':', T_COLON },
+  { ';', T_SEMICOLON },
+  { '=', T_EQUALS },
+  { '<', T_LESS },
+  { '>', T_GREATER },
   { '\0', T_EOF }
 
 };
@@ -46,6 +51,19 @@ keyword_to_token keyword_to_tokens[] =
   { "NOT", T_FUNC_NOT },
   { "OR",  T_OP_OR },
   { "AND", T_OP_AND },
+  { "PRINT", T_KEYWORD_PRINT },
+  { "GOTO", T_KEYWORD_GOTO },
+  { "IF", T_KEYWORD_IF },
+  { "THEN", T_KEYWORD_THEN },
+  { "LET", T_KEYWORD_LET },
+  { "INPUT", T_KEYWORD_INPUT },
+  { "GOSUB", T_KEYWORD_GOSUB },
+  { "RETURN", T_KEYWORD_RETURN },
+  { "CLEAR", T_KEYWORD_CLEAR },
+  { "LIST", T_KEYWORD_LIST },
+  { "RUN", T_KEYWORD_RUN },
+  { "END", T_KEYWORD_END },
+  { "CHR$", T_STRING_FUNC_CHR },
   { NULL,  T_EOF }
 
 };
@@ -57,6 +75,7 @@ char *tokenizer_next_p = NULL;
 token tokenizer_actual_token;
 float tokenizer_actual_number;
 char tokenizer_actual_char;
+char *tokenizer_actual_string = NULL;
 
 void tokenizer_init(char *input)
 {
@@ -112,6 +131,31 @@ token tokenizer_get_next_token(void)
     return T_NUMBER;
   }
 
+  // Check for string
+  if ( '"' == *tokenizer_p ) {
+    // puts("read string");
+    tokenizer_p++; // skip "
+    tokenizer_next_p = tokenizer_p;
+    size_t l=0;
+    while(*tokenizer_next_p && '"' != *tokenizer_next_p) {
+      l++;
+      tokenizer_next_p++;
+    }
+
+    if (*tokenizer_next_p) {
+      tokenizer_next_p++; // skip trailing "
+    }
+
+    if (tokenizer_actual_string != NULL) {
+      free(tokenizer_actual_string);
+    }
+    tokenizer_actual_string = strndup(tokenizer_p, l);
+   
+    tokenizer_p = tokenizer_next_p;
+
+    return T_STRING; 
+  }
+
   // Check for function
   for(size_t i=0;;i++) {
     keyword_to_token ktt = keyword_to_tokens[i];
@@ -133,4 +177,9 @@ token tokenizer_get_next_token(void)
 float tokenizer_get_number(void)
 {
   return tokenizer_actual_number;
+}
+
+char *tokenizer_get_string(void)
+{
+  return tokenizer_actual_string;
 }

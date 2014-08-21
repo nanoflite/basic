@@ -9,6 +9,26 @@
 #include "tokenizer.h"
 
 /*
+  line = [number] statement [ : statement ] CR
+
+  statement =
+    PRINT expression-list [ ; ]
+    | IF expression relation-operator expression THEN statement
+    | GOTO expression
+    | INPUT variable-list
+    | LET variable = expression
+    | GOSUB expression
+    | RETURN
+    | CLEAR
+    | LIST
+    | RUN
+    | END
+    | DIM variable "(" expression ")"
+
+  expression-list = ( string | expression ) [, expression-list]
+
+  variable-list = variable [, variable-list]
+
   expression = ["+"|"-"] term {("+"|"-"|"OR") term} .
 
   term = factor {( "*" | "/" | "AND" ) factor} .
@@ -16,7 +36,8 @@
   factor = 
     func "(" expression ")" 
     | number
-    | "(" expression ")" .
+    | "(" expression ")"
+    | variable
 
   func =
     ABS
@@ -33,9 +54,37 @@
     | SIN
     | SQR
     | TAN
+
+  string = literal_string | string_func "(" expression ")"
+
+  literal_string = '"' ... '"'
+  
+  string_func =
+    CHR$
+
+  variable = ( numeric_variable | string_variable | indexed_variable )
+
+  numeric_variable = A | B | C ... | X | Y | Z
+
+  string_variable = A$ | B$ | C$ ... | X$ | Y$ | Z$
+
+  indexed_variable = ( numeric_variable | string_variable ) "(" expression ")"
+
+  relation-operator = ( "<" | "<=" | "=" | ">=" | ">" )
+
 */
 
+typedef struct
+{
+  int line_number;
+  int next_line_number;
+  char *line;
+} line_entry;
 
+#define MAX_NR_LINES 1000
+char *__LINES[MAX_NR_LINES];
+int __LINE_P = 0;
+bool __RUNNING = false;
 static float
 _abs(float n)
 {
@@ -279,6 +328,284 @@ expression(void)
     }
   }
   return t1;
+}
+
+static bool line_check_boundaries(int line_number)
+{
+  if (line_number < 0) {
+    return false;
+  }
+
+  if (line_number >= MAX_NR_LINES ) {
+    return false;
+  }
+
+  return true;
+}
+
+static bool
+line_number_exists(int line_number)
+{
+  if (!line_check_boundaries(line_number)) {
+    error("invalid line number");
+    return false;
+  }
+  return __LINES[line_number] != NULL;
+}
+
+static void
+line_insert(int line_number, char *line)
+{
+
+  if (!line_check_boundaries(line_number)) {
+    error("invalid line number");
+    return;
+  }
+
+  __LINES[line_number] = strdup(line);
+}
+
+static void
+line_delete(int line_number)
+{
+
+  if (!line_check_boundaries(line_number)) {
+    error("invalid line number");
+    return;
+  }
+
+  free(__LINES[line_number]);
+  __LINES[line_number] = NULL;
+}
+
+static void
+line_replace(int line_number, char *line)
+{
+
+  if (!line_check_boundaries(line_number)) {
+    error("invalid line number");
+    return;
+  }
+
+  if (__LINES[line_number] == NULL) {
+    error("expected a line");
+  }
+
+  line_delete(line_number);
+  line_insert(line_number, line);
+}
+
+static void
+store_line( int line_number, char *line )
+{
+  if (line_number_exists(line_number)) {
+    line_replace(line_number, line);
+  } else {
+    line_insert(line_number, line);
+  }
+}
+
+static void
+ready(void)
+{
+  puts("READY.");
+}
+
+static void
+do_list(void)
+{
+  for(int i=0; i<MAX_NR_LINES; i++) {
+    if (__LINES[i] != NULL) {
+      puts(__LINES[i]);
+    }
+  }
+
+  ready();
+
+}
+
+static void increment_line(void)
+{
+  __LINE_P++;
+
+  if (__LINE_P >= MAX_NR_LINES) {
+    __LINE_P = 0;
+    __RUNNING = false;
+  }
+
+}
+
+static char
+chr(void)
+{
+  get_sym();
+
+  int i =  (int) expression();
+
+  if ( i == 205 ) {
+    return '/';
+  }
+
+  if ( i == 206 ) {
+    return '\\';
+  }
+
+  return i;
+}
+
+static void
+do_print(void)
+{
+  get_sym();
+
+  switch (sym) {
+    case T_STRING:
+      printf("%s", tokenizer_get_string());
+      accept(T_STRING);
+      break;
+    case T_STRING_FUNC_CHR:
+      printf("%c", chr());
+      break;
+    case T_EOF:
+      printf("\n");
+      break;
+    default:
+      printf("%f", expression());
+      break;
+  }
+
+  if (sym != T_SEMICOLON) {
+    printf("\n");
+  } else {
+    accept(T_SEMICOLON);
+  }
+
+  increment_line(); 
+
+}
+
+static void
+do_goto(void)
+{
+  get_sym();
+  
+  if (sym != T_NUMBER) {
+    error("Number expected");
+    return;
+  }
+
+  int line_number = (int) tokenizer_get_number();
+
+  if (__LINES[line_number] == NULL) {
+    error("Line not found.");
+    return;
+  }
+
+  __LINE_P = line_number;
+
+}
+
+static char *
+get_next_line(void)
+{
+  while(__LINES[__LINE_P] == NULL && __LINE_P < MAX_NR_LINES) {
+    __LINE_P++;
+  }
+
+  if (__LINE_P < MAX_NR_LINES) {
+    return __LINES[__LINE_P];
+  }
+
+  return NULL;
+}
+
+static void line(void);
+static void statement(void);
+
+static void
+do_run(void)
+{
+  __LINE_P = 0;
+  __RUNNING = true;
+  while (__RUNNING) {
+    char *code = get_next_line();
+    if (code == NULL) {
+      __RUNNING = false;
+      break;
+    }
+    tokenizer_init( code );
+    get_sym();
+    // expect number, throw away
+    if (sym != T_NUMBER) {
+      error("Where's the number?");
+      exit(-1);
+    }
+    get_sym();
+    line();
+  }
+ 
+  ready();  
+}
+
+static void
+line(void)
+{
+  while (sym != T_EOF) {
+    statement();
+    if (sym != T_COLON) {
+      break;
+    }
+    get_sym();
+  }
+}
+
+static void
+statement(void)
+{
+  // puts("I do statement");
+  switch(sym) {
+    case T_KEYWORD_LIST:
+      do_list();
+      break;
+    case T_KEYWORD_PRINT:
+      do_print();
+      break;
+    case T_KEYWORD_GOTO:
+      do_goto();
+      break;
+    case T_KEYWORD_RUN:
+      do_run();
+      break;
+    default:
+      error("Unknown statement."); 
+      break;
+  }
+}
+
+void basic_init(void)
+{
+  for(int i=0; i<MAX_NR_LINES; i++) {
+    __LINES[i] = NULL;
+  }
+}
+
+void
+basic_eval(char *line_string)
+{
+  tokenizer_init( line_string );
+  get_sym();
+  // printf("diag: symbol: %d\n", sym);
+  if (sym == T_NUMBER ) {
+    float line_number = tokenizer_get_number();
+    get_sym();
+    if (sym == T_EOF) {
+      line_delete( line_number );
+    } else {
+      store_line( line_number, line_string);
+    }
+  } else {
+    line();
+  }
 }
 
 float evaluate(char *expression_string)

@@ -9,4 +9,8 @@ void evaluate_print_func_param( char *func, float param);
 
 const char *evaluate_last_error(void);
 
+void basic_init(void);
+
+void basic_eval(char *line);
+
 #endif // __PARSER_H__
