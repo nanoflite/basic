@@ -1,0 +1,17 @@
+. Create dictionary.{c,h} to store var number and var string
+. Add a dictionary for number vars and one for string vars to the code
+. Rename parser.{c,h} to interpreter, rename functions
+. Store number vars in dict
+. Expand LET with string vars
+. Make LET optional
+. Allow variables in expressions
+. Make string expressions possible (MID$, LEFT$, RIGHT$)
+. GOSUB / RETURN
+. FOR / NEXT / STEP
+. INPUT
+. DIM
+. DATA / READ
+. CLEAR
+. END
+. REM
+. Try some basic programs

@@ -3,7 +3,7 @@
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
-
+#include <stdbool.h>
 #include "tokenizer.h"
 
 typedef struct {
@@ -76,11 +76,27 @@ token tokenizer_actual_token;
 float tokenizer_actual_number;
 char tokenizer_actual_char;
 char *tokenizer_actual_string = NULL;
+char *tokenizer_actual_variable = NULL;
 
 void tokenizer_init(char *input)
 {
   tokenizer_line = input;
   tokenizer_p = tokenizer_next_p = tokenizer_line;
+}
+
+static bool
+isvarchar(char c)
+{
+
+  if (c >= 'A' && c <= 'Z') {
+    return true;
+  }
+
+  if ( c == '$' ) {
+    return true;
+  }
+
+  return false;
 }
 
 token tokenizer_get_next_token(void)
@@ -171,6 +187,23 @@ token tokenizer_get_next_token(void)
   
   }
 
+  // Check for variable
+  tokenizer_next_p = tokenizer_p;
+  size_t len = 0;
+  while(*tokenizer_next_p && isvarchar(*tokenizer_next_p)) {
+    len++;
+    tokenizer_next_p++;
+  }
+
+  if (len > 0) {
+    tokenizer_actual_variable = strndup(tokenizer_p, len);
+    tokenizer_p = tokenizer_next_p;
+    if (tokenizer_actual_variable[len-1] == '$') {
+      return T_VARIABLE_STRING;
+    }
+    return T_VARIABLE_NUMBER;
+  }
+
   return T_ERROR; 
 }
 
@@ -182,6 +215,11 @@ float tokenizer_get_number(void)
 char *tokenizer_get_string(void)
 {
   return tokenizer_actual_string;
+}
+
+char *tokenizer_get_variable_name(void)
+{
+  return tokenizer_actual_variable;
 }
 
 typedef struct {

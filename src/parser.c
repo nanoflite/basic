@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <time.h>
+#include <execinfo.h>
 
 #include "tokenizer.h"
 
@@ -190,13 +191,30 @@ static void
 get_sym(void)
 {
   sym = tokenizer_get_next_token();
-  // printf("token: %s\n", tokenizer_token_name( sym ) );
+  printf("token: %s\n", tokenizer_token_name( sym ) );
 }
 
 static void
 error(const char *error_msg)
 {
+       void *array[10];
+       size_t size;
+       char **strings;
+       size_t i;
+ 
   last_error = error_msg;
+
+  printf("--- ERROR: %s\n", error_msg);
+    
+       size = backtrace (array, 10);
+       strings = backtrace_symbols (array, size);
+     
+       printf ("Showing %zd stack frames:\n", size);
+     
+       for (i = 0; i < size; i++)
+          printf ("  %s\n", strings[i]);
+     
+       free (strings);
 }
 
 static bool
@@ -301,7 +319,7 @@ static float
 expression(void)
 {
 
-  // printf("expression?\n");
+  printf("expression?\n");
 
   token operator = T_PLUS;
   if (sym == T_PLUS || sym == T_MINUS) {
@@ -330,7 +348,7 @@ expression(void)
         error("expression: oops");
     }
   }
-  // printf("expression: %f\n", t1);
+  printf("expression: %f\n", t1);
   return t1;
 }
 
@@ -643,7 +661,7 @@ do_let(void)
 {
   get_sym();
 
-  if (sym != T_VARIABLE_NUMBER || sym != T_VARIABLE_STRING) {
+  if (sym != T_VARIABLE_NUMBER && sym != T_VARIABLE_STRING) {
     error("Expected a variable");
     return;
   }
@@ -653,7 +671,6 @@ do_let(void)
     printf("I got this name: %s\n", name);
     get_sym();
     expect(T_EQUALS);
-    get_sym();
     float value = expression();
     set_var_number(name, value);        
   }
