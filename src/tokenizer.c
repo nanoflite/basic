@@ -183,3 +183,82 @@ char *tokenizer_get_string(void)
 {
   return tokenizer_actual_string;
 }
+
+typedef struct {
+  token t;
+  char *l;
+} token_to_label;
+
+#define t2l_entry(t) { t, #t }
+
+char *tokenizer_token_name(token t)
+{
+  token_to_label t2l_table[] = {
+  t2l_entry( T_PLUS ),
+  t2l_entry( T_MINUS ),
+  t2l_entry( T_MULTIPLY ),
+  t2l_entry( T_DIVIDE ),
+  t2l_entry( T_LEFT_BANANA ),
+  t2l_entry( T_RIGHT_BANANA ),
+  t2l_entry( T_COLON ),
+  t2l_entry( T_SEMICOLON ),
+  t2l_entry( T_EQUALS ),
+  t2l_entry( T_LESS ),
+  t2l_entry( T_GREATER ),
+  t2l_entry( T_NUMBER ),
+  t2l_entry( T_STRING ),
+  t2l_entry( T_FUNC_ABS ),
+  t2l_entry( T_FUNC_SIN ),
+  t2l_entry( T_FUNC_COS ),
+  t2l_entry( T_FUNC_RND ),
+  t2l_entry( T_FUNC_INT ),
+  t2l_entry( T_FUNC_TAN ),
+  t2l_entry( T_FUNC_SQR ),
+  t2l_entry( T_FUNC_SGN ),
+  t2l_entry( T_FUNC_LOG ),
+  t2l_entry( T_FUNC_EXP ),
+  t2l_entry( T_FUNC_ATN ),
+  t2l_entry( T_FUNC_NOT ),
+  t2l_entry( T_STRING_FUNC_CHR ),
+  t2l_entry( T_OP_OR ),
+  t2l_entry( T_OP_AND ),
+  t2l_entry( T_KEYWORD_PRINT ),
+  t2l_entry( T_KEYWORD_GOTO ),
+  t2l_entry( T_KEYWORD_IF ),
+  t2l_entry( T_KEYWORD_THEN ),
+  t2l_entry( T_KEYWORD_LET ),
+  t2l_entry( T_KEYWORD_INPUT ),
+  t2l_entry( T_KEYWORD_GOSUB ),
+  t2l_entry( T_KEYWORD_RETURN ),
+  t2l_entry( T_KEYWORD_CLEAR ),
+  t2l_entry( T_KEYWORD_LIST ),
+  t2l_entry( T_KEYWORD_RUN ),
+  t2l_entry( T_KEYWORD_END ),
+  /*
+  t2l_entry( T_KEYWORD_FOR ),
+  t2l_entry( T_KEYWORD_TO ),
+  t2l_entry( T_KEYWORD_STEP ),
+  t2l_entry( T_KEYWORD_NEXT ),
+  */
+  t2l_entry( T_VARIABLE_NUMBER ),
+  t2l_entry( T_VARIABLE_STRING ),
+  t2l_entry( T_ERROR ),
+  t2l_entry( T_EOF ),
+
+    { -1, "" }
+  };
+
+  size_t i = 0;
+  while(1) {
+    token_to_label t2l = t2l_table[i];
+    if (t2l.t == t) {
+      return t2l.l;
+    }
+    if (t2l.t == T_THE_END) {
+      break;
+    }  
+    i++;
+  }
+  
+  return "";
+}

@@ -190,7 +190,7 @@ static void
 get_sym(void)
 {
   sym = tokenizer_get_next_token();
-  // printf("t: %d\n", sym);
+  // printf("token: %s\n", tokenizer_token_name( sym ) );
 }
 
 static void
@@ -300,6 +300,9 @@ term(void)
 static float
 expression(void)
 {
+
+  // printf("expression?\n");
+
   token operator = T_PLUS;
   if (sym == T_PLUS || sym == T_MINUS) {
     operator = sym;
@@ -327,6 +330,7 @@ expression(void)
         error("expression: oops");
     }
   }
+  // printf("expression: %f\n", t1);
   return t1;
 }
 
@@ -547,6 +551,115 @@ do_run(void)
   ready();  
 }
 
+typedef enum {
+  OP_NOP,
+  OP_LT,
+  OP_LE,
+  OP_EQ,
+  OP_GE,
+  OP_GT
+} relop;
+
+static relop
+get_relop(void)
+{
+
+  if (sym == T_LESS) {
+    get_sym();
+    if (sym == T_EQUALS) {
+      return OP_LE;
+    }
+    return OP_LT;
+  }
+
+  if (sym == T_EQUALS) {
+    return OP_EQ;
+  }
+
+  if (sym == T_GREATER) {
+    get_sym();
+    if (sym == T_EQUALS) {
+      return OP_GE;
+    }
+    return OP_GT;
+  }
+
+  return OP_NOP;
+}
+
+static bool
+condition(float left, float right, relop op)
+{
+
+  switch(op) {
+    case OP_NOP:
+      error("No valid relation operator found");
+      break;
+    case OP_LT:
+      return left < right;
+    case OP_LE:
+      return left <= right;
+    case OP_EQ:
+      return left == right;
+    case OP_GE:
+      return left >= right;
+    case OP_GT:
+      return left > right;  
+  }
+
+  return false;
+}
+
+static void
+do_if(void)
+{
+
+  get_sym();
+
+  float left_side = expression();
+  relop op = get_relop();
+  float right_side = expression();
+
+  if (sym != T_KEYWORD_THEN) {
+    error("IF without THEN.");
+    return;
+  } 
+
+  if (condition(left_side, right_side, op)) {
+    get_sym();
+    statement();
+  }
+
+}
+
+static void
+set_var_number(char *name, float value)
+{
+  printf("set var '%s' to %f\n", name, value); 
+}
+
+static void
+do_let(void)
+{
+  get_sym();
+
+  if (sym != T_VARIABLE_NUMBER || sym != T_VARIABLE_STRING) {
+    error("Expected a variable");
+    return;
+  }
+
+  if (sym == T_VARIABLE_NUMBER) {
+    char *name = tokenizer_get_variable_name();
+    printf("I got this name: %s\n", name);
+    get_sym();
+    expect(T_EQUALS);
+    get_sym();
+    float value = expression();
+    set_var_number(name, value);        
+  }
+
+}
+
 static void
 line(void)
 {
@@ -575,6 +688,12 @@ statement(void)
       break;
     case T_KEYWORD_RUN:
       do_run();
+      break;
+    case T_KEYWORD_IF:
+      do_if();
+      break;
+    case T_KEYWORD_LET:
+      do_let();
       break;
     default:
       error("Unknown statement."); 

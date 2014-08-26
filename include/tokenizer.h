@@ -51,7 +51,8 @@ typedef enum {
   T_VARIABLE_NUMBER,
   T_VARIABLE_STRING,
   T_ERROR,
-  T_EOF
+  T_EOF,
+  T_THE_END
 } token;
 
 void tokenizer_init(char *input);
@@ -59,5 +60,8 @@ token tokenizer_get_next_token(void);
 
 float tokenizer_get_number(void);
 char * tokenizer_get_string(void);
+char * tokenizer_get_variable_name(void);
+
+char *tokenizer_token_name(token);
 
 #endif // __TOKENIZER_H__
