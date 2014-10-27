@@ -33,6 +33,9 @@ run: test
 	@ echo "-- Running unit tests"
 	@ ./test
 
+debug: test
+	@ echo "-- Debugging $(test)"
+	@ echo "run" | gdb ./test
 clean:
 	@ rm -f test
 	@ rm -f *.o

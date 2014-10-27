@@ -1,5 +1,5 @@
 v Create dictionary.{c,h} to store var number and var string
-. Create test for dictionary + debug
+v Create test for dictionary + debug
 . Add a dictionary for number vars and one for string vars to the code
 . Rename parser.{c,h} to interpreter, rename functions
 . Store number vars in dict

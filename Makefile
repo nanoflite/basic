@@ -58,6 +58,9 @@ run: all
 test: all
 	@ make -C ./t run
 
+testdebug: all
+	@ make -C ./t debug
+
 debug: all
 	@ echo "-- Debugging $(TARGET)"
 	@ echo "run" | gdb ./build/$(TARGET)

@@ -94,6 +94,9 @@ dictionary_del(dictionary* d, char* name)
         if (previous && entry->next) {
           previous->next = entry->next;
         }
+        if (!previous && !entry->next) {
+          d->hashtab[hash(name)] = NULL;
+        }
       }
       previous = entry;
     }
@@ -108,6 +111,11 @@ dictionary_del(dictionary* d, char* name)
 void
 dictionary_each(dictionary* d, dictionary_each_cb cb)
 {
+
+  if (!cb) {
+    return;
+  }
+
   for(size_t i=0; i < HASHSIZE; i++) {
     entry* entry = d->hashtab[i];
     while(entry) {
