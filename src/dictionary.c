@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include <dictionary.h>
+
 typedef struct entry entry;
 struct entry
 {
@@ -12,20 +14,9 @@ struct entry
 };
 
 #define HASHSIZE 101
-static entry* hashtab[HASHSIZE];
-
-typedef struct {
+struct dictionary {
   entry *hashtab[HASHSIZE];
-} dictionary;
-
-typedef void (*dictionary_each_cb)(char* name, void* value);
-
-dictionary* dictionary_new(void) { return NULL; }
-void dictionary_destroy(dictionary* d, dictionary_each_cb cb) {}
-void dictionary_put(dictionary* d, char* name, void* value) {}
-bool dictionary_has(dictionary* d, char* name) { return false; }
-void* dictionary_get(dictionary* d, char* name) { return NULL; }
-void dictionary_each(dictionary* d, dictionary_each_cb cb) {}
+};
 
 static unsigned int
 hash(char *name)
@@ -37,20 +28,20 @@ hash(char *name)
     return hashval % HASHSIZE;
 }
 
-static entry* _get(char *s)
+static entry* _get(dictionary* d, char *name)
 {
   entry* entry;
-  for (entry = hashtab[hash(s)]; entry != NULL; entry = entry->next) {
-    if (strcmp(s, entry->name) == 0) {
+  for (entry = d->hashtab[hash(name)]; entry != NULL; entry = entry->next) {
+    if (strcmp(name, entry->name) == 0) {
       return entry;
     }
   }
   return NULL;
 }
 
-void* get(char* name)
+void* dictionary_get(dictionary* d, char* name)
 {
-  entry* entry = _get(name);
+  entry* entry = _get(d, name);
   
   if (entry) {
     return entry->value;
@@ -59,9 +50,9 @@ void* get(char* name)
   return NULL;
 }
 
-bool has(char *name)
+bool dictionary_has(dictionary* d, char *name)
 {
-  entry* entry = _get(name);
+  entry* entry = _get(d, name);
 
   if (entry) {
     return true;
@@ -71,12 +62,12 @@ bool has(char *name)
 }
 
 void
-put(char* name, void* value)
+dictionary_put(dictionary* d, char* name, void* value)
 {
     entry* element;
     unsigned int hashval;
 
-    element = _get(name);
+    element = _get(d, name);
 
     if (element == NULL) {
         element = (entry*) malloc(sizeof(*element));
@@ -84,9 +75,64 @@ put(char* name, void* value)
           return;
         }
         hashval = hash(name);
-        element->next = hashtab[hashval];
-        hashtab[hashval] = element;
+        element->next = d->hashtab[hashval];
+        d->hashtab[hashval] = element;
     }
 
     element->value = value;
+}
+
+void*
+dictionary_del(dictionary* d, char* name)
+{
+  entry* element = _get(d, name);
+
+  if (element != NULL) {
+    entry* previous = NULL;
+    for(entry* entry = d->hashtab[hash(name)]; entry != NULL; entry = entry->next) {
+      if (strcmp(name, entry->name) == 0) {
+        if (previous && entry->next) {
+          previous->next = entry->next;
+        }
+      }
+      previous = entry;
+    }
+    void *value = element->value;
+    free(element); 
+    return value;
+  }
+  
+  return NULL;
+}
+
+void
+dictionary_each(dictionary* d, dictionary_each_cb cb)
+{
+  for(size_t i=0; i < HASHSIZE; i++) {
+    entry* entry = d->hashtab[i];
+    while(entry) {
+      cb(entry->name, entry->value);
+      entry = entry->next;
+    }
+  }
+}
+
+dictionary*
+dictionary_new()
+{
+  dictionary* d = malloc(sizeof(dictionary));
+  if (d == NULL) {
+    return NULL;
+  }
+  for(size_t i=0; i < HASHSIZE; i++) {
+    d->hashtab[i] = NULL;
+  }
+  return d;
+}
+
+void
+dictionary_destroy(dictionary* d, dictionary_each_cb free_cb)
+{
+  dictionary_each(d, free_cb);
+  free(d);
 }

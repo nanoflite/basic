@@ -1,11 +1,13 @@
-. Create dictionary.{c,h} to store var number and var string
+v Create dictionary.{c,h} to store var number and var string
+. Create test for dictionary + debug
 . Add a dictionary for number vars and one for string vars to the code
 . Rename parser.{c,h} to interpreter, rename functions
 . Store number vars in dict
 . Expand LET with string vars
 . Make LET optional
 . Allow variables in expressions
-. Make string expressions possible (MID$, LEFT$, RIGHT$)
+. Make string expressions possible
+. Add a few string functions (MID$, LEFT$, RIGHT$, LEN, SPC, TAB)
 . GOSUB / RETURN
 . FOR / NEXT / STEP
 . INPUT
