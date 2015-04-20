@@ -8,7 +8,7 @@
 #include <execinfo.h>
 
 #include "tokenizer.h"
-#include "dictionary.h"
+#include "variables.h"
 
 /*
   line = [number] statement [ : statement ] CR
@@ -76,19 +76,6 @@
 
 */
 
-typedef union
-{
-  float num;
-  char *string;
-} variable_value;
-
-typedef struct
-{
-  char *name;
-  int type;
-  variable_value value;
-} variable;
-
 typedef struct
 {
   int line_number;
@@ -101,13 +88,10 @@ char *__LINES[MAX_NR_LINES];
 int __LINE_P = 0;
 bool __RUNNING = false;
 
-dictionary *dict_num_vars = NULL;
-dictionary *dict_str_vars = NULL;
-
 static float
 _abs(float n)
 {
-  return abs(n);
+  return fabs(n);
 }
 
 static float
@@ -301,13 +285,11 @@ factor(void)
     printf("NUMBER VAR\n");
     char* var_name = tokenizer_get_variable_name();
     printf("Var NAME: '%s'\n", var_name);
-    // void *v = dictionary_get(dict_num_vars, var_name);
-    variable *var = dictionary_get(dict_num_vars, var_name);
-    number = var->value.num;
+    number = variable_get_numeric(var_name);
     printf("number: %f\n", number);
     accept(T_VARIABLE_NUMBER);
-  } else if (sym == T_VARIABLE_STRING) {
-    printf("STRING VAR\n");
+//  } else if (sym == T_VARIABLE_STRING) {
+//    printf("STRING VAR\n");
   } else if (accept(T_LEFT_BANANA)) {
     number = expression();
     expect(T_RIGHT_BANANA);
@@ -517,9 +499,18 @@ do_print(void)
     case T_STRING_FUNC_CHR:
       printf("%c", chr());
       break;
+    case T_VARIABLE_STRING:
+      printf("STRING VAR\n");
+      char* var_name = tokenizer_get_variable_name();
+      printf("string var name: '%s'\n", var_name);
+      char *string = variable_get_string(var_name);
+      printf("%s", string);
+      accept(T_VARIABLE_STRING);
+      break;
     case T_EOF:
       printf("\n");
       break;
+
     default:
       printf("%f", expression());
       break;
@@ -680,23 +671,6 @@ do_if(void)
 }
 
 static void
-set_var_number(char *name, float value)
-{
-  printf("set var '%s' to %f\n", name, value); 
-  variable* var = (variable*) malloc(sizeof(variable));
-  var->name = strdup(name);
-  var->value.num = value;
-  dictionary_put(dict_num_vars, name, var);
-}
-
-static void
-set_var_string(char *name, char* value)
-{
-  printf("set var '%s' to '%s'\n", name, value); 
-  dictionary_put(dict_str_vars, name, value);
-}
-
-static void
 do_let(void)
 {
   get_sym();
@@ -712,7 +686,7 @@ do_let(void)
     get_sym();
     expect(T_EQUALS);
     float value = expression();
-    set_var_number(name, value);        
+    variable_set_numeric(name, value);
   }
 
   if (sym == T_VARIABLE_STRING) {
@@ -722,7 +696,7 @@ do_let(void)
     expect(T_EQUALS);
     char *value = tokenizer_get_string();
     accept(T_STRING);
-    set_var_string(name, value);
+    variable_set_string(name, value);
   }
 
 }
@@ -778,9 +752,7 @@ void basic_init(void)
     __LINES[i] = NULL;
   }
 
-  dict_num_vars = dictionary_new();
-  dict_str_vars = dictionary_new();
-  
+  variables_init();
 }
 
 void

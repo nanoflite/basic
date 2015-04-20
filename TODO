@@ -1,14 +1,16 @@
 v Create dictionary.{c,h} to store var number and var string
 v Create test for dictionary + debug
-. Add a dictionary for number vars and string (Only 1 dict)
-. Introduce a variable struct with a union (numeric, string)
-. Rename parser.{c,h} to interpreter, rename functions
-. Store vars in dict
-. Expand LET with string vars
+v Add a dictionary for number vars and string (Only 1 dict)
+v Introduce a variable struct with a union (numeric, string)
+v Store vars in dict
+v Expand LET with string vars
 . Make LET optional
 . Allow variables in expressions
 . Make string expressions possible
 . Add a few string functions (MID$, LEFT$, RIGHT$, LEN, SPC, TAB)
+. Rename parser.{c,h} to interpreter, rename functions
+. Refactor into core and use a registry to add statements and functions
+. Rework the line saving
 . GOSUB / RETURN
 . FOR / NEXT / STEP
 . INPUT
