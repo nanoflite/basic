@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <dictionary.h>
 
@@ -30,12 +31,15 @@ hash(char *name)
 
 static entry* _get(dictionary* d, char *name)
 {
+  printf("get %p %s\n", d, name);
   entry* entry;
   for (entry = d->hashtab[hash(name)]; entry != NULL; entry = entry->next) {
     if (strcmp(name, entry->name) == 0) {
+      printf("\tgot %p\n", entry);
       return entry;
     }
   }
+  puts("not\n");
   return NULL;
 }
 
@@ -64,6 +68,7 @@ bool dictionary_has(dictionary* d, char *name)
 void
 dictionary_put(dictionary* d, char* name, void* value)
 {
+    printf("put %p %s\n", d, name);
     entry* element;
     unsigned int hashval;
 
@@ -78,7 +83,7 @@ dictionary_put(dictionary* d, char* name, void* value)
         element->next = d->hashtab[hashval];
         d->hashtab[hashval] = element;
     }
-
+    printf("entry %p\n", element);
     element->value = value;
 }
 

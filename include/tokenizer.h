@@ -2,6 +2,7 @@
 #define __TOKENIZER_H__
 
 typedef enum {
+  // 0
   T_PLUS,
   T_MINUS,
   T_MULTIPLY,
@@ -12,6 +13,7 @@ typedef enum {
   T_SEMICOLON,
   T_EQUALS,
   T_LESS,
+  // 10
   T_GREATER,
   T_NUMBER,
   T_STRING,
@@ -22,6 +24,7 @@ typedef enum {
   T_FUNC_INT,
   T_FUNC_TAN,
   T_FUNC_SQR,
+  // 20
   T_FUNC_SGN,
   T_FUNC_LOG,
   T_FUNC_EXP,
@@ -32,6 +35,7 @@ typedef enum {
   T_OP_AND,
   T_KEYWORD_PRINT,
   T_KEYWORD_GOTO,
+  // 30
   T_KEYWORD_IF,
   T_KEYWORD_THEN,
   T_KEYWORD_LET,
@@ -42,6 +46,7 @@ typedef enum {
   T_KEYWORD_LIST,
   T_KEYWORD_RUN,
   T_KEYWORD_END,
+  // 40
   /*
   T_KEYWORD_FOR,
   T_KEYWORD_TO,

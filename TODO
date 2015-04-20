@@ -1,8 +1,9 @@
 v Create dictionary.{c,h} to store var number and var string
 v Create test for dictionary + debug
-. Add a dictionary for number vars and one for string vars to the code
+. Add a dictionary for number vars and string (Only 1 dict)
+. Introduce a variable struct with a union (numeric, string)
 . Rename parser.{c,h} to interpreter, rename functions
-. Store number vars in dict
+. Store vars in dict
 . Expand LET with string vars
 . Make LET optional
 . Allow variables in expressions

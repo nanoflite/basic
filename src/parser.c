@@ -8,6 +8,7 @@
 #include <execinfo.h>
 
 #include "tokenizer.h"
+#include "dictionary.h"
 
 /*
   line = [number] statement [ : statement ] CR
@@ -75,6 +76,19 @@
 
 */
 
+typedef union
+{
+  float num;
+  char *string;
+} variable_value;
+
+typedef struct
+{
+  char *name;
+  int type;
+  variable_value value;
+} variable;
+
 typedef struct
 {
   int line_number;
@@ -86,6 +100,10 @@ typedef struct
 char *__LINES[MAX_NR_LINES];
 int __LINE_P = 0;
 bool __RUNNING = false;
+
+dictionary *dict_num_vars = NULL;
+dictionary *dict_str_vars = NULL;
+
 static float
 _abs(float n)
 {
@@ -279,6 +297,17 @@ factor(void)
   } else if (sym == T_NUMBER) {
     number = tokenizer_get_number();
     accept(T_NUMBER);
+  } else if (sym == T_VARIABLE_NUMBER) {
+    printf("NUMBER VAR\n");
+    char* var_name = tokenizer_get_variable_name();
+    printf("Var NAME: '%s'\n", var_name);
+    // void *v = dictionary_get(dict_num_vars, var_name);
+    variable *var = dictionary_get(dict_num_vars, var_name);
+    number = var->value.num;
+    printf("number: %f\n", number);
+    accept(T_VARIABLE_NUMBER);
+  } else if (sym == T_VARIABLE_STRING) {
+    printf("STRING VAR\n");
   } else if (accept(T_LEFT_BANANA)) {
     number = expression();
     expect(T_RIGHT_BANANA);
@@ -654,6 +683,17 @@ static void
 set_var_number(char *name, float value)
 {
   printf("set var '%s' to %f\n", name, value); 
+  variable* var = (variable*) malloc(sizeof(variable));
+  var->name = strdup(name);
+  var->value.num = value;
+  dictionary_put(dict_num_vars, name, var);
+}
+
+static void
+set_var_string(char *name, char* value)
+{
+  printf("set var '%s' to '%s'\n", name, value); 
+  dictionary_put(dict_str_vars, name, value);
 }
 
 static void
@@ -675,6 +715,16 @@ do_let(void)
     set_var_number(name, value);        
   }
 
+  if (sym == T_VARIABLE_STRING) {
+    char *name = tokenizer_get_variable_name();
+    printf("I got this name: %s\n", name);
+    get_sym();
+    expect(T_EQUALS);
+    char *value = tokenizer_get_string();
+    accept(T_STRING);
+    set_var_string(name, value);
+  }
+
 }
 
 static void
@@ -682,17 +732,18 @@ line(void)
 {
   while (sym != T_EOF) {
     statement();
+    get_sym();
     if (sym != T_COLON) {
       break;
     }
-    get_sym();
   }
 }
 
 static void
 statement(void)
 {
-  // puts("I do statement");
+  puts("I do statement");
+  printf("\tdiag: symbol: %d\n", sym);
   switch(sym) {
     case T_KEYWORD_LIST:
       do_list();
@@ -712,6 +763,9 @@ statement(void)
     case T_KEYWORD_LET:
       do_let();
       break;
+    case T_ERROR:
+      error("Oh no... T_ERROR");
+      break;
     default:
       error("Unknown statement."); 
       break;
@@ -723,6 +777,10 @@ void basic_init(void)
   for(int i=0; i<MAX_NR_LINES; i++) {
     __LINES[i] = NULL;
   }
+
+  dict_num_vars = dictionary_new();
+  dict_str_vars = dictionary_new();
+  
 }
 
 void
