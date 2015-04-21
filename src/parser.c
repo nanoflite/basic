@@ -57,12 +57,14 @@
     | SQR
     | TAN
 
-  string = literal_string | string_func "(" expression ")"
+  string = literal_string | string_func "(" string_expression ")"
 
   literal_string = '"' ... '"'
   
   string_func =
     CHR$
+
+  string_expression = literal_string | string_variable
 
   variable = ( numeric_variable | string_variable | indexed_variable )
 
@@ -288,8 +290,6 @@ factor(void)
     number = variable_get_numeric(var_name);
     printf("number: %f\n", number);
     accept(T_VARIABLE_NUMBER);
-//  } else if (sym == T_VARIABLE_STRING) {
-//    printf("STRING VAR\n");
   } else if (accept(T_LEFT_BANANA)) {
     number = expression();
     expect(T_RIGHT_BANANA);
@@ -486,6 +486,59 @@ chr(void)
   return i;
 }
 
+static char*
+string_expression(void)
+{
+  puts("string_expression\n");
+
+  char *string = NULL;
+  char *var_name;
+
+  switch (sym)
+  {
+    case T_STRING:
+      string = tokenizer_get_string();
+      printf("Found string: '%s'\n", string);
+      accept(T_STRING);
+      break;
+
+    case T_STRING_FUNC_CHR:
+      printf("%c", chr());
+      break;
+
+    case T_VARIABLE_STRING:
+      var_name = tokenizer_get_variable_name();
+      string = variable_get_string(var_name);
+      accept(T_VARIABLE_STRING);
+      break;
+
+    case T_STRING_FUNC_MID$:
+      // 0. expect a left banana
+      accept(sym);
+      expect(T_LEFT_BANANA);
+      // 1. expect a string expression as first parameter (recurse into string_expression)
+      char *source = string_expression();
+      // 2. expect a comma
+      expect(T_COMMA);
+      // 3. expect an expression as second param
+      int from = (int) expression();
+      // 4. expect a comma
+      expect(T_COMMA);
+      // 5. expect an expression as third param
+      int to = (int) expression();
+      // 6. expect a right banana
+      expect(T_RIGHT_BANANA);
+
+      //TODO: Better MID$ implementation... optional third parameter
+      string = strdup(&source[from]);
+      string[to] = '\0'; 
+    default:
+      break;
+  }
+
+  return string;
+}
+
 static void
 do_print(void)
 {
@@ -496,9 +549,11 @@ do_print(void)
       printf("%s", tokenizer_get_string());
       accept(T_STRING);
       break;
+
     case T_STRING_FUNC_CHR:
       printf("%c", chr());
       break;
+
     case T_VARIABLE_STRING:
       printf("STRING VAR\n");
       char* var_name = tokenizer_get_variable_name();
@@ -507,6 +562,7 @@ do_print(void)
       printf("%s", string);
       accept(T_VARIABLE_STRING);
       break;
+
     case T_EOF:
       printf("\n");
       break;
@@ -673,8 +729,6 @@ do_if(void)
 static void
 do_let(void)
 {
-  get_sym();
-
   if (sym != T_VARIABLE_NUMBER && sym != T_VARIABLE_STRING) {
     error("Expected a variable");
     return;
@@ -694,8 +748,7 @@ do_let(void)
     printf("I got this name: %s\n", name);
     get_sym();
     expect(T_EQUALS);
-    char *value = tokenizer_get_string();
-    accept(T_STRING);
+    char *value = string_expression();
     variable_set_string(name, value);
   }
 
@@ -734,14 +787,13 @@ statement(void)
     case T_KEYWORD_IF:
       do_if();
       break;
-    case T_KEYWORD_LET:
-      do_let();
-      break;
     case T_ERROR:
       error("Oh no... T_ERROR");
       break;
+    case T_KEYWORD_LET:
+      get_sym();
     default:
-      error("Unknown statement."); 
+      do_let();
       break;
   }
 }

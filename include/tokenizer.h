@@ -31,6 +31,7 @@ typedef enum {
   T_FUNC_ATN,
   T_FUNC_NOT,
   T_STRING_FUNC_CHR,
+  T_STRING_FUNC_MID$,
   T_OP_OR,
   T_OP_AND,
   T_KEYWORD_PRINT,
@@ -55,6 +56,7 @@ typedef enum {
   */
   T_VARIABLE_NUMBER,
   T_VARIABLE_STRING,
+  T_COMMA,
   T_ERROR,
   T_EOF,
   T_THE_END

@@ -25,6 +25,7 @@ char_to_token char_to_tokens[] =
   { '=', T_EQUALS },
   { '<', T_LESS },
   { '>', T_GREATER },
+  { ',', T_COMMA },
   { '\0', T_EOF }
 
 };
@@ -64,6 +65,7 @@ keyword_to_token keyword_to_tokens[] =
   { "RUN", T_KEYWORD_RUN },
   { "END", T_KEYWORD_END },
   { "CHR$", T_STRING_FUNC_CHR },
+  { "MID$", T_STRING_FUNC_MID$ },
   { NULL,  T_EOF }
 
 };
@@ -258,6 +260,7 @@ char *tokenizer_token_name(token t)
   t2l_entry( T_FUNC_ATN ),
   t2l_entry( T_FUNC_NOT ),
   t2l_entry( T_STRING_FUNC_CHR ),
+  t2l_entry( T_STRING_FUNC_MID$ ),
   t2l_entry( T_OP_OR ),
   t2l_entry( T_OP_AND ),
   t2l_entry( T_KEYWORD_PRINT ),
@@ -280,6 +283,7 @@ char *tokenizer_token_name(token t)
   */
   t2l_entry( T_VARIABLE_NUMBER ),
   t2l_entry( T_VARIABLE_STRING ),
+  t2l_entry( T_COMMA ),
   t2l_entry( T_ERROR ),
   t2l_entry( T_EOF ),
 

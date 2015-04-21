@@ -4,10 +4,16 @@ v Add a dictionary for number vars and string (Only 1 dict)
 v Introduce a variable struct with a union (numeric, string)
 v Store vars in dict
 v Expand LET with string vars
-. Make LET optional
-. Allow variables in expressions
-. Make string expressions possible
+v Make LET optional
+v Allow variables in expressions
+v Make string expressions possible
 . Add a few string functions (MID$, LEFT$, RIGHT$, LEN, SPC, TAB)
+    MID$:
+      10 A$="SATURDAY MORNING"
+      20 B$=MID$(A$,6,3): PRINT B$ (DAY is cut and printed out)
+      30 B$=MID$(A$,1,8): PRINT B$ (same as LEFT$; SATURDAY is displayed)
+      40 B$=MID$(A$,10): PRINT B$ (same as RIGHT$ or MID$(A$,10,7); MORNING is displayed)  
+      . 
 . Rename parser.{c,h} to interpreter, rename functions
 . Refactor into core and use a registry to add statements and functions
 . Rework the line saving
