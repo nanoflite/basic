@@ -31,7 +31,9 @@
 
   variable-list = variable [, variable-list]
 
-  expression = ["+"|"-"] term {("+"|"-"|"OR") term} .
+  expression = string_expression | numeric_expression
+  
+  numeric_expression = ["+"|"-"] term {("+"|"-"|"OR") term} .
 
   term = factor {( "*" | "/" | "AND" ) factor} .
 
@@ -796,6 +798,11 @@ statement(void)
       do_let();
       break;
   }
+  /*
+  // TODO:
+  statement_func func = statement_get_func(sym);
+  func();
+  */
 }
 
 void basic_init(void)

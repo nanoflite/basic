@@ -7,6 +7,12 @@ v Expand LET with string vars
 v Make LET optional
 v Allow variables in expressions
 v Make string expressions possible
+
+    To simplify the code, let expressions be a compound value -> string and float
+      expression_result result;
+      expression(&result);
+      result.value.numeric, result.value.string
+
 . Add a few string functions (MID$, LEFT$, RIGHT$, LEN, SPC, TAB)
     MID$:
       10 A$="SATURDAY MORNING"
@@ -14,6 +20,9 @@ v Make string expressions possible
       30 B$=MID$(A$,1,8): PRINT B$ (same as LEFT$; SATURDAY is displayed)
       40 B$=MID$(A$,10): PRINT B$ (same as RIGHT$ or MID$(A$,10,7); MORNING is displayed)  
       . 
+. We need string condition to compare strings in IF
+. PRINT Also needs to find out expression | string_expression (expression can be var as well, string_expression also)
+    Same mechanism for both -> reusable
 . Rename parser.{c,h} to interpreter, rename functions
 . Refactor into core and use a registry to add statements and functions
 . Rework the line saving
