@@ -80,6 +80,43 @@
 
 */
 
+typedef union
+{
+  float numeric;
+  char *string;
+} expression_value;
+
+typedef enum
+{
+  expression_type_numeric,
+  expression_type_string
+} expression_type;
+
+typedef struct
+{
+  expression_type type;
+  expression_value value;    
+} expression_result;
+
+static float numeric_expression(void);
+static char* string_expression(void);
+
+void
+expression(expression_result *result)
+{
+  char *string = string_expression();
+  if ( NULL != string )
+  {
+    result->type = expression_type_string;
+    result->value.string = string;
+  }
+  else
+  {
+    result->type = expression_type_numeric;
+    result->value.numeric = numeric_expression();
+  }
+}
+
 typedef struct
 {
   int line_number;
@@ -191,7 +228,6 @@ token_to_function token_to_functions[] =
 token sym;
 const char *last_error;
 
-static float expression(void);
 
 static void
 get_sym(void)
@@ -280,7 +316,7 @@ factor(void)
     accept(sym);
     expect(T_LEFT_BANANA);
     function func = get_function(function_sym);
-    number = func(expression());
+    number = func(numeric_expression());
     expect(T_RIGHT_BANANA);
   } else if (sym == T_NUMBER) {
     number = tokenizer_get_number();
@@ -293,7 +329,7 @@ factor(void)
     printf("number: %f\n", number);
     accept(T_VARIABLE_NUMBER);
   } else if (accept(T_LEFT_BANANA)) {
-    number = expression();
+    number = numeric_expression();
     expect(T_RIGHT_BANANA);
   } else {
     error("Factor: syntax error");
@@ -329,7 +365,7 @@ term(void)
 }
 
 static float
-expression(void)
+numeric_expression(void)
 {
 
   printf("expression?\n");
@@ -475,7 +511,7 @@ chr(void)
 {
   get_sym();
 
-  int i =  (int) expression();
+  int i =  (int) numeric_expression();
 
   if ( i == 205 ) {
     return '/';
@@ -523,11 +559,11 @@ string_expression(void)
       // 2. expect a comma
       expect(T_COMMA);
       // 3. expect an expression as second param
-      int from = (int) expression();
+      int from = (int) numeric_expression();
       // 4. expect a comma
       expect(T_COMMA);
       // 5. expect an expression as third param
-      int to = (int) expression();
+      int to = (int) numeric_expression();
       // 6. expect a right banana
       expect(T_RIGHT_BANANA);
 
@@ -570,7 +606,7 @@ do_print(void)
       break;
 
     default:
-      printf("%f", expression());
+      printf("%f", numeric_expression());
       break;
   }
 
@@ -684,8 +720,18 @@ get_relop(void)
 }
 
 static bool
-condition(float left, float right, relop op)
+// condition(float left, float right, relop op)
+condition(expression_result *left_er, expression_result *right_er, relop op)
 {
+
+  if (left_er->type != expression_type_numeric || right_er->type != expression_type_numeric)
+  {
+    printf("condition involving strings is not yet supported.");
+    return false;
+  }
+
+  float left = left_er->value.numeric;
+  float right = right_er->value.numeric;
 
   switch(op) {
     case OP_NOP:
@@ -709,19 +755,22 @@ condition(float left, float right, relop op)
 static void
 do_if(void)
 {
+  expression_result left_side, right_side;
 
   get_sym();
 
-  float left_side = expression();
+  // float left_side = numeric_expression();
+  expression(&left_side);
   relop op = get_relop();
-  float right_side = expression();
+  // float right_side = numeric_expression();
+  expression(&right_side);
 
   if (sym != T_KEYWORD_THEN) {
     error("IF without THEN.");
     return;
   } 
 
-  if (condition(left_side, right_side, op)) {
+  if (condition(&left_side, &right_side, op)) {
     get_sym();
     statement();
   }
@@ -741,7 +790,7 @@ do_let(void)
     printf("I got this name: %s\n", name);
     get_sym();
     expect(T_EQUALS);
-    float value = expression();
+    float value = numeric_expression();
     variable_set_numeric(name, value);
   }
 
@@ -838,7 +887,7 @@ float evaluate(char *expression_string)
   last_error = NULL;
   tokenizer_init( expression_string );
   get_sym();
-  float result =  expression();
+  float result =  numeric_expression();
   expect(T_EOF);
   return result;
 }

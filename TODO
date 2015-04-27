@@ -13,6 +13,10 @@ v Make string expressions possible
       expression(&result);
       result.value.numeric, result.value.string
 
+    v rename exprssion -> numeric...
+    v introduce expression type and function (find out type of expression)
+
+
 . Add a few string functions (MID$, LEFT$, RIGHT$, LEN, SPC, TAB)
     MID$:
       10 A$="SATURDAY MORNING"
