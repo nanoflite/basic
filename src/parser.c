@@ -98,12 +98,21 @@ typedef struct
   expression_value value;    
 } expression_result;
 
+token sym;
+static void
+get_sym(void)
+{
+  sym = tokenizer_get_next_token();
+  printf("token: %s\n", tokenizer_token_name( sym ) );
+}
+
 static float numeric_expression(void);
 static char* string_expression(void);
 
 void
 expression(expression_result *result)
 {
+
   char *string = string_expression();
   if ( NULL != string )
   {
@@ -225,16 +234,8 @@ token_to_function token_to_functions[] =
   { T_EOF, NULL }
 };
 
-token sym;
 const char *last_error;
 
-
-static void
-get_sym(void)
-{
-  sym = tokenizer_get_next_token();
-  printf("token: %s\n", tokenizer_token_name( sym ) );
-}
 
 static void
 error(const char *error_msg)
@@ -342,6 +343,7 @@ factor(void)
 static float
 term(void)
 {
+  printf("term\n");
   float f1 = factor();
   while (sym == T_MULTIPLY || sym == T_DIVIDE || sym == T_OP_AND) {
     token operator = sym;
@@ -368,7 +370,7 @@ static float
 numeric_expression(void)
 {
 
-  printf("expression?\n");
+  printf("numeric expression?\n");
 
   token operator = T_PLUS;
   if (sym == T_PLUS || sym == T_MINUS) {
@@ -535,7 +537,7 @@ string_expression(void)
   switch (sym)
   {
     case T_STRING:
-      string = tokenizer_get_string();
+      string = strdup(tokenizer_get_string());
       printf("Found string: '%s'\n", string);
       accept(T_STRING);
       break;
@@ -697,20 +699,23 @@ get_relop(void)
 {
 
   if (sym == T_LESS) {
-    get_sym();
+    accept(T_LESS);
     if (sym == T_EQUALS) {
+      accept(T_EQUALS);
       return OP_LE;
     }
     return OP_LT;
   }
 
   if (sym == T_EQUALS) {
+    accept(T_EQUALS);
     return OP_EQ;
   }
 
   if (sym == T_GREATER) {
-    get_sym();
+    accept(T_GREATER);
     if (sym == T_EQUALS) {
+      accept(T_EQUALS);
       return OP_GE;
     }
     return OP_GT;
@@ -720,19 +725,8 @@ get_relop(void)
 }
 
 static bool
-// condition(float left, float right, relop op)
-condition(expression_result *left_er, expression_result *right_er, relop op)
+numeric_condition(float left, float right, relop op)
 {
-
-  if (left_er->type != expression_type_numeric || right_er->type != expression_type_numeric)
-  {
-    printf("condition involving strings is not yet supported.");
-    return false;
-  }
-
-  float left = left_er->value.numeric;
-  float right = right_er->value.numeric;
-
   switch(op) {
     case OP_NOP:
       error("No valid relation operator found");
@@ -752,6 +746,56 @@ condition(expression_result *left_er, expression_result *right_er, relop op)
   return false;
 }
 
+static bool
+string_condition(char *left, char *right, relop op)
+{
+
+
+  int comparison = strcmp(left, right);
+
+  printf("String condition('%s','%s'): %d\n", left, right, comparison);
+
+  switch(op) {
+    case OP_NOP:
+      error("No valid relation operator found");
+      break;
+    case OP_LT:
+      return comparison < 0;
+    case OP_LE:
+      return comparison <= 0;
+    case OP_EQ:
+      return comparison == 0;
+    case OP_GE:
+      return comparison >= 0;
+    case OP_GT:
+      return comparison > 0;  
+  }
+
+  return false;
+}
+
+static bool
+condition(expression_result *left_er, expression_result *right_er, relop op)
+{
+
+  if (left_er->type == expression_type_numeric)
+  {
+    if (right_er->type != expression_type_numeric)
+    {
+      error("Illegal right hand type, expected numeric.");  
+    }
+    return numeric_condition(left_er->value.numeric, right_er->value.numeric, op);
+  }
+  else
+  {
+    if (right_er->type != expression_type_string)
+    {
+      error("Illegal right hand type, expected string");
+    }
+    return string_condition(left_er->value.string, right_er->value.string, op);;
+  }
+}
+
 static void
 do_if(void)
 {
@@ -763,6 +807,7 @@ do_if(void)
   expression(&left_side);
   relop op = get_relop();
   // float right_side = numeric_expression();
+  // get_sym();
   expression(&right_side);
 
   if (sym != T_KEYWORD_THEN) {

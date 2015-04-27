@@ -24,7 +24,7 @@ v Make string expressions possible
       30 B$=MID$(A$,1,8): PRINT B$ (same as LEFT$; SATURDAY is displayed)
       40 B$=MID$(A$,10): PRINT B$ (same as RIGHT$ or MID$(A$,10,7); MORNING is displayed)  
       . 
-. We need string condition to compare strings in IF
+v We need string condition to compare strings in IF
 . PRINT Also needs to find out expression | string_expression (expression can be var as well, string_expression also)
     Same mechanism for both -> reusable
 . Rename parser.{c,h} to interpreter, rename functions
