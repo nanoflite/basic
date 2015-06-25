@@ -21,6 +21,7 @@
     | LET variable = expression
     | GOSUB expression
     | RETURN
+    | FOR numeric_variable '=' numeric_expression TO numeric_expression [ STEP number ] 
     | CLEAR
     | LIST
     | RUN
@@ -80,6 +81,67 @@
 
 */
 
+
+char __stack[1024];
+size_t __stack_p = sizeof(__stack);
+size_t __stack_size = sizeof(__stack);
+
+float stack[32];
+size_t stack_p = 31;
+char *stack_string[32];
+size_t stack_string_p = 31;
+
+float
+stack_pop(void)
+{
+  puts("pop\n");
+  if (stack_p < 31 )
+  {
+    float rv = stack[stack_p++];
+    printf("pop value: %f : %ld\n", rv, stack_p);
+    return rv;
+  }
+ 
+  return -1; 
+}
+
+void
+stack_push(float value)
+{
+  puts("push\n");
+  if (stack_p > 0)
+  {
+    printf("push value: %f : %ld\n", value, stack_p);
+    stack[--stack_p] = value;
+  }
+}
+
+char*
+stack_string_pop(void)
+{
+  puts("pop s\n");
+  if (stack_string_p < 31 )
+  {
+    char* rv = stack_string[stack_string_p++];
+    printf("pop s value: '%s' : %ld\n", rv, stack_string_p);
+    return rv;
+  }
+ 
+  return NULL; 
+}
+
+void
+stack_push_string(char *value)
+{
+  puts("push s\n");
+  if (stack_string_p > 0)
+  {
+    printf("push s value:'%s' : %ld\n", value, stack_string_p);
+    stack_string[--stack_string_p] = strdup(value);
+  }
+}
+
+
 typedef union
 {
   float numeric;
@@ -97,6 +159,22 @@ typedef struct
   expression_type type;
   expression_value value;    
 } expression_result;
+
+typedef enum
+{
+  stack_frame_type_for,
+  stack_frame_type_gosub
+} stack_frame_type;
+
+typedef struct
+{
+  stack_frame_type type;
+  char *variable_name; 
+  float end_value;
+  float step;
+  size_t line;
+  size_t cursor; 
+} stack_frame_for;
 
 token sym;
 static void
@@ -137,6 +215,15 @@ typedef struct
 char *__LINES[MAX_NR_LINES];
 int __LINE_P = 0;
 bool __RUNNING = false;
+
+static void
+move_to_next_line(void)
+{
+  __LINE_P++;
+  while(__LINES[__LINE_P] == NULL && __LINE_P < MAX_NR_LINES) {
+    __LINE_P++;
+  }
+}
 
 static float
 _abs(float n)
@@ -237,27 +324,31 @@ token_to_function token_to_functions[] =
 const char *last_error;
 
 
-static void
+  static void
 error(const char *error_msg)
 {
-       void *array[10];
-       size_t size;
-       char **strings;
-       size_t i;
- 
+  void *array[10];
+  size_t size;
+  char **strings;
+  size_t i;
+
   last_error = error_msg;
 
   printf("--- ERROR: %s\n", error_msg);
-    
-       size = backtrace (array, 10);
-       strings = backtrace_symbols (array, size);
-     
-       printf ("Showing %zd stack frames:\n", size);
-     
-       for (i = 0; i < size; i++)
-          printf ("  %s\n", strings[i]);
-     
-       free (strings);
+
+  size = backtrace (array, 10);
+  strings = backtrace_symbols (array, size);
+
+  printf ("Showing %zd stack frames:\n", size);
+
+  for (i = 0; i < size; i++)
+  {
+    printf ("  %s\n", strings[i]);
+  }
+
+  free (strings);
+
+  exit(1);
 }
 
 static bool
@@ -267,6 +358,7 @@ accept(token t)
     get_sym();
     return true;
   }
+  printf("accept got %s, expected %s\n", tokenizer_token_name(sym), tokenizer_token_name(t));
   return false;
 }
 
@@ -584,6 +676,7 @@ do_print(void)
 {
   get_sym();
 
+  /*
   switch (sym) {
     case T_STRING:
       printf("%s", tokenizer_get_string());
@@ -610,6 +703,24 @@ do_print(void)
     default:
       printf("%f", numeric_expression());
       break;
+  }
+  */
+
+  expression_result expr;
+  expression(&expr);
+
+  if (expr.type == expression_type_string)
+  {
+    printf("%s", expr.value.string);
+  }
+  else
+  if (expr.type == expression_type_numeric)
+  {
+    printf("%f", expr.value.numeric);
+  }
+  else
+  {
+    error("unknown expression");
   }
 
   if (sym != T_SEMICOLON) {
@@ -640,7 +751,160 @@ do_goto(void)
   }
 
   __LINE_P = line_number;
+}
 
+  static void
+do_gosub(void)
+{
+  accept(T_KEYWORD_GOSUB);
+  // int line = (int) numeric_expression();
+  
+  if (sym != T_NUMBER) {
+    error("Number expected");
+    return;
+  }
+
+  int line_number = (int) tokenizer_get_number();
+
+  /*
+  // Move to next line
+  __LINE_P++;
+  while(__LINES[__LINE_P] == NULL && __LINE_P < MAX_NR_LINES) {
+    __LINE_P++;
+  }
+  */
+  move_to_next_line();
+  stack_push(__LINE_P);
+  stack_push(T_KEYWORD_GOSUB);
+
+  __LINE_P = line_number;
+}
+
+  static void
+do_return(void)
+{
+  accept(T_KEYWORD_RETURN);
+
+  int keyword = (int) stack_pop();
+  if (keyword != T_KEYWORD_GOSUB) {
+    error("RETURN without GOSUB");
+    return;
+  } 
+  __LINE_P = stack_pop();
+}
+
+  static void
+do_for(void)
+{
+  printf("do_for\n");
+
+  accept(T_KEYWORD_FOR);
+
+  if ( sym != T_VARIABLE_NUMBER ) {
+    error("Variable expected");
+    return;
+  }
+
+  char *name = tokenizer_get_variable_name();
+  get_sym();
+  expect(T_EQUALS);
+  float value = numeric_expression();
+  variable_set_numeric(name, value);
+
+  expect(T_KEYWORD_TO);
+  
+  float end_value = numeric_expression();
+  
+  float step = 1.0;
+  get_sym();
+  if (sym == T_KEYWORD_STEP) {
+    accept(T_KEYWORD_STEP);
+    step = numeric_expression();
+  }
+  
+  move_to_next_line();
+  /* 
+  stack_push(__LINE_P);
+  stack_push(step);
+  stack_push(end_value);
+  stack_push_string(name);
+  stack_push(T_KEYWORD_FOR);
+  */
+
+  stack_frame_for *f;
+  if ( __stack_p <  sizeof(stack_frame_for) )
+  {
+    error("Stack too small.");
+    return;
+  }  
+
+  __stack_p -= sizeof(stack_frame_for);
+  f = (stack_frame_for*) &(__stack[__stack_p]);
+  
+  f->type = stack_frame_type_for;
+  f->variable_name = name;
+  f->end_value = end_value;
+  f->step = step;
+  f->line = __LINE_P;
+  f->cursor = 0; 
+}
+
+  static void
+do_next(void)
+{
+  printf("do_next\n");
+
+  accept(T_KEYWORD_NEXT);
+
+  /*
+  int keyword = (int) stack_pop();
+  if (keyword != T_KEYWORD_FOR) {
+    error("NEXT without FOR");
+    return;
+  }
+
+  char *name = stack_string_pop();
+  float end_value = stack_pop();
+  float step = stack_pop();
+  int line = stack_pop();
+
+  float value = variable_get_numeric(name);
+  if ( (step > 0 && value >= end_value) || (step < 0 && value <= end_value) )
+  {
+    // TODO: Move to next instruction
+    move_to_next_line();  
+  }
+  else
+  {
+    __LINE_P = line;
+    stack_push(__LINE_P);
+    stack_push(step);
+    stack_push(end_value);
+    stack_push_string(name);
+    stack_push(T_KEYWORD_FOR);
+  } 
+  */
+
+  stack_frame_for *f;
+  f = (stack_frame_for*) &(__stack[__stack_p]);
+
+  if ( f->type != stack_frame_type_for )
+  {
+    error("Uncorrect stack frame, expected for");
+    return;
+  }
+
+  float value = variable_get_numeric(f->variable_name);
+  if ( (f->step > 0 && value >= f->end_value) || (f->step < 0 && value <= f->end_value) )
+  {
+      printf("For has done\n");
+      printf("Move to line behind next");
+      move_to_next_line();
+      return;
+  }
+
+  variable_set_numeric(f->variable_name, value + f->step); 
+  __LINE_P = f->line;
 }
 
 static char *
@@ -877,11 +1141,26 @@ statement(void)
     case T_KEYWORD_GOTO:
       do_goto();
       break;
+    case T_KEYWORD_GOSUB:
+      do_gosub();
+      break;
+    case T_KEYWORD_RETURN:
+      do_return();
+      break;
     case T_KEYWORD_RUN:
       do_run();
       break;
     case T_KEYWORD_IF:
       do_if();
+      break;
+    case T_KEYWORD_FOR:
+      do_for();
+      break;
+    case T_KEYWORD_NEXT:
+      do_next();
+      break;
+    case T_KEYWORD_END:
+      __RUNNING = false;
       break;
     case T_ERROR:
       error("Oh no... T_ERROR");

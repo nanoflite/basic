@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
   puts("| '_ \\ / _` / __| |/ __|");
   puts("| |_) | (_| \\__ \\ | (__ ");
   puts("|_.__/ \\__,_|___/_|\\___|");
-  puts("(c) 2014 Johan Van den Brande");
+  puts("(c) 2015 Johan Van den Brande");
 
   basic_init();
 

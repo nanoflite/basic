@@ -25,13 +25,13 @@ v Make string expressions possible
       40 B$=MID$(A$,10): PRINT B$ (same as RIGHT$ or MID$(A$,10,7); MORNING is displayed)  
       . 
 v We need string condition to compare strings in IF
-. PRINT Also needs to find out expression | string_expression (expression can be var as well, string_expression also)
+v PRINT Also needs to find out expression | string_expression (expression can be var as well, string_expression also)
     Same mechanism for both -> reusable
 . Rename parser.{c,h} to interpreter, rename functions
 . Refactor into core and use a registry to add statements and functions
 . Rework the line saving
-. GOSUB / RETURN
-. FOR / NEXT / STEP
+v GOSUB / RETURN
+v FOR / NEXT / STEP
 . INPUT
 . DIM
 . DATA / READ
@@ -39,3 +39,19 @@ v We need string condition to compare strings in IF
 . END
 . REM
 . Try some basic programs
+
+Architectural changes urgent
+----------------------------
+
+We have to do this first
+
+. stack frame for gosub
+. remove other stack tryouts
+. __LINE_P needs to be txt_pos
+. program memory is one blob: program | variables | stack
+. check the following works:
+    100 FOR A=1 TO 10: FOR B=1 TO 5
+    110 PRINT A*B
+    120 NEXT A: NEXT B
+. registry for functions (expandability)
+. expect is bad with implicit get_sym...better to that more clearly (what do these functions do? what size effects do they have?)

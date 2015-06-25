@@ -60,6 +60,10 @@ keyword_to_token keyword_to_tokens[] =
   { "INPUT", T_KEYWORD_INPUT },
   { "GOSUB", T_KEYWORD_GOSUB },
   { "RETURN", T_KEYWORD_RETURN },
+  { "FOR", T_KEYWORD_FOR },
+  { "TO", T_KEYWORD_TO },
+  { "STEP", T_KEYWORD_STEP },
+  { "NEXT", T_KEYWORD_NEXT },
   { "CLEAR", T_KEYWORD_CLEAR },
   { "LIST", T_KEYWORD_LIST },
   { "RUN", T_KEYWORD_RUN },
@@ -275,12 +279,10 @@ char *tokenizer_token_name(token t)
   t2l_entry( T_KEYWORD_LIST ),
   t2l_entry( T_KEYWORD_RUN ),
   t2l_entry( T_KEYWORD_END ),
-  /*
   t2l_entry( T_KEYWORD_FOR ),
   t2l_entry( T_KEYWORD_TO ),
   t2l_entry( T_KEYWORD_STEP ),
   t2l_entry( T_KEYWORD_NEXT ),
-  */
   t2l_entry( T_VARIABLE_NUMBER ),
   t2l_entry( T_VARIABLE_STRING ),
   t2l_entry( T_COMMA ),
