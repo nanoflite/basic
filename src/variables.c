@@ -40,7 +40,7 @@ variable_get(char* name)
 char*
 variable_get_string(char* name)
 {
-  printf("Var name: '%s'\n", name);
+  // printf("Var name: '%s'\n", name);
   variable *var = dictionary_get(_dictionary, name);
   return var->value.string;
 }
@@ -48,7 +48,7 @@ variable_get_string(char* name)
 float
 variable_get_numeric(char* name)
 {
-  printf("Var name: '%s'\n", name);
+  // printf("Var name: '%s'\n", name);
   variable *var = dictionary_get(_dictionary, name);
   return var->value.num;
 }
@@ -56,7 +56,7 @@ variable_get_numeric(char* name)
 variable*
 variable_set_string(char* name, char* value)
 {
-  printf("set var '%s' to '%s'\n", name, value); 
+  // printf("set var '%s' to '%s'\n", name, value); 
   variable* var = (variable*) malloc(sizeof(variable));
   var->name = strdup(name);
   var->value.string = strdup(value);
@@ -67,7 +67,7 @@ variable_set_string(char* name, char* value)
 variable*
 variable_set_numeric(char* name, float value)
 {
-  printf("set var '%s' to %f\n", name, value); 
+  // printf("set var '%s' to %f\n", name, value); 
   variable* var = (variable*) malloc(sizeof(variable));
   var->name = strdup(name);
   var->value.num = value;

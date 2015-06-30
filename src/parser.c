@@ -86,60 +86,60 @@ char __stack[1024];
 size_t __stack_p = sizeof(__stack);
 size_t __stack_size = sizeof(__stack);
 
-float stack[32];
-size_t stack_p = 31;
-char *stack_string[32];
-size_t stack_string_p = 31;
-
-float
-stack_pop(void)
-{
-  puts("pop\n");
-  if (stack_p < 31 )
-  {
-    float rv = stack[stack_p++];
-    printf("pop value: %f : %ld\n", rv, stack_p);
-    return rv;
-  }
- 
-  return -1; 
-}
-
-void
-stack_push(float value)
-{
-  puts("push\n");
-  if (stack_p > 0)
-  {
-    printf("push value: %f : %ld\n", value, stack_p);
-    stack[--stack_p] = value;
-  }
-}
-
-char*
-stack_string_pop(void)
-{
-  puts("pop s\n");
-  if (stack_string_p < 31 )
-  {
-    char* rv = stack_string[stack_string_p++];
-    printf("pop s value: '%s' : %ld\n", rv, stack_string_p);
-    return rv;
-  }
- 
-  return NULL; 
-}
-
-void
-stack_push_string(char *value)
-{
-  puts("push s\n");
-  if (stack_string_p > 0)
-  {
-    printf("push s value:'%s' : %ld\n", value, stack_string_p);
-    stack_string[--stack_string_p] = strdup(value);
-  }
-}
+// float stack[32];
+// size_t stack_p = 31;
+// char *stack_string[32];
+// size_t stack_string_p = 31;
+// 
+// float
+// stack_pop(void)
+// {
+//   puts("pop\n");
+//   if (stack_p < 31 )
+//   {
+//     float rv = stack[stack_p++];
+//     // printf("pop value: %f : %ld\n", rv, stack_p);
+//     return rv;
+//   }
+//  
+//   return -1; 
+// }
+// 
+// void
+// stack_push(float value)
+// {
+//   puts("push\n");
+//   if (stack_p > 0)
+//   {
+//     // printf("push value: %f : %ld\n", value, stack_p);
+//     stack[--stack_p] = value;
+//   }
+// }
+// 
+// char*
+// stack_string_pop(void)
+// {
+//   puts("pop s\n");
+//   if (stack_string_p < 31 )
+//   {
+//     char* rv = stack_string[stack_string_p++];
+//     // printf("pop s value: '%s' : %ld\n", rv, stack_string_p);
+//     return rv;
+//   }
+//  
+//   return NULL; 
+// }
+// 
+// void
+// stack_push_string(char *value)
+// {
+//   puts("push s\n");
+//   if (stack_string_p > 0)
+//   {
+//     // printf("push s value:'%s' : %ld\n", value, stack_string_p);
+//     stack_string[--stack_string_p] = strdup(value);
+//   }
+// }
 
 
 typedef union
@@ -176,12 +176,18 @@ typedef struct
   size_t cursor; 
 } stack_frame_for;
 
+typedef struct
+{
+  stack_frame_type type;
+  size_t line;
+} stack_frame_gosub;
+
 token sym;
 static void
 get_sym(void)
 {
   sym = tokenizer_get_next_token();
-  printf("token: %s\n", tokenizer_token_name( sym ) );
+  // printf("token: %s\n", tokenizer_token_name( sym ) );
 }
 
 static float numeric_expression(void);
@@ -358,7 +364,7 @@ accept(token t)
     get_sym();
     return true;
   }
-  printf("accept got %s, expected %s\n", tokenizer_token_name(sym), tokenizer_token_name(t));
+  // printf("accept got %s, expected %s\n", tokenizer_token_name(sym), tokenizer_token_name(t));
   return false;
 }
 
@@ -415,11 +421,11 @@ factor(void)
     number = tokenizer_get_number();
     accept(T_NUMBER);
   } else if (sym == T_VARIABLE_NUMBER) {
-    printf("NUMBER VAR\n");
+    // printf("NUMBER VAR\n");
     char* var_name = tokenizer_get_variable_name();
-    printf("Var NAME: '%s'\n", var_name);
+    // printf("Var NAME: '%s'\n", var_name);
     number = variable_get_numeric(var_name);
-    printf("number: %f\n", number);
+    // printf("number: %f\n", number);
     accept(T_VARIABLE_NUMBER);
   } else if (accept(T_LEFT_BANANA)) {
     number = numeric_expression();
@@ -435,7 +441,7 @@ factor(void)
 static float
 term(void)
 {
-  printf("term\n");
+  // printf("term\n");
   float f1 = factor();
   while (sym == T_MULTIPLY || sym == T_DIVIDE || sym == T_OP_AND) {
     token operator = sym;
@@ -462,7 +468,7 @@ static float
 numeric_expression(void)
 {
 
-  printf("numeric expression?\n");
+  // printf("numeric expression?\n");
 
   token operator = T_PLUS;
   if (sym == T_PLUS || sym == T_MINUS) {
@@ -491,9 +497,11 @@ numeric_expression(void)
         error("expression: oops");
     }
   }
-  printf("expression: %f\n", t1);
+  // printf("expression: %f\n", t1);
   return t1;
 }
+
+// -- Lines and BASIC program storage
 
 static bool line_check_boundaries(int line_number)
 {
@@ -621,7 +629,7 @@ chr(void)
 static char*
 string_expression(void)
 {
-  puts("string_expression\n");
+  // puts("string_expression\n");
 
   char *string = NULL;
   char *var_name;
@@ -630,7 +638,7 @@ string_expression(void)
   {
     case T_STRING:
       string = strdup(tokenizer_get_string());
-      printf("Found string: '%s'\n", string);
+      // printf("Found string: '%s'\n", string);
       accept(T_STRING);
       break;
 
@@ -774,8 +782,24 @@ do_gosub(void)
   }
   */
   move_to_next_line();
+  
+  /*
   stack_push(__LINE_P);
   stack_push(T_KEYWORD_GOSUB);
+  */
+
+  stack_frame_gosub *g;
+  if ( __stack_p < sizeof(stack_frame_gosub) )
+  {
+    error("Stack too small.");
+    return;
+  }
+
+  __stack_p -= sizeof(stack_frame_gosub);
+  g = (stack_frame_gosub*) &(__stack[__stack_p]);
+
+  g->type = stack_frame_type_gosub;
+  g->line = __LINE_P;
 
   __LINE_P = line_number;
 }
@@ -785,18 +809,33 @@ do_return(void)
 {
   accept(T_KEYWORD_RETURN);
 
+  /*
   int keyword = (int) stack_pop();
   if (keyword != T_KEYWORD_GOSUB) {
     error("RETURN without GOSUB");
     return;
   } 
   __LINE_P = stack_pop();
+  */
+
+  stack_frame_gosub *g;
+  g = (stack_frame_gosub*) &(__stack[__stack_p]);
+
+  if ( g->type != stack_frame_type_gosub )
+  {
+    error("Uncorrect stack frame, expected gosub");
+    return;
+  }
+
+  __LINE_P = g->line;
+
+  __stack_p += sizeof(stack_frame_gosub);
 }
 
   static void
 do_for(void)
 {
-  printf("do_for\n");
+  // printf("do_for\n");
 
   accept(T_KEYWORD_FOR);
 
@@ -852,7 +891,7 @@ do_for(void)
   static void
 do_next(void)
 {
-  printf("do_next\n");
+  // printf("do_next\n");
 
   accept(T_KEYWORD_NEXT);
 
@@ -897,8 +936,9 @@ do_next(void)
   float value = variable_get_numeric(f->variable_name);
   if ( (f->step > 0 && value >= f->end_value) || (f->step < 0 && value <= f->end_value) )
   {
-      printf("For has done\n");
-      printf("Move to line behind next");
+      //printf("For has done\n");
+      //printf("Move to line behind next");
+      __stack_p += sizeof(stack_frame_for);
       move_to_next_line();
       return;
   }
@@ -1017,7 +1057,7 @@ string_condition(char *left, char *right, relop op)
 
   int comparison = strcmp(left, right);
 
-  printf("String condition('%s','%s'): %d\n", left, right, comparison);
+  // printf("String condition('%s','%s'): %d\n", left, right, comparison);
 
   switch(op) {
     case OP_NOP:
@@ -1096,7 +1136,7 @@ do_let(void)
 
   if (sym == T_VARIABLE_NUMBER) {
     char *name = tokenizer_get_variable_name();
-    printf("I got this name: %s\n", name);
+    // printf("I got this name: %s\n", name);
     get_sym();
     expect(T_EQUALS);
     float value = numeric_expression();
@@ -1105,7 +1145,7 @@ do_let(void)
 
   if (sym == T_VARIABLE_STRING) {
     char *name = tokenizer_get_variable_name();
-    printf("I got this name: %s\n", name);
+    // printf("I got this name: %s\n", name);
     get_sym();
     expect(T_EQUALS);
     char *value = string_expression();
@@ -1129,8 +1169,8 @@ line(void)
 static void
 statement(void)
 {
-  puts("I do statement");
-  printf("\tdiag: symbol: %d\n", sym);
+  // puts("I do statement");
+  // printf("\tdiag: symbol: %d\n", sym);
   switch(sym) {
     case T_KEYWORD_LIST:
       do_list();

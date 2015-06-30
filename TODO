@@ -45,8 +45,8 @@ Architectural changes urgent
 
 We have to do this first
 
-. stack frame for gosub
-. remove other stack tryouts
+v stack frame for gosub
+v remove other stack tryouts
 . __LINE_P needs to be txt_pos
 . program memory is one blob: program | variables | stack
 . check the following works:
