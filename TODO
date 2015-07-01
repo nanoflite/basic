@@ -48,6 +48,17 @@ We have to do this first
 v stack frame for gosub
 v remove other stack tryouts
 . __LINE_P needs to be txt_pos
+
+  typedef line {
+    size_t line_number;
+    line* next_line;
+    char *contents;
+  }
+
+  Does not need to be linear (delete and such)
+  RENUMBER defrags this and makes it all linear again
+  This way we can keep __line_p, and work with a one-blob program space.
+
 . program memory is one blob: program | variables | stack
 . check the following works:
     100 FOR A=1 TO 10: FOR B=1 TO 5

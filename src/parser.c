@@ -9,6 +9,7 @@
 
 #include "tokenizer.h"
 #include "variables.h"
+#include "line.h"
 
 /*
   line = [number] statement [ : statement ] CR
@@ -81,66 +82,21 @@
 
 */
 
+/*
+#define MAX_NR_LINES 1000
+char *__LINES[MAX_NR_LINES];
+int __LINE_P = 0;
+*/
+
+char __memory[4096];
+size_t __memory_p = 0;
+size_t __memory_size = sizeof(__memory);
 
 char __stack[1024];
 size_t __stack_p = sizeof(__stack);
 size_t __stack_size = sizeof(__stack);
 
-// float stack[32];
-// size_t stack_p = 31;
-// char *stack_string[32];
-// size_t stack_string_p = 31;
-// 
-// float
-// stack_pop(void)
-// {
-//   puts("pop\n");
-//   if (stack_p < 31 )
-//   {
-//     float rv = stack[stack_p++];
-//     // printf("pop value: %f : %ld\n", rv, stack_p);
-//     return rv;
-//   }
-//  
-//   return -1; 
-// }
-// 
-// void
-// stack_push(float value)
-// {
-//   puts("push\n");
-//   if (stack_p > 0)
-//   {
-//     // printf("push value: %f : %ld\n", value, stack_p);
-//     stack[--stack_p] = value;
-//   }
-// }
-// 
-// char*
-// stack_string_pop(void)
-// {
-//   puts("pop s\n");
-//   if (stack_string_p < 31 )
-//   {
-//     char* rv = stack_string[stack_string_p++];
-//     // printf("pop s value: '%s' : %ld\n", rv, stack_string_p);
-//     return rv;
-//   }
-//  
-//   return NULL; 
-// }
-// 
-// void
-// stack_push_string(char *value)
-// {
-//   puts("push s\n");
-//   if (stack_string_p > 0)
-//   {
-//     // printf("push s value:'%s' : %ld\n", value, stack_string_p);
-//     stack_string[--stack_string_p] = strdup(value);
-//   }
-// }
-
+bool __RUNNING = false;
 
 typedef union
 {
@@ -210,25 +166,61 @@ expression(expression_result *result)
   }
 }
 
-typedef struct
-{
-  int line_number;
-  int next_line_number;
-  char *line;
-} line_entry;
+const char *last_error;
 
-#define MAX_NR_LINES 1000
-char *__LINES[MAX_NR_LINES];
-int __LINE_P = 0;
-bool __RUNNING = false;
+  static void
+error(const char *error_msg)
+{
+  void *array[10];
+  size_t size;
+  char **strings;
+  size_t i;
+
+  last_error = error_msg;
+
+  printf("--- ERROR: %s\n", error_msg);
+
+  size = backtrace (array, 10);
+  strings = backtrace_symbols (array, size);
+
+  printf ("Showing %zd stack frames:\n", size);
+
+  for (i = 0; i < size; i++)
+  {
+    printf ("  %s\n", strings[i]);
+  }
+
+  free (strings);
+
+  exit(1);
+}
+
 
 static void
 move_to_next_line(void)
 {
+  /*
   __LINE_P++;
   while(__LINES[__LINE_P] == NULL && __LINE_P < MAX_NR_LINES) {
     __LINE_P++;
   }
+  */
+  /*
+  while (__memory_p < __memory_size)
+  {
+    __memory_p++;
+    
+    if (__memory[__memory_p] && __memory[__memory_p] == '\n')
+    {
+      return;
+    }
+  }
+  if (__memory_p == __memory_size)
+  {
+    error("No more memory.");
+  }
+  */
+  lines_next();
 }
 
 static float
@@ -326,36 +318,6 @@ token_to_function token_to_functions[] =
   { T_FUNC_NOT, _not },
   { T_EOF, NULL }
 };
-
-const char *last_error;
-
-
-  static void
-error(const char *error_msg)
-{
-  void *array[10];
-  size_t size;
-  char **strings;
-  size_t i;
-
-  last_error = error_msg;
-
-  printf("--- ERROR: %s\n", error_msg);
-
-  size = backtrace (array, 10);
-  strings = backtrace_symbols (array, size);
-
-  printf ("Showing %zd stack frames:\n", size);
-
-  for (i = 0; i < size; i++)
-  {
-    printf ("  %s\n", strings[i]);
-  }
-
-  free (strings);
-
-  exit(1);
-}
 
 static bool
 accept(token t)
@@ -501,82 +463,6 @@ numeric_expression(void)
   return t1;
 }
 
-// -- Lines and BASIC program storage
-
-static bool line_check_boundaries(int line_number)
-{
-  if (line_number < 0) {
-    return false;
-  }
-
-  if (line_number >= MAX_NR_LINES ) {
-    return false;
-  }
-
-  return true;
-}
-
-static bool
-line_number_exists(int line_number)
-{
-  if (!line_check_boundaries(line_number)) {
-    error("invalid line number");
-    return false;
-  }
-  return __LINES[line_number] != NULL;
-}
-
-static void
-line_insert(int line_number, char *line)
-{
-
-  if (!line_check_boundaries(line_number)) {
-    error("invalid line number");
-    return;
-  }
-
-  __LINES[line_number] = strdup(line);
-}
-
-static void
-line_delete(int line_number)
-{
-
-  if (!line_check_boundaries(line_number)) {
-    error("invalid line number");
-    return;
-  }
-
-  free(__LINES[line_number]);
-  __LINES[line_number] = NULL;
-}
-
-static void
-line_replace(int line_number, char *line)
-{
-
-  if (!line_check_boundaries(line_number)) {
-    error("invalid line number");
-    return;
-  }
-
-  if (__LINES[line_number] == NULL) {
-    error("expected a line");
-  }
-
-  line_delete(line_number);
-  line_insert(line_number, line);
-}
-
-static void
-store_line( int line_number, char *line )
-{
-  if (line_number_exists(line_number)) {
-    line_replace(line_number, line);
-  } else {
-    line_insert(line_number, line);
-  }
-}
 
 static void
 ready(void)
@@ -587,26 +473,42 @@ ready(void)
 static void
 do_list(void)
 {
-  for(int i=0; i<MAX_NR_LINES; i++) {
-    if (__LINES[i] != NULL) {
-      puts(__LINES[i]);
+  lines_reset();
+
+  while (true)
+  {
+    line* l = lines_current();
+    if ( l == NULL )
+    {
+      break;
     }
+    printf("%ld %s\n", l->number, l->contents);
+    lines_next();
   }
-
+ 
   ready();
-
 }
 
-static void increment_line(void)
-{
-  __LINE_P++;
-
-  if (__LINE_P >= MAX_NR_LINES) {
-    __LINE_P = 0;
-    __RUNNING = false;
-  }
-
-}
+// static void increment_line(void)
+// {
+//   /*
+//    __LINE_P++;
+// 
+//   if (__LINE_P >= MAX_NR_LINES) {
+//     __LINE_P = 0;
+//     __RUNNING = false;
+//   }
+//   */
+//   /*
+//   while(__memory_p < __memory_size && __memory[__memory_p] && __memory[__memory_p] != '\n'){
+//     __memory_p++;
+//   } 
+//   if (__memory[__memory_p] == '\n')
+//   {
+//     __memory_p++;
+//   }
+//   */
+// }
 
 static char
 chr(void)
@@ -737,7 +639,7 @@ do_print(void)
     accept(T_SEMICOLON);
   }
 
-  increment_line(); 
+  // increment_line(); 
 
 }
 
@@ -753,12 +655,13 @@ do_goto(void)
 
   int line_number = (int) tokenizer_get_number();
 
-  if (__LINES[line_number] == NULL) {
+  line* l = lines_get_by_number(line_number);
+  if (l == NULL) {
     error("Line not found.");
     return;
   }
 
-  __LINE_P = line_number;
+  lines_set_by_number( line_number );
 }
 
   static void
@@ -799,9 +702,9 @@ do_gosub(void)
   g = (stack_frame_gosub*) &(__stack[__stack_p]);
 
   g->type = stack_frame_type_gosub;
-  g->line = __LINE_P;
+  g->line = lines_current()->number;
 
-  __LINE_P = line_number;
+  lines_set_by_number(line_number);
 }
 
   static void
@@ -827,7 +730,7 @@ do_return(void)
     return;
   }
 
-  __LINE_P = g->line;
+  lines_set_by_number( g->line );
 
   __stack_p += sizeof(stack_frame_gosub);
 }
@@ -884,7 +787,7 @@ do_for(void)
   f->variable_name = name;
   f->end_value = end_value;
   f->step = step;
-  f->line = __LINE_P;
+  f->line = lines_current()->number;
   f->cursor = 0; 
 }
 
@@ -944,30 +847,23 @@ do_next(void)
   }
 
   variable_set_numeric(f->variable_name, value + f->step); 
-  __LINE_P = f->line;
+  lines_set_by_number( f->line );
 }
 
 static char *
 get_next_line(void)
 {
-  while(__LINES[__LINE_P] == NULL && __LINE_P < MAX_NR_LINES) {
-    __LINE_P++;
-  }
-
-  if (__LINE_P < MAX_NR_LINES) {
-    return __LINES[__LINE_P];
-  }
-
-  return NULL;
+  line* l = lines_next();
+  return l->contents;
 }
 
-static void line(void);
+static void parse_line(void);
 static void statement(void);
 
 static void
 do_run(void)
 {
-  __LINE_P = 0;
+  lines_reset();
   __RUNNING = true;
   while (__RUNNING) {
     char *code = get_next_line();
@@ -983,7 +879,7 @@ do_run(void)
       exit(-1);
     }
     get_sym();
-    line();
+    parse_line();
   }
  
   ready();  
@@ -1155,7 +1051,7 @@ do_let(void)
 }
 
 static void
-line(void)
+parse_line(void)
 {
   while (sym != T_EOF) {
     statement();
@@ -1220,10 +1116,7 @@ statement(void)
 
 void basic_init(void)
 {
-  for(int i=0; i<MAX_NR_LINES; i++) {
-    __LINES[i] = NULL;
-  }
-
+  lines_init(__memory, __memory_size);
   variables_init();
 }
 
@@ -1237,12 +1130,12 @@ basic_eval(char *line_string)
     float line_number = tokenizer_get_number();
     get_sym();
     if (sym == T_EOF) {
-      line_delete( line_number );
+      lines_delete( line_number );
     } else {
-      store_line( line_number, line_string);
+      lines_store( line_number, line_string);
     }
   } else {
-    line();
+    parse_line();
   }
 }
 
