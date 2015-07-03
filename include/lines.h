@@ -1,5 +1,5 @@
-#ifndef __LINE_H__
-#define __LINE_H__
+#ifndef __LINES_H__
+#define __LINES_H__
 
 #include <stdbool.h>
 
@@ -33,10 +33,14 @@ bool lines_exists(size_t number);
 
 bool lines_insert(size_t number, char *contents);
 
-void lines_delete(size_t number);
+bool lines_delete(size_t number);
 
-void lines_replace(size_t number, char *contents);
+bool lines_replace(size_t number, char *contents);
 
-void lines_store(size_t number, char* contents );
+bool lines_store(size_t number, char* contents );
 
-#endif // __LINE_H__
+typedef void (*lines_list_cb)(size_t number, char* contents);
+
+void lines_list(lines_list_cb out);
+
+#endif // __LINES_H__

@@ -9,7 +9,7 @@
 
 #include "tokenizer.h"
 #include "variables.h"
-#include "line.h"
+#include "lines.h"
 
 /*
   line = [number] statement [ : statement ] CR
@@ -88,9 +88,9 @@ char *__LINES[MAX_NR_LINES];
 int __LINE_P = 0;
 */
 
-char __memory[4096];
-size_t __memory_p = 0;
-size_t __memory_size = sizeof(__memory);
+static char __memory[4096];
+// static size_t __memory_p = 0;
+static size_t __memory_size = sizeof(__memory);
 
 char __stack[1024];
 size_t __stack_p = sizeof(__stack);
@@ -478,6 +478,7 @@ do_list(void)
   while (true)
   {
     line* l = lines_current();
+    printf("do: %p\n", l);
     if ( l == NULL )
     {
       break;
