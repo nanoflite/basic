@@ -15,7 +15,7 @@ static size_t __memory_size;
 _terminate(line* l)
 {
   char* p = (char*) l;
-  p += sizeof(line) + l->length;
+  p += sizeof(line) - 1 + l->length;
   line* end = (line*) p;
   end->number = 0;
   end->length = 0;
@@ -26,7 +26,7 @@ _terminate(line* l)
 _next(line* l)
 {
   char* p = (char*) l;
-  p += sizeof(line) + l->length;
+  p += sizeof(line) - 1 + l->length;
   return (line*) p;
 }
 
@@ -92,7 +92,7 @@ lines_store(uint16_t number, char* contents)
       size_t m_size = m_end - m_src;
      
       // Calculate offset to move 
-      size_t insert_size = sizeof(line) + strlen(contents) + 1;
+      size_t insert_size = sizeof(line) - 1 + strlen(contents) + 1;
       char* m_dst = m_src + insert_size;
       
       // Move the memory block
@@ -100,7 +100,7 @@ lines_store(uint16_t number, char* contents)
 
       // Set the data of the insert
       insert->number = number;
-      insert->length = insert_size;
+      insert->length = strlen(contents) + 1;
       strcpy( &(insert->contents), contents );
 
       hexdump( "insert", __memory, 256 );
