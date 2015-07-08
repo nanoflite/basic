@@ -64,9 +64,6 @@ lines_store(uint16_t number, char* contents)
 {
   // support insert
 
-  /*
-  Find line that is to be insert after. That line has a line number < insert and the next line has a >
-  */
 
   char *p = __memory;
   line* l = (line*) p;
@@ -74,6 +71,7 @@ lines_store(uint16_t number, char* contents)
   {
     line* next = _next( l );
 
+    // Find line that is to be insert after. That line has a line number < insert and the next line has a >
     if ( l->number < number && next->number > number )
     {
       // We need to insert
@@ -82,7 +80,7 @@ lines_store(uint16_t number, char* contents)
       // The address of the insert is the same as the next line
       line* insert = next;
      
-      // But we need to move the memory bl ock holding the rest to the right.
+      // But we need to move the memory block holding the rest to the right.
       line* end = _find_end( insert );
       end = _next(end); // Move to next empty slot (we keep the sentinel in the copy)
       
@@ -104,6 +102,38 @@ lines_store(uint16_t number, char* contents)
       strcpy( &(insert->contents), contents );
 
       hexdump( "insert", __memory, 256 );
+      
+      return true;
+    }
+    // Replace
+    if ( l->number == number )
+    {
+      printf("replace %d\n", number);
+      
+      // We need to shift the memory to the new offset determined by the size of the line to be inserted
+      
+      line* end = _find_end( l );
+      end = _next(end); // Move to next empty slot (we keep the sentinel in the copy)
+      
+      // Calculate size of bloack
+      char* m_src = (char*) l;
+      char* m_end = (char*) end;
+      size_t m_size = m_end - m_src;
+
+      // Calculate offset to move 
+      size_t replace_size = sizeof(line) - 1 + strlen(contents) + 1;
+      size_t actual_size = sizeof(line) - 1 + strlen(&(l->contents)) + 1;
+      int offset = replace_size - actual_size ;
+      char* m_dst = m_src + offset;
+      
+      // Move the memory block
+      memmove( m_dst, m_src, m_size );
+
+      // Set the data of the replace
+      l->length = strlen(contents) + 1;
+      strcpy( &(l->contents), contents );
+
+      hexdump( "replace", __memory, 256 );
       
       return true;
     }

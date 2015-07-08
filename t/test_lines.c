@@ -74,6 +74,17 @@ void test_lines(void **state)
   lines_list(out);
 
   lines_store(15, "XXXX 15");
-  // lines_store(20, "XXXX 20.2");
+  lines_list(out);
+
+  lines_store(20, "XXXX 20.2");
+  lines_list(out);
+
+  lines_store(20, "XXXX 20");
+  lines_list(out);
+
+  lines_store(5, "XXXX 5");
+  lines_list(out);
+
+  lines_store(40, "XXXX 40");
   lines_list(out);
 }
