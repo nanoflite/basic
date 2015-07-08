@@ -5,7 +5,7 @@
 //  v wipe
 //  v get_line
 //  . clean up code
-//  . integrate with parser
+//  v integrate with parser
 
 #include <stdlib.h>
 #include <string.h>
@@ -70,7 +70,7 @@ lines_store(uint16_t number, char* contents)
     if ( l->number < number && next->number > number )
     {
       // We need to insert
-      printf("insert %d\n", number);
+      // printf("insert %d\n", number);
       
       // The address of the insert is the same as the next line
       line* insert = next;
@@ -96,14 +96,14 @@ lines_store(uint16_t number, char* contents)
       insert->length = strlen(contents) + 1;
       strcpy( &(insert->contents), contents );
 
-      hexdump( "insert", __memory, 256 );
+      // hexdump( "insert", __memory, 256 );
       
       return true;
     }
     // Replace
     if ( l->number == number )
     {
-      printf("replace %d\n", number);
+      // printf("replace %d\n", number);
       
       // We need to shift the memory to the new offset determined by the size of the line to be inserted
       
@@ -128,14 +128,14 @@ lines_store(uint16_t number, char* contents)
       l->length = strlen(contents) + 1;
       strcpy( &(l->contents), contents );
 
-      hexdump( "replace", __memory, 256 );
+      // hexdump( "replace", __memory, 256 );
       
       return true;
     }
     // Prepend
     if ( l->number > number )
     {
-      printf("prepend %d\n", number);
+      // printf("prepend %d\n", number);
       
       // The address of the insert is the same as the actual line
       line* insert = l;
@@ -161,7 +161,7 @@ lines_store(uint16_t number, char* contents)
       insert->length = strlen(contents) + 1;
       strcpy( &(insert->contents), contents );
 
-      hexdump( "prepend", __memory, 256 );
+      // hexdump( "prepend", __memory, 256 );
  
       return true; 
     }
@@ -177,7 +177,7 @@ lines_store(uint16_t number, char* contents)
   end->number = 0;
   end->length = 0;
  
-  hexdump( "append", __memory, 256 );
+  // hexdump( "append", __memory, 256 );
 
   return true;
 }
@@ -185,7 +185,7 @@ lines_store(uint16_t number, char* contents)
   bool
 lines_delete(uint16_t number)
 {
-  printf("delete line %d\n", number);
+  // printf("delete line %d\n", number);
 
   // find the line
   line* l = (line*) __memory;
@@ -196,7 +196,7 @@ lines_delete(uint16_t number)
 
   if ( _is_end( l ) )
   {
-    printf("line %d not found\n", number);
+    // printf("line %d not found\n", number);
     return false;
   }
 
@@ -205,7 +205,7 @@ lines_delete(uint16_t number)
   line* next = _next(l);
   if ( _is_end( next ) )
   {
-    printf("delete last line\n");
+    // printf("delete last line\n");
     memset( l, 0x00, sizeof(line) - 1 + strlen(&(l->contents)) + 1 );
     l->number = 0;
     l->length = 0;
@@ -213,7 +213,7 @@ lines_delete(uint16_t number)
   }
   else
   {
-    printf("delete not last line\n");
+    // printf("delete not last line\n");
     char* dst = (char*) l;
     char* src = (char*) next;
  
@@ -227,7 +227,7 @@ lines_delete(uint16_t number)
     memset( end - rest, 0x00, rest );
   }
 
-  hexdump( "delete", __memory, 256 );
+  // hexdump( "delete", __memory, 256 );
   
   return true;
 }
@@ -251,13 +251,13 @@ lines_clear(void)
   char* end = (char*) _next( _find_end( (line*) __memory ) );
   memset( __memory, 0x00, end - __memory );
 
-  hexdump( "clear", __memory, 256 );
+  // hexdump( "clear", __memory, 256 );
 }
 
   char*
 lines_get(uint16_t number)
 {
-  printf("get line %d\n", number);
+  // printf("get line %d\n", number);
 
   line* l = (line*) __memory;
   while( ! _is_end( l ) && l->number != number)
@@ -271,4 +271,16 @@ lines_get(uint16_t number)
   }
 
   return &(l->contents);
+}
+
+  uint16_t
+lines_next(uint16_t number)
+{
+  line* l = (line*) __memory;
+  while( ! _is_end( l ) && l->number < number)
+  {
+    l = _next( l );
+  }
+
+  return l->number;
 }

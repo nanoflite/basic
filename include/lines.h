@@ -47,4 +47,6 @@ void lines_clear(void);
 
 char* lines_get(uint16_t number);
 
+uint16_t lines_next(uint16_t number);
+
 #endif // __LINES_H__

@@ -91,6 +91,7 @@ int __LINE_P = 0;
 static char __memory[4096];
 // static size_t __memory_p = 0;
 static size_t __memory_size = sizeof(__memory);
+static uint16_t __line = 0;
 
 char __stack[1024];
 size_t __stack_p = sizeof(__stack);
@@ -220,7 +221,7 @@ move_to_next_line(void)
     error("No more memory.");
   }
   */
-  // lines_next();
+  __line = lines_next(__line);
 }
 
 static float
@@ -663,16 +664,14 @@ do_goto(void)
     return;
   }
 
-  // int line_number = (int) tokenizer_get_number();
+  int line_number = (int) tokenizer_get_number();
 
-  // line* l = lines_get_by_number(line_number);
-  line* l = NULL;
-  if (l == NULL) {
+  char* line = lines_get(line_number);
+  if (line == NULL) {
     error("Line not found.");
     return;
   }
 
-  // lines_set_by_number( line_number );
 }
 
   static void
@@ -686,7 +685,7 @@ do_gosub(void)
     return;
   }
 
-  // int line_number = (int) tokenizer_get_number();
+  int line_number = (int) tokenizer_get_number();
 
   /*
   // Move to next line
@@ -695,7 +694,8 @@ do_gosub(void)
     __LINE_P++;
   }
   */
-  move_to_next_line();
+  // move_to_next_line();
+  __line = lines_next( __line );
   
   /*
   stack_push(__LINE_P);
@@ -713,9 +713,9 @@ do_gosub(void)
   g = (stack_frame_gosub*) &(__stack[__stack_p]);
 
   g->type = stack_frame_type_gosub;
-  // g->line = lines_current()->number;
+  g->line = __line;
 
-  // lines_set_by_number(line_number);
+  __line = line_number;
 }
 
   static void
@@ -741,7 +741,7 @@ do_return(void)
     return;
   }
 
-  // lines_set_by_number( g->line );
+  __line = g->line;
 
   __stack_p += sizeof(stack_frame_gosub);
 }
@@ -798,7 +798,7 @@ do_for(void)
   f->variable_name = name;
   f->end_value = end_value;
   f->step = step;
-  // f->line = lines_current()->number;
+  f->line = __line;
   f->cursor = 0; 
 }
 
@@ -858,15 +858,14 @@ do_next(void)
   }
 
   variable_set_numeric(f->variable_name, value + f->step); 
-  // lines_set_by_number( f->line );
+  __line = f->line;
 }
 
 static char *
 get_next_line(void)
 {
-  // line* l = lines_next();
-  //return l->contents;
-  return NULL;
+  __line = lines_next( __line );
+  return lines_get( __line );
 }
 
 static void parse_line(void);
@@ -875,7 +874,7 @@ static void statement(void);
 static void
 do_run(void)
 {
-  // lines_reset();
+  __line = lines_next( 0 );
   __RUNNING = true;
   while (__RUNNING) {
     char *code = get_next_line();
