@@ -20,6 +20,14 @@ _terminate(line* l)
 }
 */
 
+  static line*
+_next(line* l)
+{
+  char* p = (char*) l;
+  p += sizeof(line) + l->length;
+  return (line*) p;
+}
+
   void
 lines_init(char *memory, size_t memory_size)
 {
@@ -35,21 +43,28 @@ lines_init(char *memory, size_t memory_size)
   bool
 lines_store(uint16_t number, char* contents)
 {
-  // support append
+  // support insert
+
+  /*
+  Find line that is to be insert after. That line has a line number < insert and the next line has a >
+  */
+
   char *p = __memory;
   line* l = (line*) p;
   while ( l->number && l->length )
   {
-    p += sizeof(line) + l->length;
-    l = (line*) p;
+    // p += sizeof(line) + l->length;
+    // l = (line*) p;
+    l = _next( l );
   }
   
   l->number = number;
   l->length = strlen(contents) + 1; // Length is offset to next line
   strcpy( &(l->contents), contents );
  
-  p += sizeof(line) + l->length;
-  line* end = (line*) p;
+  // p += sizeof(line) + l->length;
+  // line* end = (line*) p;
+  line* end = _next( l );
   end->number = 0;
   end->length = 0;
  
@@ -77,7 +92,8 @@ lines_list(lines_list_cb out)
   while( l->number && l->length )
   {
     out(l->number, &(l->contents) );
-    p += sizeof(line) + l->length;
-    l = (line*) p;
+    // p += sizeof(line) + l->length;
+    // l = (line*) p;
+    l = _next( l );
   }
 }
