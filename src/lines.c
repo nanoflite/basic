@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "hexdump.h"
 #include "lines.h"
 
 static char* __memory;
@@ -101,6 +102,9 @@ lines_store(uint16_t number, char* contents)
       insert->number = number;
       insert->length = insert_size;
       strcpy( &(insert->contents), contents );
+
+      hexdump( "insert", __memory, 256 );
+      
       return true;
     }
 
@@ -115,6 +119,8 @@ lines_store(uint16_t number, char* contents)
   end->number = 0;
   end->length = 0;
  
+  hexdump( "append", __memory, 256 );
+
   return true;
 }
 
