@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "lines.h"
 
@@ -28,6 +29,12 @@ _next(line* l)
   return (line*) p;
 }
 
+  static bool
+_is_end(line* l)
+{
+  return l && l->number == 0 && l->length == 0;
+}
+
   void
 lines_init(char *memory, size_t memory_size)
 {
@@ -51,9 +58,17 @@ lines_store(uint16_t number, char* contents)
 
   char *p = __memory;
   line* l = (line*) p;
-  while ( l->number && l->length )
+  while ( ! _is_end( l ) )
   {
-    l = _next( l );
+    line* next = _next( l );
+
+    if ( l->number < number && next->number > number )
+    {
+      // We need to insert
+      printf("insert %d\n", number);
+    }
+
+    l = next;
   }
   
   l->number = number;
@@ -85,7 +100,7 @@ lines_list(lines_list_cb out)
   char *p = __memory;
   
   line* l = (line*) p;
-  while( l->number && l->length )
+  while( ! _is_end( l ) )
   {
     out(l->number, &(l->contents) );
     l = _next( l );
