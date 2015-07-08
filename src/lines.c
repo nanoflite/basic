@@ -53,8 +53,6 @@ lines_store(uint16_t number, char* contents)
   line* l = (line*) p;
   while ( l->number && l->length )
   {
-    // p += sizeof(line) + l->length;
-    // l = (line*) p;
     l = _next( l );
   }
   
@@ -62,8 +60,6 @@ lines_store(uint16_t number, char* contents)
   l->length = strlen(contents) + 1; // Length is offset to next line
   strcpy( &(l->contents), contents );
  
-  // p += sizeof(line) + l->length;
-  // line* end = (line*) p;
   line* end = _next( l );
   end->number = 0;
   end->length = 0;
@@ -92,8 +88,6 @@ lines_list(lines_list_cb out)
   while( l->number && l->length )
   {
     out(l->number, &(l->contents) );
-    // p += sizeof(line) + l->length;
-    // l = (line*) p;
     l = _next( l );
   }
 }
