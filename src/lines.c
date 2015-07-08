@@ -8,6 +8,18 @@
 static char* __memory;
 static size_t __memory_size;
 
+/*
+  static void
+_terminate(line* l)
+{
+  char* p = (char*) l;
+  p += sizeof(line) + l->length;
+  line* end = (line*) p;
+  end->number = 0;
+  end->length = 0;
+}
+*/
+
   void
 lines_init(char *memory, size_t memory_size)
 {
@@ -23,12 +35,24 @@ lines_init(char *memory, size_t memory_size)
   bool
 lines_store(uint16_t number, char* contents)
 {
-  // store 1 line
-  line* l = (line*) __memory;
+  // support append
+  char *p = __memory;
+  line* l = (line*) p;
+  while ( l->number && l->length )
+  {
+    p += sizeof(line) + l->length;
+    l = (line*) p;
+  }
+  
   l->number = number;
   l->length = strlen(contents) + 1; // Length is offset to next line
   strcpy( &(l->contents), contents );
-  
+ 
+  p += sizeof(line) + l->length;
+  line* end = (line*) p;
+  end->number = 0;
+  end->length = 0;
+ 
   return true;
 }
 
