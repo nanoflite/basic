@@ -35,6 +35,17 @@ _is_end(line* l)
   return l && l->number == 0 && l->length == 0;
 }
 
+  static line*
+_find_end(line* l)
+{
+  line* n = l;
+  while ( ! _is_end( n ) )
+  {
+    n = _next( n );
+  }
+  return n;  
+}
+
   void
 lines_init(char *memory, size_t memory_size)
 {
@@ -66,6 +77,31 @@ lines_store(uint16_t number, char* contents)
     {
       // We need to insert
       printf("insert %d\n", number);
+      
+      // The address of the insert is the same as the next line
+      line* insert = next;
+     
+      // But we need to move the memory bl ock holding the rest to the right.
+      line* end = _find_end( insert );
+      end = _next(end); // Move to next empty slot (we keep the sentinel in the copy)
+      
+      // We have the end*,  calculate size to move
+      char* m_src = (char*) insert;
+      char* m_end = (char*) end;
+      size_t m_size = m_end - m_src;
+     
+      // Calculate offset to move 
+      size_t insert_size = sizeof(line) + strlen(contents) + 1;
+      char* m_dst = m_src + insert_size;
+      
+      // Move the memory block
+      memmove( m_dst, m_src, m_size );
+
+      // Set the data of the insert
+      insert->number = number;
+      insert->length = insert_size;
+      strcpy( &(insert->contents), contents );
+      return true;
     }
 
     l = next;
