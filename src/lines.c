@@ -2,8 +2,8 @@
 
 // TODO:
 //  v delete line
-//  . wipe
-//  . get_line
+//  v wipe
+//  v get_line
 //  . clean up code
 //  . integrate with parser
 
@@ -243,4 +243,32 @@ lines_list(lines_list_cb out)
     out(l->number, &(l->contents) );
     l = _next( l );
   }
+}
+
+  void
+lines_clear(void)
+{
+  char* end = (char*) _next( _find_end( (line*) __memory ) );
+  memset( __memory, 0x00, end - __memory );
+
+  hexdump( "clear", __memory, 256 );
+}
+
+  char*
+lines_get(uint16_t number)
+{
+  printf("get line %d\n", number);
+
+  line* l = (line*) __memory;
+  while( ! _is_end( l ) && l->number != number)
+  {
+    l = _next( l );
+  }
+
+  if ( _is_end( l ) )
+  {
+    return NULL;
+  }
+
+  return &(l->contents);
 }

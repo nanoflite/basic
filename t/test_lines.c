@@ -88,6 +88,9 @@ void test_lines(void **state)
   lines_store(40, "XXXX 40");
   lines_list(out);
 
+  char* l15 = lines_get( 15 );
+  assert_string_equal( l15, "XXXX 15" );
+
   lines_delete( 11 );
   lines_list(out);
 
@@ -98,5 +101,8 @@ void test_lines(void **state)
   lines_list(out);
 
   lines_delete( 15 );
+  lines_list(out);
+
+  lines_clear();
   lines_list(out);
 }
