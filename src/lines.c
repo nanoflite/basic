@@ -1,5 +1,12 @@
 // -- Lines BASIC program storage
 
+// TODO:
+//  v delete line
+//  . wipe
+//  . get_line
+//  . clean up code
+//  . integrate with parser
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -9,18 +16,6 @@
 
 static char* __memory;
 static size_t __memory_size;
-
-/*
-  static void
-_terminate(line* l)
-{
-  char* p = (char*) l;
-  p += sizeof(line) - 1 + l->length;
-  line* end = (line*) p;
-  end->number = 0;
-  end->length = 0;
-}
-*/
 
   static line*
 _next(line* l)
@@ -190,12 +185,50 @@ lines_store(uint16_t number, char* contents)
   bool
 lines_delete(uint16_t number)
 {
-  // delete first line
-  line* l = (line*) __memory;
-  l->number = 0;
-  l->length = 0;
-  strcpy( &(l->contents), "" );
+  printf("delete line %d\n", number);
 
+  // find the line
+  line* l = (line*) __memory;
+  while( ! _is_end( l ) && l->number != number)
+  {
+    l = _next( l );
+  }
+
+  if ( _is_end( l ) )
+  {
+    printf("line %d not found\n", number);
+    return false;
+  }
+
+  // l is the line to delete
+  // check if this is the last line
+  line* next = _next(l);
+  if ( _is_end( next ) )
+  {
+    printf("delete last line\n");
+    memset( l, 0x00, sizeof(line) - 1 + strlen(&(l->contents)) + 1 );
+    l->number = 0;
+    l->length = 0;
+    strcpy( &(l->contents), "" );
+  }
+  else
+  {
+    printf("delete not last line\n");
+    char* dst = (char*) l;
+    char* src = (char*) next;
+ 
+    line* lend = _find_end( next );
+    lend = _next(lend); // Move to next empty slot (we keep the sentinel in the copy)
+    char* end = (char*) lend;
+    size_t size = (char*) end - src;
+    memmove( dst, src, size );
+
+    size_t rest = src - dst;
+    memset( end - rest, 0x00, rest );
+  }
+
+  hexdump( "delete", __memory, 256 );
+  
   return true;
 }
 

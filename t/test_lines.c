@@ -87,4 +87,16 @@ void test_lines(void **state)
 
   lines_store(40, "XXXX 40");
   lines_list(out);
+
+  lines_delete( 11 );
+  lines_list(out);
+
+  lines_delete( 5 );
+  lines_list(out);
+
+  lines_delete( 40 );
+  lines_list(out);
+
+  lines_delete( 15 );
+  lines_list(out);
 }
