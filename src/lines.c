@@ -116,7 +116,7 @@ lines_store(uint16_t number, char* contents)
       end = _next(end); // Move to next empty slot (we keep the sentinel in the copy)
       
       // Calculate size of bloack
-      char* m_src = (char*) l;
+      char* m_src = (char*) next;
       char* m_end = (char*) end;
       size_t m_size = m_end - m_src;
 
@@ -136,6 +136,39 @@ lines_store(uint16_t number, char* contents)
       hexdump( "replace", __memory, 256 );
       
       return true;
+    }
+    // Prepend
+    if ( l->number > number )
+    {
+      printf("prepend %d\n", number);
+      
+      // The address of the insert is the same as the actual line
+      line* insert = l;
+     
+      // But we need to move the memory block holding the rest to the right.
+      line* end = _find_end( insert );
+      end = _next(end); // Move to next empty slot (we keep the sentinel in the copy)
+      
+      // We have the end*,  calculate size to move
+      char* m_src = (char*) insert;
+      char* m_end = (char*) end;
+      size_t m_size = m_end - m_src;
+     
+      // Calculate offset to move 
+      size_t insert_size = sizeof(line) - 1 + strlen(contents) + 1;
+      char* m_dst = m_src + insert_size;
+      
+      // Move the memory block
+      memmove( m_dst, m_src, m_size );
+
+      // Set the data of the insert
+      insert->number = number;
+      insert->length = strlen(contents) + 1;
+      strcpy( &(insert->contents), contents );
+
+      hexdump( "prepend", __memory, 256 );
+ 
+      return true; 
     }
 
     l = next;
