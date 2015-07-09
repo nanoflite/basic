@@ -69,4 +69,6 @@ char * tokenizer_get_variable_name(void);
 
 char *tokenizer_token_name(token);
 
+char* tokenizer_char_pointer(void);
+
 #endif // __TOKENIZER_H__

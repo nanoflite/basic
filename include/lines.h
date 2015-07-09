@@ -39,14 +39,15 @@ bool lines_delete(uint16_t number);
 // 
 bool lines_store(uint16_t number, char* contents );
  
-typedef void (*lines_list_cb)(size_t number, char* contents);
+typedef void (*lines_list_cb)(uint16_t number, char* contents);
  
 void lines_list(lines_list_cb out);
 
 void lines_clear(void);
 
-char* lines_get(uint16_t number);
+char* lines_get_contents(uint16_t number);
 
+uint16_t lines_first(void);
 uint16_t lines_next(uint16_t number);
 
 #endif // __LINES_H__

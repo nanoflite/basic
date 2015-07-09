@@ -90,6 +90,15 @@ void tokenizer_init(char *input)
   tokenizer_p = tokenizer_next_p = tokenizer_line;
 }
 
+char* tokenizer_char_pointer(void)
+{
+  // Skip white space
+  while ( *tokenizer_p && isspace(*tokenizer_p) ) {
+    tokenizer_p++;
+  } 
+  return tokenizer_p;
+}
+
 static bool
 isvarchar(char c)
 {

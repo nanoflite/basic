@@ -18,11 +18,11 @@ int lines_teardown(void **state)
   return 0;
 }
 
-static void out(size_t number, char* contents)
+static void out(uint16_t number, char* contents)
 {
   static int calls = 0;
   
-  printf("(%ld) '%s'\n", number, contents);
+  printf("(%d) '%s'\n", number, contents);
   
   calls++;
 
@@ -88,8 +88,21 @@ void test_lines(void **state)
   lines_store(40, "XXXX 40");
   lines_list(out);
 
-  char* l15 = lines_get( 15 );
+  char* l15 = lines_get_contents( 15 );
   assert_string_equal( l15, "XXXX 15" );
+
+  printf("iterate lines:\n");
+  uint16_t line = lines_first();
+  while (true)
+  {
+    printf(" %d\n", line);
+    line = lines_next( line );
+    if ( line == 0 )
+    {
+      break;
+    }
+  } 
+  printf("-- done\n");
 
   lines_delete( 11 );
   lines_list(out);

@@ -197,32 +197,32 @@ error(const char *error_msg)
 }
 
 
-static void
-move_to_next_line(void)
-{
-  /*
-  __LINE_P++;
-  while(__LINES[__LINE_P] == NULL && __LINE_P < MAX_NR_LINES) {
-    __LINE_P++;
-  }
-  */
-  /*
-  while (__memory_p < __memory_size)
-  {
-    __memory_p++;
-    
-    if (__memory[__memory_p] && __memory[__memory_p] == '\n')
-    {
-      return;
-    }
-  }
-  if (__memory_p == __memory_size)
-  {
-    error("No more memory.");
-  }
-  */
-  __line = lines_next(__line);
-}
+// static void
+// move_to_next_line(void)
+// {
+//   /*
+//   __LINE_P++;
+//   while(__LINES[__LINE_P] == NULL && __LINE_P < MAX_NR_LINES) {
+//     __LINE_P++;
+//   }
+//   */
+//   /*
+//   while (__memory_p < __memory_size)
+//   {
+//     __memory_p++;
+//     
+//     if (__memory[__memory_p] && __memory[__memory_p] == '\n')
+//     {
+//       return;
+//     }
+//   }
+//   if (__memory_p == __memory_size)
+//   {
+//     error("No more memory.");
+//   }
+//   */
+//   __line = lines_next(__line);
+// }
 
 static float
 _abs(float n)
@@ -472,9 +472,9 @@ ready(void)
 }
 
 static void
-list_out(size_t number, char* contents)
+list_out(uint16_t number, char* contents)
 {
-  printf("(%ld) %s\n", number, contents);
+  printf("%d %s\n", number, contents);
 }
 
 static void
@@ -666,12 +666,13 @@ do_goto(void)
 
   int line_number = (int) tokenizer_get_number();
 
-  char* line = lines_get(line_number);
+  char* line = lines_get_contents(line_number);
   if (line == NULL) {
     error("Line not found.");
     return;
   }
 
+  __line = line_number;
 }
 
   static void
@@ -695,7 +696,7 @@ do_gosub(void)
   }
   */
   // move_to_next_line();
-  __line = lines_next( __line );
+  // __line = lines_next( __line );
   
   /*
   stack_push(__LINE_P);
@@ -775,7 +776,7 @@ do_for(void)
     step = numeric_expression();
   }
   
-  move_to_next_line();
+  // move_to_next_line();
   /* 
   stack_push(__LINE_P);
   stack_push(step);
@@ -853,7 +854,7 @@ do_next(void)
       //printf("For has done\n");
       //printf("Move to line behind next");
       __stack_p += sizeof(stack_frame_for);
-      move_to_next_line();
+      // move_to_next_line();
       return;
   }
 
@@ -861,12 +862,20 @@ do_next(void)
   __line = f->line;
 }
 
+/*
 static char *
 get_next_line(void)
 {
   __line = lines_next( __line );
+
+  if ( __line == 0 )
+  {
+    return NULL;
+  }
+
   return lines_get( __line );
 }
+*/
 
 static void parse_line(void);
 static void statement(void);
@@ -874,21 +883,21 @@ static void statement(void);
 static void
 do_run(void)
 {
-  __line = lines_next( 0 );
+  // printf("run\n");
+  __line = lines_first();
   __RUNNING = true;
-  while (__RUNNING) {
-    char *code = get_next_line();
-    if (code == NULL) {
+  while (__RUNNING)
+  {
+    // printf("r:line: %d\n", __line);
+    char *code = lines_get_contents(__line);
+    __line = lines_next( __line );
+    if (code == NULL)
+    {
       __RUNNING = false;
       break;
     }
+    // printf("r:code: '%s'\n", code);
     tokenizer_init( code );
-    get_sym();
-    // expect number, throw away
-    if (sym != T_NUMBER) {
-      error("Where's the number?");
-      exit(-1);
-    }
     get_sym();
     parse_line();
   }
@@ -1139,11 +1148,12 @@ basic_eval(char *line_string)
   // printf("diag: symbol: %d\n", sym);
   if (sym == T_NUMBER ) {
     float line_number = tokenizer_get_number();
+    char* line = tokenizer_char_pointer();
     get_sym();
     if (sym == T_EOF) {
       lines_delete( line_number );
     } else {
-      lines_store( line_number, line_string);
+      lines_store( line_number, line);
     }
   } else {
     parse_line();

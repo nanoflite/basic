@@ -255,10 +255,8 @@ lines_clear(void)
 }
 
   char*
-lines_get(uint16_t number)
+lines_get_contents(uint16_t number)
 {
-  // printf("get line %d\n", number);
-
   line* l = (line*) __memory;
   while( ! _is_end( l ) && l->number != number)
   {
@@ -274,12 +272,24 @@ lines_get(uint16_t number)
 }
 
   uint16_t
+lines_first(void)
+{
+  line* l = (line*) __memory;
+  return l->number;
+}
+
+  uint16_t
 lines_next(uint16_t number)
 {
   line* l = (line*) __memory;
-  while( ! _is_end( l ) && l->number < number)
+  while( ! _is_end( l ) && l->number <= number)
   {
     l = _next( l );
+  }
+
+  if ( number == l->number )
+  {
+    return 0;
   }
 
   return l->number;
