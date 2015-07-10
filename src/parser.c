@@ -88,14 +88,13 @@ char *__LINES[MAX_NR_LINES];
 int __LINE_P = 0;
 */
 
-static char __memory[4096];
-// static size_t __memory_p = 0;
-static size_t __memory_size = sizeof(__memory);
-static uint16_t __line = 0;
-
-char __stack[1024];
-size_t __stack_p = sizeof(__stack);
-size_t __stack_size = sizeof(__stack);
+static uint16_t __line;
+static char* __memory;
+static char* __stack;
+static size_t __memory_size;
+static size_t __stack_size;
+static size_t __program_size;
+static size_t __stack_p;
 
 bool __RUNNING = false;
 
@@ -1134,8 +1133,18 @@ statement(void)
   */
 }
 
-void basic_init(void)
+void basic_init(char* memory, size_t memory_size, size_t stack_size)
 {
+  __memory = memory;
+  __memory_size = memory_size;
+  __stack_size = stack_size;
+
+  __line = 0;
+  
+  __stack = __memory + __memory_size - __stack_size;
+  __stack_p = __memory_size ;
+  __program_size = __memory_size - __stack_size;
+
   lines_init(__memory, __memory_size);
   variables_init();
 }

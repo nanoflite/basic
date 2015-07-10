@@ -25,8 +25,17 @@ readline_gets ()
   return (line_read);
 }
 
+/*
+float expansion_do_led(float param)
+{
+  printf("LED %s", (param > 0) ? "ON" : "OFF" );
+  return 1;
+}
+*/
+
 int main(int argc, char *argv[])
 {
+  char memory[4096];
 
   puts(" _               _      ");
   puts("| |__   __ _ ___(_) ___ ");
@@ -35,7 +44,8 @@ int main(int argc, char *argv[])
   puts("|_.__/ \\__,_|___/_|\\___|");
   puts("(c) 2015 Johan Van den Brande");
 
-  basic_init();
+  // basic_register_function("LED", expansion_do_led, basic_returns_numeric, 1, basic_param_numeric);
+  basic_init(memory, sizeof(memory), 512);
 
   char *input;
   while ((input = readline_gets()) != NULL ) {
