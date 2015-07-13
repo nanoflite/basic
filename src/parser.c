@@ -82,12 +82,6 @@
 
 */
 
-/*
-#define MAX_NR_LINES 1000
-char *__LINES[MAX_NR_LINES];
-int __LINE_P = 0;
-*/
-
 static uint16_t __line;
 static char* __memory;
 static char* __stack;
@@ -129,7 +123,7 @@ typedef struct
   float end_value;
   float step;
   size_t line;
-  size_t cursor; 
+  char* cursor; 
 } stack_frame_for;
 
 typedef struct
@@ -194,34 +188,6 @@ error(const char *error_msg)
 
   exit(1);
 }
-
-
-// static void
-// move_to_next_line(void)
-// {
-//   /*
-//   __LINE_P++;
-//   while(__LINES[__LINE_P] == NULL && __LINE_P < MAX_NR_LINES) {
-//     __LINE_P++;
-//   }
-//   */
-//   /*
-//   while (__memory_p < __memory_size)
-//   {
-//     __memory_p++;
-//     
-//     if (__memory[__memory_p] && __memory[__memory_p] == '\n')
-//     {
-//       return;
-//     }
-//   }
-//   if (__memory_p == __memory_size)
-//   {
-//     error("No more memory.");
-//   }
-//   */
-//   __line = lines_next(__line);
-// }
 
 static float
 _abs(float n)
@@ -479,46 +445,9 @@ list_out(uint16_t number, char* contents)
 static void
 do_list(void)
 {
-  /*
-  lines_reset();
-
-  while (true)
-  {
-    line* l = lines_current();
-    printf("do: %p\n", l);
-    if ( l == NULL )
-    {
-      break;
-    }
-    printf("%ld %s\n", l->number, l->contents);
-    lines_next();
-  }
-  */
   lines_list(list_out);
- 
   ready();
 }
-
-// static void increment_line(void)
-// {
-//   /*
-//    __LINE_P++;
-// 
-//   if (__LINE_P >= MAX_NR_LINES) {
-//     __LINE_P = 0;
-//     __RUNNING = false;
-//   }
-//   */
-//   /*
-//   while(__memory_p < __memory_size && __memory[__memory_p] && __memory[__memory_p] != '\n'){
-//     __memory_p++;
-//   } 
-//   if (__memory[__memory_p] == '\n')
-//   {
-//     __memory_p++;
-//   }
-//   */
-// }
 
 static char
 chr(void)
@@ -596,36 +525,6 @@ do_print(void)
 {
   get_sym();
 
-  /*
-  switch (sym) {
-    case T_STRING:
-      printf("%s", tokenizer_get_string());
-      accept(T_STRING);
-      break;
-
-    case T_STRING_FUNC_CHR:
-      printf("%c", chr());
-      break;
-
-    case T_VARIABLE_STRING:
-      printf("STRING VAR\n");
-      char* var_name = tokenizer_get_variable_name();
-      printf("string var name: '%s'\n", var_name);
-      char *string = variable_get_string(var_name);
-      printf("%s", string);
-      accept(T_VARIABLE_STRING);
-      break;
-
-    case T_EOF:
-      printf("\n");
-      break;
-
-    default:
-      printf("%f", numeric_expression());
-      break;
-  }
-  */
-
   expression_result expr;
   expression(&expr);
 
@@ -687,21 +586,6 @@ do_gosub(void)
 
   int line_number = (int) tokenizer_get_number();
 
-  /*
-  // Move to next line
-  __LINE_P++;
-  while(__LINES[__LINE_P] == NULL && __LINE_P < MAX_NR_LINES) {
-    __LINE_P++;
-  }
-  */
-  // move_to_next_line();
-  // __line = lines_next( __line );
-  
-  /*
-  stack_push(__LINE_P);
-  stack_push(T_KEYWORD_GOSUB);
-  */
-
   stack_frame_gosub *g;
   if ( __stack_p < sizeof(stack_frame_gosub) )
   {
@@ -723,15 +607,6 @@ do_return(void)
 {
   accept(T_KEYWORD_RETURN);
 
-  /*
-  int keyword = (int) stack_pop();
-  if (keyword != T_KEYWORD_GOSUB) {
-    error("RETURN without GOSUB");
-    return;
-  } 
-  __LINE_P = stack_pop();
-  */
-
   stack_frame_gosub *g;
   g = (stack_frame_gosub*) &(__stack[__stack_p]);
 
@@ -749,7 +624,7 @@ do_return(void)
   static void
 do_for(void)
 {
-  // printf("do_for\n");
+  printf("do_for\n");
 
   accept(T_KEYWORD_FOR);
 
@@ -775,15 +650,6 @@ do_for(void)
     step = numeric_expression();
   }
   
-  // move_to_next_line();
-  /* 
-  stack_push(__LINE_P);
-  stack_push(step);
-  stack_push(end_value);
-  stack_push_string(name);
-  stack_push(T_KEYWORD_FOR);
-  */
-
   stack_frame_for *f;
   if ( __stack_p <  sizeof(stack_frame_for) )
   {
@@ -799,44 +665,17 @@ do_for(void)
   f->end_value = end_value;
   f->step = step;
   f->line = __line;
-  f->cursor = 0; 
+  f->cursor = tokenizer_char_pointer(NULL); 
+
+  printf("f: %s, %f -> %f\n", name, value, end_value);
 }
 
   static void
 do_next(void)
 {
-  // printf("do_next\n");
+  printf("do_next\n");
 
   accept(T_KEYWORD_NEXT);
-
-  /*
-  int keyword = (int) stack_pop();
-  if (keyword != T_KEYWORD_FOR) {
-    error("NEXT without FOR");
-    return;
-  }
-
-  char *name = stack_string_pop();
-  float end_value = stack_pop();
-  float step = stack_pop();
-  int line = stack_pop();
-
-  float value = variable_get_numeric(name);
-  if ( (step > 0 && value >= end_value) || (step < 0 && value <= end_value) )
-  {
-    // TODO: Move to next instruction
-    move_to_next_line();  
-  }
-  else
-  {
-    __LINE_P = line;
-    stack_push(__LINE_P);
-    stack_push(step);
-    stack_push(end_value);
-    stack_push_string(name);
-    stack_push(T_KEYWORD_FOR);
-  } 
-  */
 
   stack_frame_for *f;
   f = (stack_frame_for*) &(__stack[__stack_p]);
@@ -850,31 +689,19 @@ do_next(void)
   float value = variable_get_numeric(f->variable_name);
   if ( (f->step > 0 && value >= f->end_value) || (f->step < 0 && value <= f->end_value) )
   {
-      //printf("For has done\n");
-      //printf("Move to line behind next");
+      printf("for done\n");
+      __line = f->line;
+      tokenizer_char_pointer( f->cursor );
       __stack_p += sizeof(stack_frame_for);
-      // move_to_next_line();
       return;
   }
 
+  printf("n: %s\n", f->variable_name);
   variable_set_numeric(f->variable_name, value + f->step); 
+
   __line = f->line;
+  tokenizer_char_pointer( f->cursor );
 }
-
-/*
-static char *
-get_next_line(void)
-{
-  __line = lines_next( __line );
-
-  if ( __line == 0 )
-  {
-    return NULL;
-  }
-
-  return lines_get( __line );
-}
-*/
 
 static void parse_line(void);
 static void statement(void);
@@ -1142,10 +969,10 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   __line = 0;
   
   __stack = __memory + __memory_size - __stack_size;
-  __stack_p = __memory_size ;
+  __stack_p = __stack_size;
   __program_size = __memory_size - __stack_size;
 
-  lines_init(__memory, __memory_size);
+  lines_init(__memory, __program_size);
   variables_init();
 }
 
@@ -1157,7 +984,7 @@ basic_eval(char *line_string)
   // printf("diag: symbol: %d\n", sym);
   if (sym == T_NUMBER ) {
     float line_number = tokenizer_get_number();
-    char* line = tokenizer_char_pointer();
+    char* line = tokenizer_char_pointer(NULL);
     get_sym();
     if (sym == T_EOF) {
       lines_delete( line_number );

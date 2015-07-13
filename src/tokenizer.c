@@ -90,8 +90,14 @@ void tokenizer_init(char *input)
   tokenizer_p = tokenizer_next_p = tokenizer_line;
 }
 
-char* tokenizer_char_pointer(void)
+char* tokenizer_char_pointer(char* set)
 {
+  if ( set != NULL )
+  {
+    tokenizer_p = set; 
+    return NULL;
+  }
+
   // Skip white space
   while ( *tokenizer_p && isspace(*tokenizer_p) ) {
     tokenizer_p++;
