@@ -131,6 +131,7 @@ typedef struct
 {
   stack_frame_type type;
   size_t line;
+  char* cursor;
 } stack_frame_gosub;
 
 token sym;
@@ -139,6 +140,14 @@ get_sym(void)
 {
   sym = tokenizer_get_next_token();
   // printf("token: %s\n", tokenizer_token_name( sym ) );
+}
+
+static void
+set_line( uint16_t line_number )
+{
+  __line = line_number;
+  char *cursor = lines_get_contents( __line );
+  tokenizer_char_pointer( cursor );
 }
 
 static float numeric_expression(void);
@@ -573,9 +582,12 @@ do_goto(void)
     return;
   }
 
+  /*
   __line = line_number;
   char *cursor = lines_get_contents( __line );
   tokenizer_char_pointer( cursor );
+  */
+  set_line( line_number );
 }
 
   static void
@@ -604,10 +616,14 @@ do_gosub(void)
 
   g->type = stack_frame_type_gosub;
   g->line = __line;
+  g->cursor = tokenizer_char_pointer(NULL); 
 
+  /*
   __line = line_number;
   char *cursor = lines_get_contents( __line );
   tokenizer_char_pointer( cursor );
+  */
+  set_line( line_number );
 }
 
   static void
@@ -626,6 +642,7 @@ do_return(void)
   }
 
   __line = g->line;
+  tokenizer_char_pointer( g->cursor );
 
   __stack_p += sizeof(stack_frame_gosub);
 }
