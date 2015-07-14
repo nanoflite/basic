@@ -558,9 +558,6 @@ do_print(void)
   } else {
     accept(T_SEMICOLON);
   }
-
-  // increment_line(); 
-
 }
 
 static void
@@ -582,11 +579,6 @@ do_goto(void)
     return;
   }
 
-  /*
-  __line = line_number;
-  char *cursor = lines_get_contents( __line );
-  tokenizer_char_pointer( cursor );
-  */
   set_line( line_number );
 }
 
@@ -618,11 +610,6 @@ do_gosub(void)
   g->line = __line;
   g->cursor = tokenizer_char_pointer(NULL); 
 
-  /*
-  __line = line_number;
-  char *cursor = lines_get_contents( __line );
-  tokenizer_char_pointer( cursor );
-  */
   set_line( line_number );
 }
 
@@ -670,18 +657,10 @@ do_for(void)
   float end_value = numeric_expression();
 
   float step = 1.0;
-  // get_sym();
-  //if (sym == T_KEYWORD_STEP) {
-  //  accept(T_KEYWORD_STEP);
-  //  step = numeric_expression();
-  //}
-
   if (sym != T_EOF && sym != T_COLON)
   {
-    // printf("get step\n"); 
     expect(T_KEYWORD_STEP);
     step = numeric_expression();
-    // printf("step done\n");
   }  
 
   stack_frame_for *f;
@@ -700,9 +679,6 @@ do_for(void)
   f->step = step;
   f->line = __line;
   f->cursor = tokenizer_char_pointer(NULL); 
-
-  // printf(" for: %s, %f -> %f\n", name, value, end_value);
-  // printf("tcp: %p (s:'%s'\n", f->cursor, f->cursor);
 }
 
   static void
@@ -758,13 +734,8 @@ do_run(void)
   __RUNNING = true;
   while (__cursor && __RUNNING)
   {
-    // printf("__memory: %p, __cursor: %p, tokenizer_char_pointer: %p\n", __memory, __cursor, tokenizer_char_pointer(NULL) );
-    // printf("r:line: %d, cursor %ld\n", __line, tokenizer_char_pointer(NULL) - __memory);
-    // printf("do_run get_sym\n");
     get_sym();
-
     if ( sym == T_EOF ) {
-      // printf("next line\n");
       __line = lines_next(__line);
       __cursor = lines_get_contents(__line);
       if ( __cursor == NULL )
@@ -844,8 +815,6 @@ numeric_condition(float left, float right, relop op)
 static bool
 string_condition(char *left, char *right, relop op)
 {
-
-
   int comparison = strcmp(left, right);
 
   // printf("String condition('%s','%s'): %d\n", left, right, comparison);
@@ -948,15 +917,8 @@ do_let(void)
 static void
 parse_line(void)
 {
-  // printf("parse line\n");
   while (sym != T_EOF && sym != T_COLON) {
-    // printf("pl: statement\n");
     statement();
-    // printf("pl: get_sym\n");
-    // get_sym();
-    // if (sym != T_COLON) {
-    //   break;
-    // }
   }
 }
 
