@@ -83,6 +83,7 @@
 */
 
 static uint16_t __line;
+static char* __cursor;
 static char* __memory;
 static char* __stack;
 static size_t __memory_size;
@@ -445,6 +446,7 @@ list_out(uint16_t number, char* contents)
 static void
 do_list(void)
 {
+  accept(T_KEYWORD_LIST);
   lines_list(list_out);
   ready();
 }
@@ -523,7 +525,7 @@ string_expression(void)
 static void
 do_print(void)
 {
-  get_sym();
+  accept(T_KEYWORD_PRINT);
 
   expression_result expr;
   expression(&expr);
@@ -555,7 +557,7 @@ do_print(void)
 static void
 do_goto(void)
 {
-  get_sym();
+  accept(T_KEYWORD_GOTO);
   
   if (sym != T_NUMBER) {
     error("Number expected");
@@ -563,6 +565,7 @@ do_goto(void)
   }
 
   int line_number = (int) tokenizer_get_number();
+  accept(T_NUMBER);
 
   char* line = lines_get_contents(line_number);
   if (line == NULL) {
@@ -571,20 +574,23 @@ do_goto(void)
   }
 
   __line = line_number;
+  char *cursor = lines_get_contents( __line );
+  tokenizer_char_pointer( cursor );
 }
 
   static void
 do_gosub(void)
 {
+  // printf("do_gosub\n");
   accept(T_KEYWORD_GOSUB);
-  // int line = (int) numeric_expression();
   
   if (sym != T_NUMBER) {
     error("Number expected");
     return;
   }
-
   int line_number = (int) tokenizer_get_number();
+  // printf("line number: %d\n", line_number);
+  accept(T_NUMBER);
 
   stack_frame_gosub *g;
   if ( __stack_p < sizeof(stack_frame_gosub) )
@@ -600,11 +606,14 @@ do_gosub(void)
   g->line = __line;
 
   __line = line_number;
+  char *cursor = lines_get_contents( __line );
+  tokenizer_char_pointer( cursor );
 }
 
   static void
 do_return(void)
 {
+  // printf("do_return");
   accept(T_KEYWORD_RETURN);
 
   stack_frame_gosub *g;
@@ -624,7 +633,7 @@ do_return(void)
   static void
 do_for(void)
 {
-  printf("do_for\n");
+  // printf("do_for\n");
 
   accept(T_KEYWORD_FOR);
 
@@ -642,14 +651,22 @@ do_for(void)
   expect(T_KEYWORD_TO);
   
   float end_value = numeric_expression();
-  
+
   float step = 1.0;
-  get_sym();
-  if (sym == T_KEYWORD_STEP) {
-    accept(T_KEYWORD_STEP);
+  // get_sym();
+  //if (sym == T_KEYWORD_STEP) {
+  //  accept(T_KEYWORD_STEP);
+  //  step = numeric_expression();
+  //}
+
+  if (sym != T_EOF && sym != T_COLON)
+  {
+    // printf("get step\n"); 
+    expect(T_KEYWORD_STEP);
     step = numeric_expression();
-  }
-  
+    // printf("step done\n");
+  }  
+
   stack_frame_for *f;
   if ( __stack_p <  sizeof(stack_frame_for) )
   {
@@ -667,14 +684,14 @@ do_for(void)
   f->line = __line;
   f->cursor = tokenizer_char_pointer(NULL); 
 
-  printf("f: %s, %f -> %f\n", name, value, end_value);
+  // printf(" for: %s, %f -> %f\n", name, value, end_value);
+  // printf("tcp: %p (s:'%s'\n", f->cursor, f->cursor);
 }
 
   static void
 do_next(void)
 {
-  printf("do_next\n");
-
+  // printf("do_next\n");
   accept(T_KEYWORD_NEXT);
 
   stack_frame_for *f;
@@ -686,18 +703,27 @@ do_next(void)
     return;
   }
 
-  float value = variable_get_numeric(f->variable_name);
-  if ( (f->step > 0 && value >= f->end_value) || (f->step < 0 && value <= f->end_value) )
+  if (sym == T_VARIABLE_NUMBER)
   {
-      printf("for done\n");
-      __line = f->line;
-      tokenizer_char_pointer( f->cursor );
+    char* var_name = tokenizer_get_variable_name();
+    accept(T_VARIABLE_NUMBER);
+    if ( strcmp(var_name, f->variable_name) != 0 )
+    {
+      error("Expected for with other var");
+      return;
+    }
+  }
+
+  float value = variable_get_numeric(f->variable_name) + f->step;
+  if ( (f->step > 0 && value > f->end_value) || (f->step < 0 && value < f->end_value) )
+  {
+      // printf("for done\n");
       __stack_p += sizeof(stack_frame_for);
       return;
   }
 
-  printf("n: %s\n", f->variable_name);
-  variable_set_numeric(f->variable_name, value + f->step); 
+  // printf("n: %s\n", f->variable_name);
+  variable_set_numeric(f->variable_name, value); 
 
   __line = f->line;
   tokenizer_char_pointer( f->cursor );
@@ -709,22 +735,28 @@ static void statement(void);
 static void
 do_run(void)
 {
-  // printf("run\n");
   __line = lines_first();
+  __cursor = lines_get_contents(__line);
+  tokenizer_init( __cursor );
   __RUNNING = true;
-  while (__RUNNING)
+  while (__cursor && __RUNNING)
   {
-    // printf("r:line: %d\n", __line);
-    char *code = lines_get_contents(__line);
-    __line = lines_next( __line );
-    if (code == NULL)
-    {
-      __RUNNING = false;
-      break;
-    }
-    // printf("r:code: '%s'\n", code);
-    tokenizer_init( code );
+    // printf("__memory: %p, __cursor: %p, tokenizer_char_pointer: %p\n", __memory, __cursor, tokenizer_char_pointer(NULL) );
+    // printf("r:line: %d, cursor %ld\n", __line, tokenizer_char_pointer(NULL) - __memory);
+    // printf("do_run get_sym\n");
     get_sym();
+
+    if ( sym == T_EOF ) {
+      // printf("next line\n");
+      __line = lines_next(__line);
+      __cursor = lines_get_contents(__line);
+      if ( __cursor == NULL )
+      {
+        __RUNNING = false;
+        break;
+      }
+      tokenizer_init( __cursor );
+    }
     parse_line();
   }
  
@@ -899,20 +931,23 @@ do_let(void)
 static void
 parse_line(void)
 {
-  while (sym != T_EOF) {
+  // printf("parse line\n");
+  while (sym != T_EOF && sym != T_COLON) {
+    // printf("pl: statement\n");
     statement();
-    get_sym();
-    if (sym != T_COLON) {
-      break;
-    }
+    // printf("pl: get_sym\n");
+    // get_sym();
+    // if (sym != T_COLON) {
+    //   break;
+    // }
   }
 }
 
 static void
 statement(void)
 {
-  // puts("I do statement");
-  // printf("\tdiag: symbol: %d\n", sym);
+  //puts("statement");
+  //printf("\tdiag: symbol: %d\n", sym);
   switch(sym) {
     case T_KEYWORD_LIST:
       do_list();
