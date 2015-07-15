@@ -6,6 +6,32 @@
 #include <stdbool.h>
 #include "tokenizer.h"
 
+#define std_token_entry(t, k) { t, #t, k }
+
+static token_entry tokens[1024] = {
+ std_token_entry( T_ERROR, NULL ),
+ std_token_entry( T_EOF, NULL ),
+ std_token_entry( T_NUMBER, NULL ),
+ std_token_entry( T_STRING, NULL ),
+ std_token_entry( T_VARIABLE_STRING, NULL ),
+ std_token_entry( T_VARIABLE_NUMBER, NULL ),
+ std_token_entry( T_PLUS, "+" ),
+ std_token_entry( T_MINUS, "-" ),
+ std_token_entry( T_MULTIPLY, "*" ),
+ std_token_entry( T_DIVIDE, "/" ),
+ std_token_entry( T_LEFT_BANANA, "(" ),
+ std_token_entry( T_RIGHT_BANANA, ")" ),
+ std_token_entry( T_COLON, ":" ),
+ std_token_entry( T_SEMICOLON, ";" ),
+ std_token_entry( T_EQUALS, "=" ),
+ std_token_entry( T_LESS, "<" ),
+ std_token_entry( T_GREATER, ">" ),
+ std_token_entry( T_COMMA, "," )
+};
+
+static size_t tokens_index = 18;
+
+/*
 typedef struct {
   char _char;
   token _token;
@@ -73,6 +99,7 @@ keyword_to_token keyword_to_tokens[] =
   { NULL,  T_EOF }
 
 };
+*/
 
 char *tokenizer_line = NULL;
 char *tokenizer_p = NULL;
@@ -243,6 +270,7 @@ char *tokenizer_get_variable_name(void)
   return tokenizer_actual_variable;
 }
 
+/*
 typedef struct {
   token t;
   char *l;
@@ -320,4 +348,18 @@ char *tokenizer_token_name(token t)
   }
   
   return "";
+}
+*/
+
+  void
+tokenizer_register_token( token token, token_name name, token_keyword keyword )
+{
+  if ( tokens_index >= sizeof(tokens) )
+  {
+    printf("error: no more token space.\n");
+    return;
+  }
+  token_entry* t = &(tokens[tokens_index]);
+  t->token = token;
+  t->name = name;
 }

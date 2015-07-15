@@ -1,6 +1,17 @@
 #ifndef __TOKENIZER_H__
 #define __TOKENIZER_H__
 
+typedef size_t token;
+typedef char* token_name;
+typedef char* token_keyword;
+
+typedef struct {
+  token token;
+  token_name name;  
+  token_keyword keyword;
+} token_entry;
+
+/*
 typedef enum {
   // 0
   T_PLUS,
@@ -58,7 +69,32 @@ typedef enum {
   T_ERROR,
   T_EOF,
   T_THE_END
-} token;
+} token_type;
+*/
+
+typedef enum {
+  // Standard token types needed by the tokenizer
+  T_ERROR,
+  T_EOF,
+  T_NUMBER,
+  T_STRING,
+  T_VARIABLE_STRING,
+  T_VARIABLE_NUMBER,
+
+  // Some tokens that are standard as well
+  T_PLUS,
+  T_MINUS,
+  T_MULTIPLY,
+  T_DIVIDE,
+  T_LEFT_BANANA,
+  T_RIGHT_BANANA,
+  T_COLON,
+  T_SEMICOLON,
+  T_EQUALS,
+  T_LESS,
+  T_GREATER,
+  T_COMMA
+} token_type;
 
 void tokenizer_init(char *input);
 token tokenizer_get_next_token(void);
@@ -70,5 +106,7 @@ char * tokenizer_get_variable_name(void);
 char *tokenizer_token_name(token);
 
 char* tokenizer_char_pointer(char* set);
+
+void tokenizer_register_token(token, token_name, token_keyword);
 
 #endif // __TOKENIZER_H__
