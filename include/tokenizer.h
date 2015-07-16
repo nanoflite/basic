@@ -74,6 +74,7 @@ typedef enum {
 
 typedef enum {
   // Standard token types needed by the tokenizer
+  T_THE_END,
   T_ERROR,
   T_EOF,
   T_NUMBER,
@@ -107,6 +108,7 @@ char *tokenizer_token_name(token);
 
 char* tokenizer_char_pointer(char* set);
 
-void tokenizer_register_token(token, token_name, token_keyword);
+// void tokenizer_register_token(token, token_name, token_keyword);
+void tokenizer_add_tokens( token_entry* tokens );
 
 #endif // __TOKENIZER_H__

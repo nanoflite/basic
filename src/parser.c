@@ -82,6 +82,78 @@
 
 */
 
+typedef enum {
+  T_FUNC_ABS,
+  T_FUNC_SIN,
+  T_FUNC_COS,
+  T_FUNC_RND,
+  T_FUNC_INT,
+  T_FUNC_TAN,
+  T_FUNC_SQR,
+  T_FUNC_SGN,
+  T_FUNC_LOG,
+  T_FUNC_EXP,
+  T_FUNC_ATN,
+  T_FUNC_NOT,
+  T_STRING_FUNC_CHR,
+  T_STRING_FUNC_MID$,
+  T_OP_OR,
+  T_OP_AND,
+  T_KEYWORD_PRINT,
+  T_KEYWORD_GOTO,
+  T_KEYWORD_IF,
+  T_KEYWORD_THEN,
+  T_KEYWORD_LET,
+  T_KEYWORD_INPUT,
+  T_KEYWORD_GOSUB,
+  T_KEYWORD_RETURN,
+  T_KEYWORD_CLEAR,
+  T_KEYWORD_LIST,
+  T_KEYWORD_RUN,
+  T_KEYWORD_END,
+  T_KEYWORD_FOR,
+  T_KEYWORD_TO,
+  T_KEYWORD_STEP,
+  T_KEYWORD_NEXT,
+} token_type_basic;
+
+#define add_token(t, k) { t, #t, k }
+static token_entry basic_tokens[] = {
+  add_token( T_FUNC_ABS, "ABS" ),
+  add_token( T_FUNC_SIN, "SIN" ),
+  add_token( T_FUNC_COS, "COS" ),
+  add_token( T_FUNC_RND, "RND" ),
+  add_token( T_FUNC_INT, "INT" ),
+  add_token( T_FUNC_TAN, "TAN" ),
+  add_token( T_FUNC_SQR, "SQR" ),
+  add_token( T_FUNC_SGN, "SGN" ),
+  add_token( T_FUNC_LOG, "LOG" ),
+  add_token( T_FUNC_EXP, "EXP" ),
+  add_token( T_FUNC_ATN, "ATN" ),
+  add_token( T_FUNC_NOT, "NOT" ),
+  add_token( T_OP_OR, "OR" ),
+  add_token( T_OP_AND, "AND" ),
+  add_token( T_KEYWORD_PRINT, "PRINT" ),
+  add_token( T_KEYWORD_GOTO, "GOTO" ),
+  add_token( T_KEYWORD_IF, "IF" ),
+  add_token( T_KEYWORD_THEN, "THEN" ),
+  add_token( T_KEYWORD_LET, "LET" ),
+  add_token( T_KEYWORD_INPUT, "INPUT" ),
+  add_token( T_KEYWORD_GOSUB, "GOSUB" ),
+  add_token( T_KEYWORD_RETURN, "RETURN" ),
+  add_token( T_KEYWORD_FOR, "FOR" ),
+  add_token( T_KEYWORD_TO, "TO" ),
+  add_token( T_KEYWORD_STEP, "STEP" ),
+  add_token( T_KEYWORD_NEXT, "NEXT" ),
+  add_token( T_KEYWORD_CLEAR, "CLEAR" ),
+  add_token( T_KEYWORD_LIST, "LIST" ),
+  add_token( T_KEYWORD_RUN, "RUN" ),
+  add_token( T_KEYWORD_END, "END" ),
+  add_token( T_STRING_FUNC_CHR, "CHR$" ),
+  add_token( T_STRING_FUNC_MID$, "MID$" ),
+  add_token( T_THE_END, NULL )
+};
+
 static uint16_t __line;
 static char* __cursor;
 static char* __memory;
@@ -986,6 +1058,7 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   __stack_p = __stack_size;
   __program_size = __memory_size - __stack_size;
 
+  tokenizer_add_tokens( basic_tokens );
   lines_init(__memory, __program_size);
   variables_init();
 }

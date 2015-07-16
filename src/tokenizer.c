@@ -8,7 +8,7 @@
 
 #define std_token_entry(t, k) { t, #t, k }
 
-static token_entry tokens[1024] = {
+static token_entry tokens[] = {
  std_token_entry( T_ERROR, NULL ),
  std_token_entry( T_EOF, NULL ),
  std_token_entry( T_NUMBER, NULL ),
@@ -26,10 +26,11 @@ static token_entry tokens[1024] = {
  std_token_entry( T_EQUALS, "=" ),
  std_token_entry( T_LESS, "<" ),
  std_token_entry( T_GREATER, ">" ),
- std_token_entry( T_COMMA, "," )
+ std_token_entry( T_COMMA, "," ),
+ std_token_entry( T_THE_END, NULL )
 };
 
-static size_t tokens_index = 18;
+static token_entry* extra_tokens = NULL;
 
 /*
 typedef struct {
@@ -147,6 +148,22 @@ isvarchar(char c)
   return false;
 }
 
+token _find(token_entry* tokens)
+{
+  for(size_t i=0;; i++) {
+    token_entry entry = tokens[i];
+    if ( entry.token == T_THE_END ) break;
+
+    if (strncmp(tokenizer_p, entry.keyword, strlen(entry.keyword)) == 0) {
+       printf("found '%s'\n", entry.keyword);
+       tokenizer_next_p = tokenizer_p + strlen(entry.keyword);
+       tokenizer_p = tokenizer_next_p;
+       return entry.token;
+    }
+  }
+  return T_THE_END;
+}
+
 token tokenizer_get_next_token(void)
 {
   if ( ! *tokenizer_p ) {
@@ -158,23 +175,24 @@ token tokenizer_get_next_token(void)
     tokenizer_p++;
   } 
 
+  
   // read single char token
-  for(size_t i=0;;i++) {
-    char_to_token ctt = char_to_tokens[i];
-    if (ctt._char == '\0') {
-      break;
-    }
-    if (*tokenizer_p == ctt._char) {
-      tokenizer_actual_char = ctt._char;
-      tokenizer_actual_number = NAN;
-      tokenizer_actual_token = ctt._token;
+  // for(size_t i=0;;i++) {
+  //   char_to_token ctt = char_to_tokens[i];
+  //   if (ctt._char == '\0') {
+  //     break;
+  //   }
+  //   if (*tokenizer_p == ctt._char) {
+  //     tokenizer_actual_char = ctt._char;
+  //     tokenizer_actual_number = NAN;
+  //     tokenizer_actual_token = ctt._token;
 
-      tokenizer_p++;
-      tokenizer_next_p = tokenizer_p;
-       
-      return ctt._token;
-    }
-  } 
+  //     tokenizer_p++;
+  //     tokenizer_next_p = tokenizer_p;
+  //      
+  //     return ctt._token;
+  //   }
+  // } 
 
   // Check for number
   if (isdigit(*tokenizer_p)) {
@@ -221,18 +239,39 @@ token tokenizer_get_next_token(void)
   }
 
   // Check for function
-  for(size_t i=0;;i++) {
-    keyword_to_token ktt = keyword_to_tokens[i];
-    if (ktt._keyword == NULL) {
-      break;
-    }
-    if (strncmp(tokenizer_p, ktt._keyword, strlen(ktt._keyword)) == 0) {
-      // printf("%s\n",ktt._keyword);
-      tokenizer_next_p = tokenizer_p + strlen(ktt._keyword);
-      tokenizer_p = tokenizer_next_p;
-      return ktt._token;
-    }
+  // for(size_t i=0;;i++) {
+  //   keyword_to_token ktt = keyword_to_tokens[i];
+  //   if (ktt._keyword == NULL) {
+  //     break;
+  //   }
+  //   if (strncmp(tokenizer_p, ktt._keyword, strlen(ktt._keyword)) == 0) {
+  //     // printf("%s\n",ktt._keyword);
+  //     tokenizer_next_p = tokenizer_p + strlen(ktt._keyword);
+  //     tokenizer_p = tokenizer_next_p;
+  //     return ktt._token;
+  //   }
+  // 
+  // }
+ //  
+ //  for(size_t i=0;; i++) {
+ //    token_entry entry = tokens[i];
+ //    if ( entry.token == T_THE_END ) break;
+
+ //    if (strncmp(tokenizer_p, entry.keyword, strlen(entry.keyword)) == 0) {
+ //       printf("found '%s'\n", entry.keyword);
+ //       tokenizer_next_p = tokenizer_p + strlen(entry.keyword);
+ //       tokenizer_p = tokenizer_next_p;
+ //       return entry.token;
+ //    }
+ //  }
+  token t;
+  t = _find( tokens );
+  if ( t != T_THE_END ) return t;
   
+  if ( extra_tokens )
+  {
+    t = _find( extra_tokens );
+    if ( t != T_THE_END ) return t;
   }
 
   // Check for variable
@@ -351,6 +390,7 @@ char *tokenizer_token_name(token t)
 }
 */
 
+/*
   void
 tokenizer_register_token( token token, token_name name, token_keyword keyword )
 {
@@ -362,4 +402,11 @@ tokenizer_register_token( token token, token_name name, token_keyword keyword )
   token_entry* t = &(tokens[tokens_index]);
   t->token = token;
   t->name = name;
+  t->keyword = keyword;
+}
+*/
+  void
+tokenizer_add_tokens( token_entry* tokens )
+{
+  extra_tokens = tokens;
 }
