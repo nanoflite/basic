@@ -94,7 +94,8 @@ typedef enum {
   T_EQUALS,
   T_LESS,
   T_GREATER,
-  T_COMMA
+  T_COMMA,
+  TOKEN_TYPE_END
 } token_type;
 
 void tokenizer_init(char *input);

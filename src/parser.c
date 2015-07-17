@@ -83,7 +83,7 @@
 */
 
 typedef enum {
-  T_FUNC_ABS,
+  T_FUNC_ABS = TOKEN_TYPE_END,
   T_FUNC_SIN,
   T_FUNC_COS,
   T_FUNC_RND,

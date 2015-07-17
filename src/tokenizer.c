@@ -150,12 +150,21 @@ isvarchar(char c)
 
 token _find(token_entry* tokens)
 {
+
+  // printf("_find\n");
+
   for(size_t i=0;; i++) {
     token_entry entry = tokens[i];
+  
+    // printf("t_p: '%s', t: '%s'\n", tokenizer_p, entry.name);
+
     if ( entry.token == T_THE_END ) break;
+    if ( entry.keyword == NULL ) continue;
+
+    // printf("look for: '%s'\n", entry.keyword);
 
     if (strncmp(tokenizer_p, entry.keyword, strlen(entry.keyword)) == 0) {
-       printf("found '%s'\n", entry.keyword);
+       // printf("found '%s'\n", entry.keyword);
        tokenizer_next_p = tokenizer_p + strlen(entry.keyword);
        tokenizer_p = tokenizer_next_p;
        return entry.token;
