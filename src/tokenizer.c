@@ -5,8 +5,12 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "tokenizer.h"
+#include "hexdump.h"
 
 #define std_token_entry(t, k) { t, #t, k }
+
+static size_t registered_tokens_count = 0;
+static token_entry* registered_tokens_ptr = NULL;
 
 static token_entry tokens[] = {
  std_token_entry( T_ERROR, NULL ),
@@ -148,6 +152,33 @@ isvarchar(char c)
   return false;
 }
 
+token _find_registered(void)
+{
+
+  // printf("_find registered\n");
+
+  for(size_t i=0; i<registered_tokens_count; i++)
+  {
+    // token_entry* entry = registered_tokens_ptr + i * sizeof(token_entry);
+    token_entry* entry = registered_tokens_ptr + i;
+  
+    // printf("t: '%s'\n", entry->name);
+
+    if ( entry->keyword == NULL ) continue;
+
+    // printf("look for: '%s'\n", entry->keyword);
+
+    if (strncmp(tokenizer_p, entry->keyword, strlen(entry->keyword)) == 0) {
+       // printf("found '%s'\n", entry->keyword);
+       tokenizer_next_p = tokenizer_p + strlen(entry->keyword);
+       tokenizer_p = tokenizer_next_p;
+       return entry->token;
+    }
+  }
+  return T_THE_END;
+}
+
+
 token _find(token_entry* tokens)
 {
 
@@ -283,6 +314,9 @@ token tokenizer_get_next_token(void)
     if ( t != T_THE_END ) return t;
   }
 
+  t = _find_registered();
+  if ( t != T_THE_END ) return t;
+
   // Check for variable
   tokenizer_next_p = tokenizer_p;
   size_t len = 0;
@@ -398,24 +432,31 @@ char *tokenizer_token_name(token t)
   return "";
 }
 */
-
-/*
-  void
-tokenizer_register_token( token token, token_name name, token_keyword keyword )
-{
-  if ( tokens_index >= sizeof(tokens) )
-  {
-    printf("error: no more token space.\n");
-    return;
-  }
-  token_entry* t = &(tokens[tokens_index]);
-  t->token = token;
-  t->name = name;
-  t->keyword = keyword;
-}
-*/
   void
 tokenizer_add_tokens( token_entry* tokens )
 {
   extra_tokens = tokens;
 }
+
+  void
+tokenizer_register_token( token_entry* entry )
+{
+  // Create space for token_entry
+  registered_tokens_count++;
+  registered_tokens_ptr = realloc((char*)registered_tokens_ptr, sizeof(token_entry) * registered_tokens_count);
+  // Copy data
+  //token_entry* new = registered_tokens_ptr + sizeof(token_entry) * ( registered_tokens_count - 1 );
+  token_entry* new = registered_tokens_ptr + registered_tokens_count - 1;
+  // printf("n:%p, e:%p, i:%ld, s:%ld\n", new, entry, registered_tokens_count, sizeof(token_entry));
+  memcpy(new, entry, sizeof(token_entry));
+  // hexdump("tokens", new, sizeof(token_entry) * registered_tokens_count );
+}
+
+  void
+tokenizer_free_registered_tokens(void)
+{
+  registered_tokens_count = 0;
+  free(registered_tokens_ptr);
+  registered_tokens_ptr = NULL;
+}
+

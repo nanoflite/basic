@@ -109,7 +109,9 @@ char *tokenizer_token_name(token);
 
 char* tokenizer_char_pointer(char* set);
 
-// void tokenizer_register_token(token, token_name, token_keyword);
 void tokenizer_add_tokens( token_entry* tokens );
+
+void tokenizer_register_token( token_entry* entry );
+void tokenizer_free_registered_tokens(void);
 
 #endif // __TOKENIZER_H__

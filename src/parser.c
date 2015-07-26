@@ -117,6 +117,7 @@ typedef enum {
   T_KEYWORD_NEXT,
 } token_type_basic;
 
+/*
 #define add_token(t, k) { t, #t, k }
 static token_entry basic_tokens[] = {
   add_token( T_FUNC_ABS, "ABS" ),
@@ -153,6 +154,44 @@ static token_entry basic_tokens[] = {
   add_token( T_STRING_FUNC_MID$, "MID$" ),
   add_token( T_THE_END, NULL )
 };
+*/
+
+// static token_entry _T_FUNC_ABS = { T_FUNC_ABS, "T_FUNC_ABS", "ABS" };
+#define add_token(t, k) \
+  static token_entry _##t = { t, #t, k };
+
+add_token( T_FUNC_ABS, "ABS" );
+add_token( T_FUNC_SIN, "SIN" );
+add_token( T_FUNC_COS, "COS" );
+add_token( T_FUNC_RND, "RND" );
+add_token( T_FUNC_INT, "INT" );
+add_token( T_FUNC_TAN, "TAN" );
+add_token( T_FUNC_SQR, "SQR" );
+add_token( T_FUNC_SGN, "SGN" );
+add_token( T_FUNC_LOG, "LOG" );
+add_token( T_FUNC_EXP, "EXP" );
+add_token( T_FUNC_ATN, "ATN" );
+add_token( T_FUNC_NOT, "NOT" );
+add_token( T_OP_OR, "OR" );
+add_token( T_OP_AND, "AND" );
+add_token( T_KEYWORD_PRINT, "PRINT" );
+add_token( T_KEYWORD_GOTO, "GOTO" );
+add_token( T_KEYWORD_IF, "IF" );
+add_token( T_KEYWORD_THEN, "THEN" );
+add_token( T_KEYWORD_LET, "LET" );
+add_token( T_KEYWORD_INPUT, "INPUT" );
+add_token( T_KEYWORD_GOSUB, "GOSUB" );
+add_token( T_KEYWORD_RETURN, "RETURN" );
+add_token( T_KEYWORD_FOR, "FOR" );
+add_token( T_KEYWORD_TO, "TO" );
+add_token( T_KEYWORD_STEP, "STEP" );
+add_token( T_KEYWORD_NEXT, "NEXT" );
+add_token( T_KEYWORD_CLEAR, "CLEAR" );
+add_token( T_KEYWORD_LIST, "LIST" );
+add_token( T_KEYWORD_RUN, "RUN" );
+add_token( T_KEYWORD_END, "END" );
+add_token( T_STRING_FUNC_CHR, "CHR$" );
+add_token( T_STRING_FUNC_MID$, "MID$" );
 
 static uint16_t __line;
 static char* __cursor;
@@ -1058,7 +1097,40 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   __stack_p = __stack_size;
   __program_size = __memory_size - __stack_size;
 
-  tokenizer_add_tokens( basic_tokens );
+  // tokenizer_add_tokens( basic_tokens );
+  tokenizer_register_token( &_T_FUNC_ABS );
+  tokenizer_register_token( &_T_FUNC_SIN );
+  tokenizer_register_token( &_T_FUNC_COS );
+  tokenizer_register_token( &_T_FUNC_RND );
+  tokenizer_register_token( &_T_FUNC_INT );
+  tokenizer_register_token( &_T_FUNC_TAN );
+  tokenizer_register_token( &_T_FUNC_SQR );
+  tokenizer_register_token( &_T_FUNC_SGN );
+  tokenizer_register_token( &_T_FUNC_LOG );
+  tokenizer_register_token( &_T_FUNC_EXP );
+  tokenizer_register_token( &_T_FUNC_ATN );
+  tokenizer_register_token( &_T_FUNC_NOT );
+  tokenizer_register_token( &_T_OP_OR );
+  tokenizer_register_token( &_T_OP_AND );
+  tokenizer_register_token( &_T_KEYWORD_PRINT );
+  tokenizer_register_token( &_T_KEYWORD_GOTO );
+  tokenizer_register_token( &_T_KEYWORD_IF );
+  tokenizer_register_token( &_T_KEYWORD_THEN );
+  tokenizer_register_token( &_T_KEYWORD_LET );
+  tokenizer_register_token( &_T_KEYWORD_INPUT );
+  tokenizer_register_token( &_T_KEYWORD_GOSUB );
+  tokenizer_register_token( &_T_KEYWORD_RETURN );
+  tokenizer_register_token( &_T_KEYWORD_FOR );
+  tokenizer_register_token( &_T_KEYWORD_TO );
+  tokenizer_register_token( &_T_KEYWORD_STEP );
+  tokenizer_register_token( &_T_KEYWORD_NEXT );
+  tokenizer_register_token( &_T_KEYWORD_CLEAR );
+  tokenizer_register_token( &_T_KEYWORD_LIST );
+  tokenizer_register_token( &_T_KEYWORD_RUN );
+  tokenizer_register_token( &_T_KEYWORD_END );
+  tokenizer_register_token( &_T_STRING_FUNC_CHR );
+  tokenizer_register_token( &_T_STRING_FUNC_MID$ );
+
   lines_init(__memory, __program_size);
   variables_init();
 }
