@@ -157,8 +157,11 @@ static token_entry basic_tokens[] = {
 */
 
 // static token_entry _T_FUNC_ABS = { T_FUNC_ABS, "T_FUNC_ABS", "ABS" };
+/*
 #define add_token(t, k) \
   static token_entry _##t = { t, #t, k };
+
+*/
 
 add_token( T_FUNC_ABS, "ABS" );
 add_token( T_FUNC_SIN, "SIN" );
@@ -1097,6 +1100,8 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   __stack_p = __stack_size;
   __program_size = __memory_size - __stack_size;
 
+  tokenizer_setup();
+
   // tokenizer_add_tokens( basic_tokens );
   tokenizer_register_token( &_T_FUNC_ABS );
   tokenizer_register_token( &_T_FUNC_SIN );
@@ -1130,7 +1135,7 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   tokenizer_register_token( &_T_KEYWORD_END );
   tokenizer_register_token( &_T_STRING_FUNC_CHR );
   tokenizer_register_token( &_T_STRING_FUNC_MID$ );
-
+  
   lines_init(__memory, __program_size);
   variables_init();
 }

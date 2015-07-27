@@ -7,11 +7,12 @@
 #include "tokenizer.h"
 #include "hexdump.h"
 
-#define std_token_entry(t, k) { t, #t, k }
+// #define std_token_entry(t, k) { t, #t, k }
 
 static size_t registered_tokens_count = 0;
 static token_entry* registered_tokens_ptr = NULL;
 
+/*
 static token_entry tokens[] = {
  std_token_entry( T_ERROR, NULL ),
  std_token_entry( T_EOF, NULL ),
@@ -33,8 +34,28 @@ static token_entry tokens[] = {
  std_token_entry( T_COMMA, "," ),
  std_token_entry( T_THE_END, NULL )
 };
+*/
 
-static token_entry* extra_tokens = NULL;
+add_token( T_ERROR, NULL );
+add_token( T_EOF, NULL );
+add_token( T_NUMBER, NULL );
+add_token( T_STRING, NULL );
+add_token( T_VARIABLE_STRING, NULL );
+add_token( T_VARIABLE_NUMBER, NULL );
+add_token( T_PLUS, "+" );
+add_token( T_MINUS, "-" );
+add_token( T_MULTIPLY, "*" );
+add_token( T_DIVIDE, "/" );
+add_token( T_LEFT_BANANA, "(" );
+add_token( T_RIGHT_BANANA, ")" );
+add_token( T_COLON, ":" );
+add_token( T_SEMICOLON, ";" );
+add_token( T_EQUALS, "=" );
+add_token( T_LESS, "<" );
+add_token( T_GREATER, ">" );
+add_token( T_COMMA, "," );
+
+// static token_entry* extra_tokens = NULL;
 
 /*
 typedef struct {
@@ -115,6 +136,28 @@ float tokenizer_actual_number;
 char tokenizer_actual_char;
 char *tokenizer_actual_string = NULL;
 char *tokenizer_actual_variable = NULL;
+
+void tokenizer_setup(void)
+{
+  tokenizer_register_token( &_T_ERROR);
+  tokenizer_register_token( &_T_EOF);
+  tokenizer_register_token( &_T_NUMBER);
+  tokenizer_register_token( &_T_STRING);
+  tokenizer_register_token( &_T_VARIABLE_STRING);
+  tokenizer_register_token( &_T_VARIABLE_NUMBER);
+  tokenizer_register_token( &_T_PLUS);
+  tokenizer_register_token( &_T_MINUS);
+  tokenizer_register_token( &_T_MULTIPLY);
+  tokenizer_register_token( &_T_DIVIDE);
+  tokenizer_register_token( &_T_LEFT_BANANA);
+  tokenizer_register_token( &_T_RIGHT_BANANA);
+  tokenizer_register_token( &_T_COLON);
+  tokenizer_register_token( &_T_SEMICOLON);
+  tokenizer_register_token( &_T_EQUALS);
+  tokenizer_register_token( &_T_LESS);
+  tokenizer_register_token( &_T_GREATER);
+  tokenizer_register_token( &_T_COMMA);
+}
 
 void tokenizer_init(char *input)
 {
@@ -305,14 +348,16 @@ token tokenizer_get_next_token(void)
  //    }
  //  }
   token t;
-  t = _find( tokens );
-  if ( t != T_THE_END ) return t;
+  // t = _find( tokens );
+  // if ( t != T_THE_END ) return t;
   
+  /*
   if ( extra_tokens )
   {
     t = _find( extra_tokens );
     if ( t != T_THE_END ) return t;
   }
+  */
 
   t = _find_registered();
   if ( t != T_THE_END ) return t;
@@ -432,11 +477,13 @@ char *tokenizer_token_name(token t)
   return "";
 }
 */
+/*
   void
 tokenizer_add_tokens( token_entry* tokens )
 {
   extra_tokens = tokens;
 }
+*/
 
   void
 tokenizer_register_token( token_entry* entry )

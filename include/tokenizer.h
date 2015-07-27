@@ -11,6 +11,9 @@ typedef struct {
   token_keyword keyword;
 } token_entry;
 
+#define add_token(t, k) \
+  static token_entry _##t = { t, #t, k };
+
 /*
 typedef enum {
   // 0
@@ -98,6 +101,7 @@ typedef enum {
   TOKEN_TYPE_END
 } token_type;
 
+void tokenizer_setup(void);
 void tokenizer_init(char *input);
 token tokenizer_get_next_token(void);
 
