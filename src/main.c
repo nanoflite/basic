@@ -44,9 +44,9 @@ int main(int argc, char *argv[])
   puts("|_.__/ \\__,_|___/_|\\___|");
   puts("(c) 2015 Johan Van den Brande");
 
-  // basic_register_function("LED", expansion_do_led, basic_returns_numeric, 1, basic_param_numeric);
   basic_init(memory, sizeof(memory), 512);
-
+  // basic_register_function("LED", expansion_do_led, basic_returns_numeric, 1, basic_param_numeric);
+  
   char *input;
   while ((input = readline_gets()) != NULL ) {
 
