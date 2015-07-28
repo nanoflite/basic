@@ -68,6 +68,7 @@ v Refactor the folowing in the code into 1 function:
     __line = <number>;
     char *cursor = lines_get_contents( __line );
     tokenizer_char_pointer( cursor );
+v Registry for tokens
 . Registry for functions and statements (comamnds) (expandability)
 . expect is bad with implicit get_sym...better to that more clearly (what do these functions do? what size effects do they have?)
     Just better understand and use consistently

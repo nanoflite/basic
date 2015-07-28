@@ -82,6 +82,64 @@
 
 */
 
+typedef float (*function)(float number);
+
+typedef struct
+{
+  token _token;
+  function _function;
+} token_to_function;
+
+typedef enum {
+  basic_function_type_void,
+  basic_function_type_numeric,
+  basic_function_type_string
+} basic_function_type;
+
+typedef enum {
+  kind_numeric,
+  kind_string
+} kind;
+
+typedef union {
+  float number;
+  char* string;
+} value;
+
+typedef struct {
+  kind kind;
+  value value;
+} basic_type;
+
+typedef int (*function_0)(basic_type* rv);
+typedef int (*function_1)(basic_type* v1, basic_type* rv);
+typedef int (*function_2)(basic_type* v1, basic_type* v2, basic_type* rv);
+typedef int (*function_3)(basic_type* v1, basic_type* v2, basic_type* v3, basic_type* rv);
+typedef int (*function_4)(basic_type* v1, basic_type* v2, basic_type* v3, basic_type* v4, basic_type* rv);
+typedef int (*function_5)(basic_type* v1, basic_type* v2, basic_type* v3, basic_type* v4, basic_type* v5, basic_type* rv);
+
+typedef union
+{
+  function_0 function_0;
+  function_1 function_1;
+  function_2 function_2;
+  function_3 function_3;
+  function_4 function_4;
+  function_5 function_5;
+} basic_function_union;
+
+typedef struct {
+  token token;
+  basic_function_type type;
+  size_t nr_arguments;
+  kind kind_1;
+  kind kind_2;
+  kind kind_3;
+  kind kind_4;
+  kind kind_5;
+  basic_function_union function; 
+} basic_function;
+
 typedef enum {
   T_FUNC_ABS = TOKEN_TYPE_END,
   T_FUNC_SIN,
@@ -337,14 +395,6 @@ _not(float number)
 {
   return (float) ( ~ (int) number );
 }
-
-typedef float (*function)(float number);
-
-typedef struct
-{
-  token _token;
-  function _function;
-} token_to_function;
 
 token_to_function token_to_functions[] = 
 {
@@ -1140,4 +1190,47 @@ void evaluate_print_func_param( char *func, float param)
 const char *evaluate_last_error(void)
 {
   return last_error;
+}
+
+static bool
+is_basic_function_token(token sym)
+{
+  return false;
+}
+
+static int
+basic_dispatch_function(basic_function* function, basic_type* rv)
+{
+  basic_type v1;
+  switch (function->nr_arguments)
+  {
+    case 0:
+      accept(sym);
+      expect(T_LEFT_BANANA);
+      expect(T_RIGHT_BANANA);
+      function->function.function_0(rv);
+      break; 
+    case 1:
+      accept(sym);
+      expect(T_LEFT_BANANA);
+      if (function->kind_1 == kind_numeric)
+      {
+        char *s = string_expression();
+        v1.kind = kind_string;
+        v1.value.string = s;
+      }
+      else
+      {
+        float n = numeric_expression();
+        v1.kind = kind_numeric;
+        v1.value.number = n;
+      }
+      expect(T_RIGHT_BANANA);
+      function->function.function_1(&v1, rv);
+      break;
+    default:
+      error("Max nr vars exceeded");
+      return -1;
+  }
+  return 0;
 }
