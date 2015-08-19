@@ -173,6 +173,7 @@ typedef enum {
   T_KEYWORD_TO,
   T_KEYWORD_STEP,
   T_KEYWORD_NEXT,
+  T_STRING_FUNC_LEN
 } token_type_basic;
 
 add_token( T_FUNC_ABS, "ABS" );
@@ -207,6 +208,8 @@ add_token( T_KEYWORD_RUN, "RUN" );
 add_token( T_KEYWORD_END, "END" );
 add_token( T_STRING_FUNC_CHR, "CHR$" );
 add_token( T_STRING_FUNC_MID$, "MID$" );
+
+add_token( T_STRING_FUNC_LEN, "LEN" );
 
 static uint16_t __line;
 static char* __cursor;
@@ -259,6 +262,19 @@ typedef struct
   size_t line;
   char* cursor;
 } stack_frame_gosub;
+
+static bool is_basic_function_token(token sym);
+static int basic_dispatch_function(basic_function* function, basic_type* rv);
+
+int str_len(basic_type* str, basic_type* rv);
+
+basic_function bf_len = {
+  .token = T_STRING_FUNC_LEN,
+  .type = basic_function_type_numeric,
+  .nr_arguments = 1,
+  .kind_1 = kind_string,
+  .function.function_1 = str_len
+};
 
 token sym;
 static void
@@ -473,6 +489,11 @@ factor(void)
     function func = get_function(function_sym);
     number = func(numeric_expression());
     expect(T_RIGHT_BANANA);
+  } else if (is_basic_function_token(sym)) {
+      printf("Test basic function...");
+      basic_type rv;
+      basic_dispatch_function( &bf_len, &rv);
+      number = rv.value.number;
   } else if (sym == T_NUMBER) {
     number = tokenizer_get_number();
     accept(T_NUMBER);
@@ -622,6 +643,7 @@ string_expression(void)
       accept(T_VARIABLE_STRING);
       break;
 
+    // TODO: register functions -> look up functions that return strings here!
     case T_STRING_FUNC_MID$:
       // 0. expect a left banana
       accept(sym);
@@ -1139,6 +1161,8 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   tokenizer_register_token( &_T_STRING_FUNC_CHR );
   tokenizer_register_token( &_T_STRING_FUNC_MID$ );
   
+  tokenizer_register_token( &_T_STRING_FUNC_LEN );
+  
   lines_init(__memory, __program_size);
   variables_init();
 }
@@ -1195,13 +1219,14 @@ const char *evaluate_last_error(void)
 static bool
 is_basic_function_token(token sym)
 {
-  return false;
+  return sym == T_STRING_FUNC_LEN;
 }
 
 static int
 basic_dispatch_function(basic_function* function, basic_type* rv)
 {
   basic_type v1;
+  printf("nr arguments: %ld\n", function->nr_arguments);
   switch (function->nr_arguments)
   {
     case 0:
@@ -1213,7 +1238,7 @@ basic_dispatch_function(basic_function* function, basic_type* rv)
     case 1:
       accept(sym);
       expect(T_LEFT_BANANA);
-      if (function->kind_1 == kind_numeric)
+      if (function->kind_1 == kind_string)
       {
         char *s = string_expression();
         v1.kind = kind_string;
@@ -1232,5 +1257,14 @@ basic_dispatch_function(basic_function* function, basic_type* rv)
       error("Max nr vars exceeded");
       return -1;
   }
+  return 0;
+}
+
+int
+str_len(basic_type* str, basic_type* rv)
+{
+  printf("In str_len: t:%d, v:'%s'\n", str->kind, str->value.string);
+  rv->kind = kind_numeric;
+  rv->value.number = (int) strlen(str->value.string);
   return 0;
 }

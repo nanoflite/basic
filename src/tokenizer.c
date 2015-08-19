@@ -6,9 +6,14 @@
 #include <stdbool.h>
 #include "tokenizer.h"
 #include "hexdump.h"
+#include "array.h"
 
+/*
 static size_t registered_tokens_count = 0;
 static token_entry* registered_tokens_ptr = NULL;
+*/
+
+static array* token_array = NULL;
 
 add_token( T_ERROR, NULL );
 add_token( T_EOF, NULL );
@@ -65,6 +70,7 @@ void tokenizer_init(char *input)
 {
   tokenizer_line = input;
   tokenizer_p = tokenizer_next_p = tokenizer_line;
+  token_array = array_new(sizeof(token_entry));
 }
 
 char* tokenizer_char_pointer(char* set)
@@ -102,10 +108,10 @@ token _find_registered(void)
 
   // printf("_find registered\n");
 
-  for(size_t i=0; i<registered_tokens_count; i++)
+  for(size_t i=0; i<array_size(token_array); i++)
   {
     // token_entry* entry = registered_tokens_ptr + i * sizeof(token_entry);
-    token_entry* entry = registered_tokens_ptr + i;
+    token_entry* entry = (token_entry*) array_get(token_array, i);
   
     // printf("t: '%s'\n", entry->name);
 
@@ -222,6 +228,7 @@ char *tokenizer_get_variable_name(void)
   void
 tokenizer_register_token( token_entry* entry )
 {
+  /*
   // Create space for token_entry
   registered_tokens_count++;
   registered_tokens_ptr = realloc((char*)registered_tokens_ptr, sizeof(token_entry) * registered_tokens_count);
@@ -231,13 +238,18 @@ tokenizer_register_token( token_entry* entry )
   // printf("n:%p, e:%p, i:%ld, s:%ld\n", new, entry, registered_tokens_count, sizeof(token_entry));
   memcpy(new, entry, sizeof(token_entry));
   // hexdump("tokens", new, sizeof(token_entry) * registered_tokens_count );
+  */
+  array_push(token_array, entry);
 }
 
   void
 tokenizer_free_registered_tokens(void)
 {
+  array_destroy(token_array);
+  /*
   registered_tokens_count = 0;
   free(registered_tokens_ptr);
   registered_tokens_ptr = NULL;
+  */
 }
 
