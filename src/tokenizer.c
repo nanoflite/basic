@@ -46,6 +46,7 @@ char *tokenizer_actual_variable = NULL;
 
 void tokenizer_setup(void)
 {
+  token_array = array_new(sizeof(token_entry));
   tokenizer_register_token( &_T_ERROR);
   tokenizer_register_token( &_T_EOF);
   tokenizer_register_token( &_T_NUMBER);
@@ -70,7 +71,6 @@ void tokenizer_init(char *input)
 {
   tokenizer_line = input;
   tokenizer_p = tokenizer_next_p = tokenizer_line;
-  token_array = array_new(sizeof(token_entry));
 }
 
 char* tokenizer_char_pointer(char* set)
