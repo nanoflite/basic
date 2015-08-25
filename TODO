@@ -72,10 +72,10 @@ v Registry for tokens
 
 . Registry for functions and statements (comamnds) (expandability)
   v POC basic dispatch
-  . basic dispatch for functions with 0 to 5 parameters
+  v basic dispatch for functions with 0 to 5 parameters
   v generic array.c / array.h to store tokens (register tokens) and basic functions
   . register basic functions
-  . Intercept on 3 places in parser: statememt (void), expression (numeric) and string expression (string)
+  v Intercept on 3 places in parser: statememt (void), expression (numeric via factor, term) and string expression (string)
 . expect is bad with implicit get_sym...better to that more clearly (what do these functions do? what size effects do they have?)
     Just better understand and use consistently
 . move internal functions and commands to registry format

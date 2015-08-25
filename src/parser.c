@@ -10,6 +10,7 @@
 #include "tokenizer.h"
 #include "variables.h"
 #include "lines.h"
+#include "array.h"
 
 /*
   line = [number] statement [ : statement ] CR
@@ -140,6 +141,9 @@ typedef struct {
   basic_function_union function; 
 } basic_function;
 
+static array* basic_tokens = NULL;
+static array* basic_functions = NULL;
+
 typedef enum {
   T_FUNC_ABS = TOKEN_TYPE_END,
   T_FUNC_SIN,
@@ -173,7 +177,7 @@ typedef enum {
   T_KEYWORD_TO,
   T_KEYWORD_STEP,
   T_KEYWORD_NEXT,
-  T_STRING_FUNC_LEN
+  // T_STRING_FUNC_LEN
 } token_type_basic;
 
 add_token( T_FUNC_ABS, "ABS" );
@@ -209,7 +213,7 @@ add_token( T_KEYWORD_END, "END" );
 add_token( T_STRING_FUNC_CHR, "CHR$" );
 add_token( T_STRING_FUNC_MID$, "MID$" );
 
-add_token( T_STRING_FUNC_LEN, "LEN" );
+// add_token( T_STRING_FUNC_LEN, "LEN" );
 
 static uint16_t __line;
 static char* __cursor;
@@ -264,10 +268,29 @@ typedef struct
 } stack_frame_gosub;
 
 static bool is_basic_function_token(token sym);
+static basic_function* get_basic_function(token sym);
 static int basic_dispatch_function(basic_function* function, basic_type* rv);
-
+void register_function_1(basic_function_type type, char* keyword, function_1 function, kind v1);
 int str_len(basic_type* str, basic_type* rv);
 
+// size_t __TOKEN_I = TOKEN_TYPE_END + 1000;
+
+// #define __TOKEN_I (TOKEN_TYPE_END + 1000)
+
+/*
+#define token_id 0
+
+#define register_function_1(t, name, f, v1) \
+  add_token( token_id, name ); \
+  basic_function bf_##f = { \
+    .token = token_id, \
+    .type = basic_function_type_##t, \
+    .nr_arguments = 1, \
+    .kind_1 = kind_##v1, \
+    .function.function_1 = f \
+  }; \
+*/
+/*
 basic_function bf_len = {
   .token = T_STRING_FUNC_LEN,
   .type = basic_function_type_numeric,
@@ -275,6 +298,8 @@ basic_function bf_len = {
   .kind_1 = kind_string,
   .function.function_1 = str_len
 };
+*/
+// register_function_1(numeric, "LEN", str_len, string);
 
 token sym;
 static void
@@ -492,7 +517,11 @@ factor(void)
   } else if (is_basic_function_token(sym)) {
       printf("Test basic function...");
       basic_type rv;
-      basic_dispatch_function( &bf_len, &rv);
+      basic_dispatch_function( get_basic_function(sym), &rv);
+      if (rv.kind != kind_numeric)
+      {
+        error("Expected numeric.");
+      }
       number = rv.value.number;
   } else if (sym == T_NUMBER) {
     number = tokenizer_get_number();
@@ -665,6 +694,16 @@ string_expression(void)
       string = strdup(&source[from]);
       string[to] = '\0'; 
     default:
+      if (is_basic_function_token(sym)) {
+        printf("string_expression function");
+        basic_type rv;
+        basic_dispatch_function( get_basic_function(sym), &rv);
+        if (rv.kind != kind_string)
+        {
+          error("Expected string.");
+        }
+        string = rv.value.string;
+      }
       break;
   }
 
@@ -1126,6 +1165,9 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   __stack_p = __stack_size;
   __program_size = __memory_size - __stack_size;
 
+  basic_tokens = array_new(sizeof(token_entry));
+  basic_functions = array_new(sizeof(basic_function));
+
   tokenizer_setup();
 
   tokenizer_register_token( &_T_FUNC_ABS );
@@ -1161,7 +1203,8 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   tokenizer_register_token( &_T_STRING_FUNC_CHR );
   tokenizer_register_token( &_T_STRING_FUNC_MID$ );
   
-  tokenizer_register_token( &_T_STRING_FUNC_LEN );
+  // tokenizer_register_token( &_T_STRING_FUNC_LEN );
+  register_function_1(basic_function_type_numeric, "LEN", str_len, kind_numeric);
   
   lines_init(__memory, __program_size);
   variables_init();
@@ -1216,16 +1259,162 @@ const char *evaluate_last_error(void)
   return last_error;
 }
 
+// - Register functions
+
+static size_t basic_token_id = TOKEN_TYPE_END + 1000; 
+
+token_entry*
+register_token(char* name , char* keyword)
+{
+  token_entry token;
+
+  token.token = basic_token_id++;
+  token.name = name;
+  token.keyword = keyword;
+
+  return array_push(basic_tokens, &token);
+}
+
+void
+register_function_0(basic_function_type type, char* keyword, function_0 function)
+{
+  token_entry* token = register_token(keyword, keyword);
+  basic_function bf = {
+    .token = token->token,
+    .type = type,
+    .nr_arguments = 0,
+    .function.function_0 = function
+  };
+
+  array_push(basic_functions, &bf);
+}
+
+void
+register_function_1(basic_function_type type, char* keyword, function_1 function, kind v1)
+{
+  token_entry* token = register_token(keyword, keyword);
+  basic_function bf = {
+    .token = token->token,
+    .type = type,
+    .nr_arguments = 1,
+    .kind_1 = v1,
+    .function.function_1 = function
+  };
+
+  array_push(basic_functions, &bf);
+}
+
+void
+register_function_2(basic_function_type type, char* keyword, function_2 function, kind v1, kind v2)
+{
+  token_entry* token = register_token(keyword, keyword);
+  basic_function bf = {
+    .token = token->token,
+    .type = type,
+    .nr_arguments = 2,
+    .kind_1 = v1,
+    .kind_2 = v2,
+    .function.function_2 = function
+  };
+
+  array_push(basic_functions, &bf);
+}
+
+void
+register_function_3(basic_function_type type, char* keyword, function_3 function, kind v1, kind v2, kind v3)
+{
+  token_entry* token = register_token(keyword, keyword);
+  basic_function bf = {
+    .token = token->token,
+    .type = type,
+    .nr_arguments = 3,
+    .kind_1 = v1,
+    .kind_2 = v2,
+    .kind_3 = v3,
+    .function.function_3 = function
+  };
+
+  array_push(basic_functions, &bf);
+}
+
+void
+register_function_4(basic_function_type type, char* keyword, function_4 function, kind v1, kind v2, kind v3, kind v4)
+{
+  token_entry* token = register_token(keyword, keyword);
+  basic_function bf = {
+    .token = token->token,
+    .type = type,
+    .nr_arguments = 4,
+    .kind_1 = v1,
+    .kind_2 = v2,
+    .kind_3 = v3,
+    .kind_4 = v4,
+    .function.function_4 = function
+  };
+
+  array_push(basic_functions, &bf);
+}
+
+void
+register_function_5(basic_function_type type, char* keyword, function_5 function, kind v1, kind v2, kind v3, kind v4, kind v5)
+{
+  token_entry* token = register_token(keyword, keyword);
+  basic_function bf = {
+    .token = token->token,
+    .type = type,
+    .nr_arguments = 5,
+    .kind_1 = v1,
+    .kind_2 = v2,
+    .kind_3 = v3,
+    .kind_4 = v4,
+    .kind_5 = v5,
+    .function.function_5 = function
+  };
+
+  array_push(basic_functions, &bf);
+}
+
 static bool
 is_basic_function_token(token sym)
 {
-  return sym == T_STRING_FUNC_LEN;
+  return sym >= TOKEN_TYPE_END + 1000;
+}
+
+static basic_function*
+get_basic_function(token sym)
+{
+  for(size_t i=0; i<array_size(basic_functions); i++)
+  {
+    basic_function* bf = (basic_function*) array_get(basic_functions, i);
+    if (bf->token == sym)
+    {
+      return bf;
+    }
+  }
+  return NULL;
+}
+
+static void
+get_parameter(kind k, basic_type* v)
+{
+      if (k == kind_string)
+      {
+        char *s = string_expression();
+        v->kind = kind_string;
+        v->value.string = s;
+      }
+      else
+      {
+        float n = numeric_expression();
+        v->kind = kind_numeric;
+        v->value.number = n;
+      }
 }
 
 static int
 basic_dispatch_function(basic_function* function, basic_type* rv)
 {
-  basic_type v1;
+  basic_type v1, v2, v3, v4, v5;
   printf("nr arguments: %ld\n", function->nr_arguments);
   switch (function->nr_arguments)
   {
@@ -1238,20 +1427,57 @@ basic_dispatch_function(basic_function* function, basic_type* rv)
     case 1:
       accept(sym);
       expect(T_LEFT_BANANA);
-      if (function->kind_1 == kind_string)
-      {
-        char *s = string_expression();
-        v1.kind = kind_string;
-        v1.value.string = s;
-      }
-      else
-      {
-        float n = numeric_expression();
-        v1.kind = kind_numeric;
-        v1.value.number = n;
-      }
+      get_parameter(function->kind_1, &v1);
       expect(T_RIGHT_BANANA);
       function->function.function_1(&v1, rv);
+      break;
+    case 2:
+      accept(sym);
+      expect(T_LEFT_BANANA);
+      get_parameter(function->kind_1, &v1);
+      expect(T_COMMA);
+      get_parameter(function->kind_2, &v2);
+      expect(T_RIGHT_BANANA);
+      function->function.function_2(&v1, &v2, rv);
+      break;
+    case 3:
+      accept(sym);
+      expect(T_LEFT_BANANA);
+      get_parameter(function->kind_1, &v1);
+      expect(T_COMMA);
+      get_parameter(function->kind_2, &v2);
+      expect(T_COMMA);
+      get_parameter(function->kind_3, &v3);
+      expect(T_RIGHT_BANANA);
+      function->function.function_3(&v1, &v2, &v3, rv);
+      break;
+    case 4:
+      accept(sym);
+      expect(T_LEFT_BANANA);
+      get_parameter(function->kind_1, &v1);
+      expect(T_COMMA);
+      get_parameter(function->kind_2, &v2);
+      expect(T_COMMA);
+      get_parameter(function->kind_3, &v3);
+      expect(T_COMMA);
+      get_parameter(function->kind_4, &v4);
+      expect(T_RIGHT_BANANA);
+      function->function.function_4(&v1, &v2, &v3, &v4, rv);
+      break;
+    case 5:
+      accept(sym);
+      expect(T_LEFT_BANANA);
+      get_parameter(function->kind_1, &v1);
+      expect(T_COMMA);
+      get_parameter(function->kind_2, &v2);
+      expect(T_COMMA);
+      get_parameter(function->kind_3, &v3);
+      expect(T_COMMA);
+      get_parameter(function->kind_4, &v4);
+      expect(T_COMMA);
+      get_parameter(function->kind_5, &v5);
+      expect(T_RIGHT_BANANA);
+      function->function.function_5(&v1, &v2, &v3, &v4, &v5, rv);
       break;
     default:
       error("Max nr vars exceeded");

@@ -28,13 +28,14 @@ array_destroy(array* array)
   free(array);
 }
 
-  void
+  void*
 array_push(array* array, void* value)
 {
   array->size++;
   array->ptr = realloc(array->ptr, array->element_size * array->size);
   void* element = array->ptr + array->element_size * (array->size - 1);
   memcpy(element, value, array->element_size);
+  return element;
 }
 
   void*

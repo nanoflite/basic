@@ -7,7 +7,7 @@ array* array_new(size_t element_size);
 
 void array_destroy(array* array);
 
-void array_push(array* array, void* value);
+void* array_push(array* array, void* value);
 
 void* array_get(array* array, size_t index);
 
