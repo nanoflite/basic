@@ -117,7 +117,7 @@ token _find_registered(void)
 
     if ( entry->keyword == NULL ) continue;
 
-    // printf("look for: '%s'\n", entry->keyword);
+    // printf("look for: '%s', in '%s'\n", entry->keyword, tokenizer_p);
 
     if (strncmp(tokenizer_p, entry->keyword, strlen(entry->keyword)) == 0) {
        // printf("found '%s'\n", entry->keyword);

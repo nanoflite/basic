@@ -323,15 +323,17 @@ static char* string_expression(void);
 void
 expression(expression_result *result)
 {
-
+  // printf("expression\n");
   char *string = string_expression();
   if ( NULL != string )
   {
+    // printf("string");
     result->type = expression_type_string;
     result->value.string = string;
   }
   else
   {
+    // printf("numeric");
     result->type = expression_type_numeric;
     result->value.numeric = numeric_expression();
   }
@@ -457,17 +459,19 @@ token_to_function token_to_functions[] =
 static bool
 accept(token t)
 {
+  // printf("accept %ld\n", t);
   if (t == sym) {
     get_sym();
     return true;
   }
-  // printf("accept got %s, expected %s\n", tokenizer_token_name(sym), tokenizer_token_name(t));
+  // printf("accept got %ld, expected %ld\n", sym, t);
   return false;
 }
 
 static bool
 expect(token t)
 {
+  // printf("expect %ld\n", t);
   if (accept(t)) {
     return true;
   }
@@ -506,8 +510,10 @@ get_function(token sym)
 static float
 factor(void)
 {
+  // printf("factor: %ld\n", sym);
   float number;
   if (is_function_token(sym)) {
+    // printf("function token\n");
     token function_sym = sym;
     accept(sym);
     expect(T_LEFT_BANANA);
@@ -515,18 +521,27 @@ factor(void)
     number = func(numeric_expression());
     expect(T_RIGHT_BANANA);
   } else if (is_basic_function_token(sym)) {
-      printf("Test basic function...");
-      basic_type rv;
-      basic_dispatch_function( get_basic_function(sym), &rv);
-      if (rv.kind != kind_numeric)
+      if (is_basic_function_token(sym))
       {
-        error("Expected numeric.");
+        basic_function* bf = get_basic_function(sym);
+        if (bf->type == basic_function_type_numeric)
+        {
+          // printf("factor basic function numeric...");
+          basic_type rv;
+          basic_dispatch_function( get_basic_function(sym), &rv);
+          if (rv.kind != kind_numeric)
+          {
+            error("Expected numeric.");
+          }
+          number = rv.value.number;
+        }
       }
-      number = rv.value.number;
   } else if (sym == T_NUMBER) {
+    // printf("number\n");
     number = tokenizer_get_number();
     accept(T_NUMBER);
   } else if (sym == T_VARIABLE_NUMBER) {
+    // printf("variable number\n");
     // printf("NUMBER VAR\n");
     char* var_name = tokenizer_get_variable_name();
     // printf("Var NAME: '%s'\n", var_name);
@@ -694,15 +709,20 @@ string_expression(void)
       string = strdup(&source[from]);
       string[to] = '\0'; 
     default:
-      if (is_basic_function_token(sym)) {
-        printf("string_expression function");
-        basic_type rv;
-        basic_dispatch_function( get_basic_function(sym), &rv);
-        if (rv.kind != kind_string)
+      if (is_basic_function_token(sym))
+      {
+        basic_function* bf = get_basic_function(sym);
+        if (bf->type == basic_function_type_string)
         {
-          error("Expected string.");
+          // printf("string_expression function\n");
+          basic_type rv;
+          basic_dispatch_function( get_basic_function(sym), &rv);
+          if (rv.kind != kind_string)
+          {
+            error("Expected string.");
+          }
+          string = rv.value.string;
         }
-        string = rv.value.string;
       }
       break;
   }
@@ -1104,8 +1124,8 @@ parse_line(void)
 static void
 statement(void)
 {
-  //puts("statement");
-  //printf("\tdiag: symbol: %d\n", sym);
+  // puts("statement");
+  // printf("\tdiag: symbol: %ld\n", sym);
   switch(sym) {
     case T_KEYWORD_LIST:
       do_list();
@@ -1204,7 +1224,7 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   tokenizer_register_token( &_T_STRING_FUNC_MID$ );
   
   // tokenizer_register_token( &_T_STRING_FUNC_LEN );
-  register_function_1(basic_function_type_numeric, "LEN", str_len, kind_numeric);
+  register_function_1(basic_function_type_numeric, "LEN", str_len, kind_string);
   
   lines_init(__memory, __program_size);
   variables_init();
@@ -1215,7 +1235,7 @@ basic_eval(char *line_string)
 {
   tokenizer_init( line_string );
   get_sym();
-  // printf("diag: symbol: %d\n", sym);
+  // printf("diag: symbol: %ld\n", sym);
   if (sym == T_NUMBER ) {
     float line_number = tokenizer_get_number();
     char* line = tokenizer_char_pointer(NULL);
@@ -1263,7 +1283,7 @@ const char *evaluate_last_error(void)
 
 static size_t basic_token_id = TOKEN_TYPE_END + 1000; 
 
-token_entry*
+token
 register_token(char* name , char* keyword)
 {
   token_entry token;
@@ -1272,15 +1292,19 @@ register_token(char* name , char* keyword)
   token.name = name;
   token.keyword = keyword;
 
-  return array_push(basic_tokens, &token);
+  // printf("token '%s' = %ld\n", keyword, token.token);
+
+  tokenizer_register_token(&token);
+
+  return token.token;
 }
 
 void
 register_function_0(basic_function_type type, char* keyword, function_0 function)
 {
-  token_entry* token = register_token(keyword, keyword);
+  token t = register_token(keyword, keyword);
   basic_function bf = {
-    .token = token->token,
+    .token = t,
     .type = type,
     .nr_arguments = 0,
     .function.function_0 = function
@@ -1292,9 +1316,9 @@ register_function_0(basic_function_type type, char* keyword, function_0 function
 void
 register_function_1(basic_function_type type, char* keyword, function_1 function, kind v1)
 {
-  token_entry* token = register_token(keyword, keyword);
+  token t = register_token(keyword, keyword);
   basic_function bf = {
-    .token = token->token,
+    .token = t,
     .type = type,
     .nr_arguments = 1,
     .kind_1 = v1,
@@ -1307,9 +1331,9 @@ register_function_1(basic_function_type type, char* keyword, function_1 function
 void
 register_function_2(basic_function_type type, char* keyword, function_2 function, kind v1, kind v2)
 {
-  token_entry* token = register_token(keyword, keyword);
+  token t = register_token(keyword, keyword);
   basic_function bf = {
-    .token = token->token,
+    .token = t,
     .type = type,
     .nr_arguments = 2,
     .kind_1 = v1,
@@ -1323,9 +1347,9 @@ register_function_2(basic_function_type type, char* keyword, function_2 function
 void
 register_function_3(basic_function_type type, char* keyword, function_3 function, kind v1, kind v2, kind v3)
 {
-  token_entry* token = register_token(keyword, keyword);
+  token t = register_token(keyword, keyword);
   basic_function bf = {
-    .token = token->token,
+    .token = t,
     .type = type,
     .nr_arguments = 3,
     .kind_1 = v1,
@@ -1340,9 +1364,9 @@ register_function_3(basic_function_type type, char* keyword, function_3 function
 void
 register_function_4(basic_function_type type, char* keyword, function_4 function, kind v1, kind v2, kind v3, kind v4)
 {
-  token_entry* token = register_token(keyword, keyword);
+  token t = register_token(keyword, keyword);
   basic_function bf = {
-    .token = token->token,
+    .token = t,
     .type = type,
     .nr_arguments = 4,
     .kind_1 = v1,
@@ -1358,9 +1382,9 @@ register_function_4(basic_function_type type, char* keyword, function_4 function
 void
 register_function_5(basic_function_type type, char* keyword, function_5 function, kind v1, kind v2, kind v3, kind v4, kind v5)
 {
-  token_entry* token = register_token(keyword, keyword);
+  token t = register_token(keyword, keyword);
   basic_function bf = {
-    .token = token->token,
+    .token = t,
     .type = type,
     .nr_arguments = 5,
     .kind_1 = v1,
@@ -1394,28 +1418,33 @@ get_basic_function(token sym)
   return NULL;
 }
 
-static void
+  static void
 get_parameter(kind k, basic_type* v)
 {
-      if (k == kind_string)
-      {
-        char *s = string_expression();
-        v->kind = kind_string;
-        v->value.string = s;
-      }
-      else
-      {
-        float n = numeric_expression();
-        v->kind = kind_numeric;
-        v->value.number = n;
-      }
+
+  // printf("get_parameter %d\n", k);
+
+  if (k == kind_string)
+  {
+    // printf("go get string\n");
+    char *s = string_expression();
+    v->kind = kind_string;
+    v->value.string = s;
+  }
+  else
+  {
+    // printf("go get numeric\n");
+    float n = numeric_expression();
+    v->kind = kind_numeric;
+    v->value.number = n;
+  }
 }
 
 static int
 basic_dispatch_function(basic_function* function, basic_type* rv)
 {
   basic_type v1, v2, v3, v4, v5;
-  printf("nr arguments: %ld\n", function->nr_arguments);
+  // printf("nr arguments: %ld\n", function->nr_arguments);
   switch (function->nr_arguments)
   {
     case 0:
@@ -1489,7 +1518,7 @@ basic_dispatch_function(basic_function* function, basic_type* rv)
 int
 str_len(basic_type* str, basic_type* rv)
 {
-  printf("In str_len: t:%d, v:'%s'\n", str->kind, str->value.string);
+  // printf("In str_len: t:%d, v:'%s'\n", str->kind, str->value.string);
   rv->kind = kind_numeric;
   rv->value.number = (int) strlen(str->value.string);
   return 0;
