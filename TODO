@@ -75,6 +75,11 @@ v Registry for tokens
   v basic dispatch for functions with 0 to 5 parameters
   v generic array.c / array.h to store tokens (register tokens) and basic functions
   . register basic functions
+      v FOR A=1 TO 10 STEP 2
+        ^ keyword
+                ^ just a token without a function -> but we need to regsiter
+                      ^ same for step
+      . IF
   v Intercept on 3 places in parser: statememt (void), expression (numeric via factor, term) and string expression (string)
 . expect is bad with implicit get_sym...better to that more clearly (what do these functions do? what size effects do they have?)
     Just better understand and use consistently

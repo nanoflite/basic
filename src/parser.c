@@ -92,7 +92,8 @@ typedef struct
 } token_to_function;
 
 typedef enum {
-  basic_function_type_void,
+  basic_function_type_keyword,
+  basic_function_type_op,
   basic_function_type_numeric,
   basic_function_type_string
 } basic_function_type;
@@ -143,6 +144,22 @@ typedef struct {
 
 static array* basic_tokens = NULL;
 static array* basic_functions = NULL;
+static token t_keyword_print;
+static token t_keyword_goto;
+static token t_keyword_if;
+static token t_keyword_then;
+static token t_keyword_let;
+// static token t_keyword_input;
+static token t_keyword_gosub;
+static token t_keyword_return;
+// static token t_keyword_clear;
+static token t_keyword_list;
+static token t_keyword_run;
+static token t_keyword_end;
+static token t_keyword_for;
+static token t_keyword_to;
+static token t_keyword_step;
+static token t_keyword_next;
 
 typedef enum {
   T_FUNC_ABS = TOKEN_TYPE_END,
@@ -161,22 +178,22 @@ typedef enum {
   T_STRING_FUNC_MID$,
   T_OP_OR,
   T_OP_AND,
-  T_KEYWORD_PRINT,
-  T_KEYWORD_GOTO,
-  T_KEYWORD_IF,
-  T_KEYWORD_THEN,
-  T_KEYWORD_LET,
-  T_KEYWORD_INPUT,
-  T_KEYWORD_GOSUB,
-  T_KEYWORD_RETURN,
-  T_KEYWORD_CLEAR,
-  T_KEYWORD_LIST,
-  T_KEYWORD_RUN,
-  T_KEYWORD_END,
-  T_KEYWORD_FOR,
-  T_KEYWORD_TO,
-  T_KEYWORD_STEP,
-  T_KEYWORD_NEXT,
+  // T_KEYWORD_PRINT,
+  // T_KEYWORD_GOTO,
+  // T_KEYWORD_IF,
+  // T_KEYWORD_THEN,
+  // T_KEYWORD_LET,
+  // T_KEYWORD_INPUT,
+  // T_KEYWORD_GOSUB,
+  // T_KEYWORD_RETURN,
+  // T_KEYWORD_CLEAR,
+  // T_KEYWORD_LIST,
+  // T_KEYWORD_RUN,
+  // T_KEYWORD_END,
+  // T_KEYWORD_FOR,
+  // T_KEYWORD_TO,
+  // T_KEYWORD_STEP,
+  // T_KEYWORD_NEXT,
   // T_STRING_FUNC_LEN
 } token_type_basic;
 
@@ -194,22 +211,22 @@ add_token( T_FUNC_ATN, "ATN" );
 add_token( T_FUNC_NOT, "NOT" );
 add_token( T_OP_OR, "OR" );
 add_token( T_OP_AND, "AND" );
-add_token( T_KEYWORD_PRINT, "PRINT" );
-add_token( T_KEYWORD_GOTO, "GOTO" );
-add_token( T_KEYWORD_IF, "IF" );
-add_token( T_KEYWORD_THEN, "THEN" );
-add_token( T_KEYWORD_LET, "LET" );
-add_token( T_KEYWORD_INPUT, "INPUT" );
-add_token( T_KEYWORD_GOSUB, "GOSUB" );
-add_token( T_KEYWORD_RETURN, "RETURN" );
-add_token( T_KEYWORD_FOR, "FOR" );
-add_token( T_KEYWORD_TO, "TO" );
-add_token( T_KEYWORD_STEP, "STEP" );
-add_token( T_KEYWORD_NEXT, "NEXT" );
-add_token( T_KEYWORD_CLEAR, "CLEAR" );
-add_token( T_KEYWORD_LIST, "LIST" );
-add_token( T_KEYWORD_RUN, "RUN" );
-add_token( T_KEYWORD_END, "END" );
+// add_token( T_KEYWORD_PRINT, "PRINT" );
+// add_token( T_KEYWORD_GOTO, "GOTO" );
+// add_token( T_KEYWORD_IF, "IF" );
+// add_token( T_KEYWORD_THEN, "THEN" );
+// add_token( T_KEYWORD_LET, "LET" );
+// add_token( T_KEYWORD_INPUT, "INPUT" );
+// add_token( T_KEYWORD_GOSUB, "GOSUB" );
+// add_token( T_KEYWORD_RETURN, "RETURN" );
+// add_token( T_KEYWORD_FOR, "FOR" );
+// add_token( T_KEYWORD_TO, "TO" );
+// add_token( T_KEYWORD_STEP, "STEP" );
+// add_token( T_KEYWORD_NEXT, "NEXT" );
+// add_token( T_KEYWORD_CLEAR, "CLEAR" );
+// add_token( T_KEYWORD_LIST, "LIST" );
+// add_token( T_KEYWORD_RUN, "RUN" );
+// add_token( T_KEYWORD_END, "END" );
 add_token( T_STRING_FUNC_CHR, "CHR$" );
 add_token( T_STRING_FUNC_MID$, "MID$" );
 
@@ -267,10 +284,19 @@ typedef struct
   char* cursor;
 } stack_frame_gosub;
 
-static bool is_basic_function_token(token sym);
-static basic_function* get_basic_function(token sym);
+//static bool is_basic_function_token(token sym);
+//static basic_function* get_basic_function(token sym);
 static int basic_dispatch_function(basic_function* function, basic_type* rv);
-void register_function_1(basic_function_type type, char* keyword, function_1 function, kind v1);
+static basic_function* find_basic_function_by_type(token sym, basic_function_type type);
+
+token register_token(char* name , char* keyword);
+token register_function_0(basic_function_type type, char* keyword, function_0 function);
+token register_function_1(basic_function_type type, char* keyword, function_1 function, kind v1);
+token register_function_2(basic_function_type type, char* keyword, function_2 function, kind v1, kind v2);
+token register_function_3(basic_function_type type, char* keyword, function_3 function, kind v1, kind v2, kind v3);
+token register_function_4(basic_function_type type, char* keyword, function_4 function, kind v1, kind v2, kind v3, kind v4);
+token register_function_5(basic_function_type type, char* keyword, function_5 function, kind v1, kind v2, kind v3, kind v4, kind v5);
+
 int str_len(basic_type* str, basic_type* rv);
 
 // size_t __TOKEN_I = TOKEN_TYPE_END + 1000;
@@ -512,6 +538,7 @@ factor(void)
 {
   // printf("factor: %ld\n", sym);
   float number;
+  basic_function* bf;
   if (is_function_token(sym)) {
     // printf("function token\n");
     token function_sym = sym;
@@ -520,22 +547,30 @@ factor(void)
     function func = get_function(function_sym);
     number = func(numeric_expression());
     expect(T_RIGHT_BANANA);
-  } else if (is_basic_function_token(sym)) {
-      if (is_basic_function_token(sym))
-      {
-        basic_function* bf = get_basic_function(sym);
-        if (bf->type == basic_function_type_numeric)
-        {
-          // printf("factor basic function numeric...");
-          basic_type rv;
-          basic_dispatch_function( get_basic_function(sym), &rv);
-          if (rv.kind != kind_numeric)
-          {
-            error("Expected numeric.");
-          }
-          number = rv.value.number;
-        }
-      }
+//  } else if (is_basic_function_token(sym)) {
+//      if (is_basic_function_token(sym))
+//      {
+//        basic_function* bf = get_basic_function(sym);
+//        if (bf->type == basic_function_type_numeric)
+//        {
+//          // printf("factor basic function numeric...");
+//          basic_type rv;
+//          basic_dispatch_function( get_basic_function(sym), &rv);
+//          if (rv.kind != kind_numeric)
+//          {
+//            error("Expected numeric.");
+//          }
+//          number = rv.value.number;
+//        }
+//      }
+  } else if ( (bf = find_basic_function_by_type(sym, basic_function_type_numeric)) != NULL ) {
+    basic_type rv;
+    basic_dispatch_function( bf, &rv);
+    if (rv.kind != kind_numeric)
+    {
+      error("Expected numeric.");
+    }
+    number = rv.value.number;
   } else if (sym == T_NUMBER) {
     // printf("number\n");
     number = tokenizer_get_number();
@@ -635,12 +670,15 @@ list_out(uint16_t number, char* contents)
   printf("%d %s\n", number, contents);
 }
 
-static void
-do_list(void)
+//static void
+//do_list(void)
+static int
+do_list(basic_type* rv)
 {
-  accept(T_KEYWORD_LIST);
+  accept(t_keyword_list);
   lines_list(list_out);
   ready();
+  return 0;
 }
 
 static char
@@ -709,14 +747,27 @@ string_expression(void)
       string = strdup(&source[from]);
       string[to] = '\0'; 
     default:
-      if (is_basic_function_token(sym))
+      //if (is_basic_function_token(sym))
+      //{
+      //  basic_function* bf = get_basic_function(sym);
+      //  if (bf->type == basic_function_type_string)
+      //  {
+      //    // printf("string_expression function\n");
+      //    basic_type rv;
+      //    basic_dispatch_function( get_basic_function(sym), &rv);
+      //    if (rv.kind != kind_string)
+      //    {
+      //      error("Expected string.");
+      //    }
+      //    string = rv.value.string;
+      //  }
+      //
       {
-        basic_function* bf = get_basic_function(sym);
-        if (bf->type == basic_function_type_string)
+        basic_function* bf = find_basic_function_by_type(sym, basic_function_type_string);
+        if ( bf != NULL )
         {
-          // printf("string_expression function\n");
           basic_type rv;
-          basic_dispatch_function( get_basic_function(sym), &rv);
+          basic_dispatch_function( bf, &rv);
           if (rv.kind != kind_string)
           {
             error("Expected string.");
@@ -730,10 +781,15 @@ string_expression(void)
   return string;
 }
 
+/*
 static void
 do_print(void)
+*/
+  static int
+do_print(basic_type* rv)
 {
-  accept(T_KEYWORD_PRINT);
+  //accept(T_KEYWORD_PRINT);
+  accept(t_keyword_print);
 
   expression_result expr;
   expression(&expr);
@@ -757,16 +813,20 @@ do_print(void)
   } else {
     accept(T_SEMICOLON);
   }
+
+  return 0;
 }
 
-static void
-do_goto(void)
+//static void
+//do_goto(void)
+static int
+do_goto(basic_type* rv)
 {
-  accept(T_KEYWORD_GOTO);
+  accept(t_keyword_goto);
   
   if (sym != T_NUMBER) {
     error("Number expected");
-    return;
+    return 0;
   }
 
   int line_number = (int) tokenizer_get_number();
@@ -775,21 +835,25 @@ do_goto(void)
   char* line = lines_get_contents(line_number);
   if (line == NULL) {
     error("Line not found.");
-    return;
+    return 0;
   }
 
   set_line( line_number );
+
+  return 0;
 }
 
-  static void
-do_gosub(void)
+//  static void
+//do_gosub(void)
+static int
+do_gosub(basic_type* rv)
 {
   // printf("do_gosub\n");
-  accept(T_KEYWORD_GOSUB);
+  accept(t_keyword_gosub);
   
   if (sym != T_NUMBER) {
     error("Number expected");
-    return;
+    return 0;
   }
   int line_number = (int) tokenizer_get_number();
   // printf("line number: %d\n", line_number);
@@ -799,7 +863,7 @@ do_gosub(void)
   if ( __stack_p < sizeof(stack_frame_gosub) )
   {
     error("Stack too small.");
-    return;
+    return 0;
   }
 
   __stack_p -= sizeof(stack_frame_gosub);
@@ -810,13 +874,17 @@ do_gosub(void)
   g->cursor = tokenizer_char_pointer(NULL); 
 
   set_line( line_number );
+
+  return 0;
 }
 
-  static void
-do_return(void)
+//  static void
+//do_return(void)
+static int
+do_return(basic_type* rv)
 {
   // printf("do_return");
-  accept(T_KEYWORD_RETURN);
+  accept(t_keyword_return);
 
   stack_frame_gosub *g;
   g = (stack_frame_gosub*) &(__stack[__stack_p]);
@@ -824,25 +892,29 @@ do_return(void)
   if ( g->type != stack_frame_type_gosub )
   {
     error("Uncorrect stack frame, expected gosub");
-    return;
+    return 0;
   }
 
   __line = g->line;
   tokenizer_char_pointer( g->cursor );
 
   __stack_p += sizeof(stack_frame_gosub);
+
+  return 0;
 }
 
-  static void
-do_for(void)
+//  static void
+//do_for(void)
+static int
+do_for(basic_type* rv)
 {
   // printf("do_for\n");
 
-  accept(T_KEYWORD_FOR);
+  accept(t_keyword_for);
 
   if ( sym != T_VARIABLE_NUMBER ) {
     error("Variable expected");
-    return;
+    return 0;
   }
 
   char *name = tokenizer_get_variable_name();
@@ -851,14 +923,14 @@ do_for(void)
   float value = numeric_expression();
   variable_set_numeric(name, value);
 
-  expect(T_KEYWORD_TO);
+  expect(t_keyword_to);
   
   float end_value = numeric_expression();
 
   float step = 1.0;
   if (sym != T_EOF && sym != T_COLON)
   {
-    expect(T_KEYWORD_STEP);
+    expect(t_keyword_step);
     step = numeric_expression();
   }  
 
@@ -866,7 +938,7 @@ do_for(void)
   if ( __stack_p <  sizeof(stack_frame_for) )
   {
     error("Stack too small.");
-    return;
+    return 0;
   }  
 
   __stack_p -= sizeof(stack_frame_for);
@@ -878,13 +950,17 @@ do_for(void)
   f->step = step;
   f->line = __line;
   f->cursor = tokenizer_char_pointer(NULL); 
+
+  return 0;
 }
 
-  static void
-do_next(void)
+//  static void
+//do_next(void)
+static int
+do_next(basic_type* rv)
 {
   // printf("do_next\n");
-  accept(T_KEYWORD_NEXT);
+  accept(t_keyword_next);
 
   stack_frame_for *f;
   f = (stack_frame_for*) &(__stack[__stack_p]);
@@ -892,7 +968,7 @@ do_next(void)
   if ( f->type != stack_frame_type_for )
   {
     error("Uncorrect stack frame, expected for");
-    return;
+    return 0;
   }
 
   if (sym == T_VARIABLE_NUMBER)
@@ -902,7 +978,7 @@ do_next(void)
     if ( strcmp(var_name, f->variable_name) != 0 )
     {
       error("Expected for with other var");
-      return;
+      return 0;
     }
   }
 
@@ -911,7 +987,7 @@ do_next(void)
   {
       // printf("for done\n");
       __stack_p += sizeof(stack_frame_for);
-      return;
+      return 0;
   }
 
   // printf("n: %s\n", f->variable_name);
@@ -919,13 +995,24 @@ do_next(void)
 
   __line = f->line;
   tokenizer_char_pointer( f->cursor );
+
+  return 0;
+}
+
+static int
+do_end(basic_type* rv)
+{
+  __RUNNING = false;
+  return 0;
 }
 
 static void parse_line(void);
 static void statement(void);
 
-static void
-do_run(void)
+//static void
+//do_run(void)
+static int
+do_run(basic_type* rv)
 {
   __line = lines_first();
   __cursor = lines_get_contents(__line);
@@ -947,7 +1034,9 @@ do_run(void)
     parse_line();
   }
  
-  ready();  
+  ready(); 
+
+  return 0; 
 }
 
 typedef enum {
@@ -1059,8 +1148,10 @@ condition(expression_result *left_er, expression_result *right_er, relop op)
   }
 }
 
-static void
-do_if(void)
+//static void
+//do_if(void)
+static int
+do_if(basic_type* rv)
 {
   expression_result left_side, right_side;
 
@@ -1073,9 +1164,9 @@ do_if(void)
   // get_sym();
   expression(&right_side);
 
-  if (sym != T_KEYWORD_THEN) {
+  if (sym != t_keyword_then) {
     error("IF without THEN.");
-    return;
+    return 0;
   } 
 
   if (condition(&left_side, &right_side, op)) {
@@ -1083,14 +1174,17 @@ do_if(void)
     statement();
   }
 
+  return 0;
 }
 
-static void
-do_let(void)
+//static void
+//do_let(void)
+static int
+do_let(basic_type* rv)
 {
   if (sym != T_VARIABLE_NUMBER && sym != T_VARIABLE_STRING) {
     error("Expected a variable");
-    return;
+    return 0;
   }
 
   if (sym == T_VARIABLE_NUMBER) {
@@ -1111,6 +1205,7 @@ do_let(void)
     variable_set_string(name, value);
   }
 
+  return 0;
 }
 
 static void
@@ -1127,43 +1222,58 @@ statement(void)
   // puts("statement");
   // printf("\tdiag: symbol: %ld\n", sym);
   switch(sym) {
-    case T_KEYWORD_LIST:
-      do_list();
-      break;
-    case T_KEYWORD_PRINT:
-      do_print();
-      break;
-    case T_KEYWORD_GOTO:
-      do_goto();
-      break;
-    case T_KEYWORD_GOSUB:
-      do_gosub();
-      break;
-    case T_KEYWORD_RETURN:
-      do_return();
-      break;
-    case T_KEYWORD_RUN:
-      do_run();
-      break;
-    case T_KEYWORD_IF:
-      do_if();
-      break;
-    case T_KEYWORD_FOR:
-      do_for();
-      break;
-    case T_KEYWORD_NEXT:
-      do_next();
-      break;
-    case T_KEYWORD_END:
-      __RUNNING = false;
-      break;
+    //case T_KEYWORD_LIST:
+    //  do_list();
+    //  break;
+    // case T_KEYWORD_PRINT:
+    //  do_print(NULL);
+    //  break;
+    // case T_KEYWORD_GOTO:
+    //  do_goto();
+    //  break;
+    //case T_KEYWORD_GOSUB:
+    //  do_gosub();
+    //  break;
+    // case T_KEYWORD_RETURN:
+    //  do_return();
+    //  break;
+    //case T_KEYWORD_RUN:
+    //  do_run();
+    //  break;
+    //case T_KEYWORD_IF:
+    //  do_if();
+    //  break;
+    //case T_KEYWORD_FOR:
+    //  do_for();
+    //  break;
+    // case T_KEYWORD_NEXT:
+    //  do_next();
+    //  break;
+    //case T_KEYWORD_END:
+    //  __RUNNING = false;
+    //  break;
     case T_ERROR:
       error("Oh no... T_ERROR");
       break;
-    case T_KEYWORD_LET:
-      get_sym();
+    // case T_KEYWORD_LET:
+    //  get_sym();
     default:
-      do_let();
+//      if (sym == t_keyword_print)
+//      {
+//        do_print(NULL);
+//      }
+      {
+        basic_function* bf = find_basic_function_by_type(sym, basic_function_type_keyword);
+        if ( bf != NULL )
+        {
+          basic_type rv;
+          basic_dispatch_function( bf, &rv);
+        }
+        else
+        {
+          do_let(NULL);
+        }
+      }
       break;
   }
   /*
@@ -1172,6 +1282,7 @@ statement(void)
   func();
   */
 }
+
 
 void basic_init(char* memory, size_t memory_size, size_t stack_size)
 {
@@ -1204,28 +1315,42 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   tokenizer_register_token( &_T_FUNC_NOT );
   tokenizer_register_token( &_T_OP_OR );
   tokenizer_register_token( &_T_OP_AND );
-  tokenizer_register_token( &_T_KEYWORD_PRINT );
-  tokenizer_register_token( &_T_KEYWORD_GOTO );
-  tokenizer_register_token( &_T_KEYWORD_IF );
-  tokenizer_register_token( &_T_KEYWORD_THEN );
-  tokenizer_register_token( &_T_KEYWORD_LET );
-  tokenizer_register_token( &_T_KEYWORD_INPUT );
-  tokenizer_register_token( &_T_KEYWORD_GOSUB );
-  tokenizer_register_token( &_T_KEYWORD_RETURN );
-  tokenizer_register_token( &_T_KEYWORD_FOR );
-  tokenizer_register_token( &_T_KEYWORD_TO );
-  tokenizer_register_token( &_T_KEYWORD_STEP );
-  tokenizer_register_token( &_T_KEYWORD_NEXT );
-  tokenizer_register_token( &_T_KEYWORD_CLEAR );
-  tokenizer_register_token( &_T_KEYWORD_LIST );
-  tokenizer_register_token( &_T_KEYWORD_RUN );
-  tokenizer_register_token( &_T_KEYWORD_END );
+  // tokenizer_register_token( &_T_KEYWORD_PRINT );
+  // tokenizer_register_token( &_T_KEYWORD_GOTO );
+  // tokenizer_register_token( &_T_KEYWORD_IF );
+  // tokenizer_register_token( &_T_KEYWORD_THEN );
+  // tokenizer_register_token( &_T_KEYWORD_LET );
+  // tokenizer_register_token( &_T_KEYWORD_INPUT );
+  // tokenizer_register_token( &_T_KEYWORD_GOSUB );
+  // tokenizer_register_token( &_T_KEYWORD_RETURN );
+  // tokenizer_register_token( &_T_KEYWORD_FOR );
+  // tokenizer_register_token( &_T_KEYWORD_TO );
+  // tokenizer_register_token( &_T_KEYWORD_STEP );
+  // tokenizer_register_token( &_T_KEYWORD_NEXT );
+  // tokenizer_register_token( &_T_KEYWORD_CLEAR );
+  // tokenizer_register_token( &_T_KEYWORD_LIST );
+  // tokenizer_register_token( &_T_KEYWORD_RUN );
+  // tokenizer_register_token( &_T_KEYWORD_END );
   tokenizer_register_token( &_T_STRING_FUNC_CHR );
   tokenizer_register_token( &_T_STRING_FUNC_MID$ );
   
   // tokenizer_register_token( &_T_STRING_FUNC_LEN );
   register_function_1(basic_function_type_numeric, "LEN", str_len, kind_string);
-  
+  t_keyword_print = register_function_0(basic_function_type_keyword, "PRINT", do_print);
+  t_keyword_list = register_function_0(basic_function_type_keyword, "LIST", do_list);
+  t_keyword_goto = register_function_0(basic_function_type_keyword, "GOTO", do_goto);
+  t_keyword_gosub = register_function_0(basic_function_type_keyword, "GOSUB", do_gosub); 
+  t_keyword_return = register_function_0(basic_function_type_keyword, "RETURN", do_return);
+  t_keyword_run = register_function_0(basic_function_type_keyword, "RUN", do_run);
+  t_keyword_if = register_function_0(basic_function_type_keyword, "IF", do_if);
+  t_keyword_then = register_token("THEN", "THEN");
+  t_keyword_for = register_function_0(basic_function_type_keyword, "FOR", do_for);
+  t_keyword_to = register_token("TO", "TO");
+  t_keyword_step = register_token("STEP", "STEP");
+  t_keyword_next = register_function_0(basic_function_type_keyword, "NEXT", do_next);
+  t_keyword_end = register_function_0(basic_function_type_keyword, "END", do_end);
+  t_keyword_let = register_function_0(basic_function_type_keyword, "LET", do_let);
+ 
   lines_init(__memory, __program_size);
   variables_init();
 }
@@ -1299,7 +1424,7 @@ register_token(char* name , char* keyword)
   return token.token;
 }
 
-void
+token
 register_function_0(basic_function_type type, char* keyword, function_0 function)
 {
   token t = register_token(keyword, keyword);
@@ -1311,9 +1436,11 @@ register_function_0(basic_function_type type, char* keyword, function_0 function
   };
 
   array_push(basic_functions, &bf);
+
+  return t;
 }
 
-void
+token
 register_function_1(basic_function_type type, char* keyword, function_1 function, kind v1)
 {
   token t = register_token(keyword, keyword);
@@ -1326,9 +1453,11 @@ register_function_1(basic_function_type type, char* keyword, function_1 function
   };
 
   array_push(basic_functions, &bf);
+
+  return t;
 }
 
-void
+token
 register_function_2(basic_function_type type, char* keyword, function_2 function, kind v1, kind v2)
 {
   token t = register_token(keyword, keyword);
@@ -1342,9 +1471,11 @@ register_function_2(basic_function_type type, char* keyword, function_2 function
   };
 
   array_push(basic_functions, &bf);
+
+  return t;
 }
 
-void
+token
 register_function_3(basic_function_type type, char* keyword, function_3 function, kind v1, kind v2, kind v3)
 {
   token t = register_token(keyword, keyword);
@@ -1359,9 +1490,11 @@ register_function_3(basic_function_type type, char* keyword, function_3 function
   };
 
   array_push(basic_functions, &bf);
+
+  return t;
 }
 
-void
+token
 register_function_4(basic_function_type type, char* keyword, function_4 function, kind v1, kind v2, kind v3, kind v4)
 {
   token t = register_token(keyword, keyword);
@@ -1377,9 +1510,11 @@ register_function_4(basic_function_type type, char* keyword, function_4 function
   };
 
   array_push(basic_functions, &bf);
+
+  return t;
 }
 
-void
+token
 register_function_5(basic_function_type type, char* keyword, function_5 function, kind v1, kind v2, kind v3, kind v4, kind v5)
 {
   token t = register_token(keyword, keyword);
@@ -1396,27 +1531,45 @@ register_function_5(basic_function_type type, char* keyword, function_5 function
   };
 
   array_push(basic_functions, &bf);
+
+  return t;
 }
 
-static bool
-is_basic_function_token(token sym)
-{
-  return sym >= TOKEN_TYPE_END + 1000;
-}
+//static bool
+//is_basic_function_token(token sym)
+//{
+//  return sym >= TOKEN_TYPE_END + 1000;
+//}
+//
+//static basic_function*
+//get_basic_function(token sym)
+//{
+//  for(size_t i=0; i<array_size(basic_functions); i++)
+//  {
+//    basic_function* bf = (basic_function*) array_get(basic_functions, i);
+//    if (bf->token == sym)
+//    {
+//      return bf;
+//    }
+//  }
+//  return NULL;
+//}
 
 static basic_function*
-get_basic_function(token sym)
+find_basic_function_by_type(token sym, basic_function_type type)
 {
   for(size_t i=0; i<array_size(basic_functions); i++)
   {
     basic_function* bf = (basic_function*) array_get(basic_functions, i);
-    if (bf->token == sym)
+    if (bf->type == type && bf->token == sym)
     {
       return bf;
     }
   }
   return NULL;
 }
+
+
 
   static void
 get_parameter(kind k, basic_type* v)
@@ -1449,8 +1602,11 @@ basic_dispatch_function(basic_function* function, basic_type* rv)
   {
     case 0:
       accept(sym);
-      expect(T_LEFT_BANANA);
-      expect(T_RIGHT_BANANA);
+      if (function->type != basic_function_type_keyword)
+      {
+        expect(T_LEFT_BANANA);
+        expect(T_RIGHT_BANANA);
+      }
       function->function.function_0(rv);
       break; 
     case 1:
