@@ -79,7 +79,7 @@ v Registry for tokens
         ^ keyword
                 ^ just a token without a function -> but we need to regsiter
                       ^ same for step
-      . IF
+      v IF
   v Intercept on 3 places in parser: statememt (void), expression (numeric via factor, term) and string expression (string)
 . expect is bad with implicit get_sym...better to that more clearly (what do these functions do? what size effects do they have?)
     Just better understand and use consistently

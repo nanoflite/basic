@@ -332,6 +332,7 @@ static void
 get_sym(void)
 {
   sym = tokenizer_get_next_token();
+  printf("token: %ld\n", sym);
   // printf("token: %s\n", tokenizer_token_name( sym ) );
 }
 
@@ -349,17 +350,17 @@ static char* string_expression(void);
 void
 expression(expression_result *result)
 {
-  // printf("expression\n");
+  printf("expression\n");
   char *string = string_expression();
   if ( NULL != string )
   {
-    // printf("string");
+    printf("string");
     result->type = expression_type_string;
     result->value.string = string;
   }
   else
   {
-    // printf("numeric");
+    printf("numeric");
     result->type = expression_type_numeric;
     result->value.numeric = numeric_expression();
   }
@@ -377,7 +378,7 @@ error(const char *error_msg)
 
   last_error = error_msg;
 
-  printf("--- ERROR: %s\n", error_msg);
+  printf("--- ERROR: %d %s\n", __line, error_msg);
 
   size = backtrace (array, 10);
   strings = backtrace_symbols (array, size);
@@ -536,7 +537,7 @@ get_function(token sym)
 static float
 factor(void)
 {
-  // printf("factor: %ld\n", sym);
+  printf("factor: %ld\n", sym);
   float number;
   basic_function* bf;
   if (is_function_token(sym)) {
@@ -564,6 +565,7 @@ factor(void)
 //        }
 //      }
   } else if ( (bf = find_basic_function_by_type(sym, basic_function_type_numeric)) != NULL ) {
+    printf("basic function\n");
     basic_type rv;
     basic_dispatch_function( bf, &rv);
     if (rv.kind != kind_numeric)
@@ -572,16 +574,16 @@ factor(void)
     }
     number = rv.value.number;
   } else if (sym == T_NUMBER) {
-    // printf("number\n");
+    printf("number\n");
     number = tokenizer_get_number();
     accept(T_NUMBER);
   } else if (sym == T_VARIABLE_NUMBER) {
-    // printf("variable number\n");
+    printf("variable number\n");
     // printf("NUMBER VAR\n");
     char* var_name = tokenizer_get_variable_name();
     // printf("Var NAME: '%s'\n", var_name);
     number = variable_get_numeric(var_name);
-    // printf("number: %f\n", number);
+    printf("number: %f\n", number);
     accept(T_VARIABLE_NUMBER);
   } else if (accept(T_LEFT_BANANA)) {
     number = numeric_expression();
@@ -1081,6 +1083,9 @@ get_relop(void)
 static bool
 numeric_condition(float left, float right, relop op)
 {
+
+  printf("numeric condition %f, %f, %d\n", left, right, op);
+
   switch(op) {
     case OP_NOP:
       error("No valid relation operator found");
@@ -1105,7 +1110,7 @@ string_condition(char *left, char *right, relop op)
 {
   int comparison = strcmp(left, right);
 
-  // printf("String condition('%s','%s'): %d\n", left, right, comparison);
+  printf("String condition('%s','%s'): %d\n", left, right, comparison);
 
   switch(op) {
     case OP_NOP:
@@ -1148,14 +1153,25 @@ condition(expression_result *left_er, expression_result *right_er, relop op)
   }
 }
 
+static void
+move_to_next_statement(void)
+{
+  while (sym != T_EOF && sym != T_COLON) {
+    get_sym();
+  }
+}
+
 //static void
 //do_if(void)
 static int
 do_if(basic_type* rv)
 {
+  printf("do if\n");
+  // accept(t_keyword_if);
+
   expression_result left_side, right_side;
 
-  get_sym();
+  // get_sym();
 
   // float left_side = numeric_expression();
   expression(&left_side);
@@ -1164,14 +1180,23 @@ do_if(basic_type* rv)
   // get_sym();
   expression(&right_side);
 
+  printf("left: %f, op: %d, right: %f\n", left_side.value.numeric, op, right_side.value.numeric);
+
   if (sym != t_keyword_then) {
     error("IF without THEN.");
     return 0;
   } 
+  
+  printf("check condition\n");
 
   if (condition(&left_side, &right_side, op)) {
+    printf("condition reached");
     get_sym();
     statement();
+  } else {
+    printf("condition not reached");
+    // move to next line or statement
+    move_to_next_statement();
   }
 
   return 0;
@@ -1417,7 +1442,7 @@ register_token(char* name , char* keyword)
   token.name = name;
   token.keyword = keyword;
 
-  // printf("token '%s' = %ld\n", keyword, token.token);
+  printf("token '%s' = %ld\n", keyword, token.token);
 
   tokenizer_register_token(&token);
 
