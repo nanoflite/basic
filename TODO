@@ -32,12 +32,13 @@ v PRINT Also needs to find out expression | string_expression (expression can be
 v Rework the line saving
 v GOSUB / RETURN
 v FOR / NEXT / STEP
-. INPUT
+. INPUT / GET (inchar, outchar)
 . DIM
 . DATA / READ
 . CLEAR
 . END
 . REM
+. A% (Integer variable support)
 . Try some basic programs
 . prep site and docs
 . release
@@ -75,12 +76,18 @@ v Registry for tokens
   v basic dispatch for functions with 0 to 5 parameters
   v generic array.c / array.h to store tokens (register tokens) and basic functions
   . register basic functions
+      v keywords
+      v op
+      . functions
+      . string functions
       v FOR A=1 TO 10 STEP 2
         ^ keyword
                 ^ just a token without a function -> but we need to regsiter
                       ^ same for step
       v IF
   v Intercept on 3 places in parser: statememt (void), expression (numeric via factor, term) and string expression (string)
+. IF 1=1 AND 2=2 THEN PRINT "OK"
+  ^ Does not work, gives false, why?
 . expect is bad with implicit get_sym...better to that more clearly (what do these functions do? what size effects do they have?)
     Just better understand and use consistently
 . move internal functions and commands to registry format
