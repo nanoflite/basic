@@ -17,7 +17,7 @@
 
   statement =
     PRINT expression-list [ ; ]
-    | IF expression relation-operator expression THEN statement
+    | IF relation-expression THEN statement
     | GOTO expression
     | INPUT variable-list
     | LET variable = expression
@@ -45,6 +45,10 @@
     | number
     | "(" expression ")"
     | variable
+    | relation-expression
+
+  relation-expression =
+    expression relation-operator expression
 
   func =
     ABS
@@ -551,7 +555,7 @@ get_function(token sym)
 static float
 factor(void)
 {
-  // printf("factor: %ld\n", sym);
+  // printf("  factor: %ld\n", sym);
 
   float number;
   basic_function* bf;
@@ -588,8 +592,16 @@ factor(void)
     number = numeric_expression();
     expect(T_RIGHT_BANANA);
   } else {
+    // printf("sym: %ld\n", sym);
     error("Factor: syntax error");
     get_sym();
+  }
+
+  relop op = get_relop();
+  if (op != OP_NOP)
+  {
+    float right_number = factor();    
+    number = numeric_condition(number, right_number, op);
   }
 
   return number; 
@@ -602,17 +614,18 @@ term(void)
   // printf("term\n");
 
   float f1 = factor();
-  while (sym == T_MULTIPLY || sym == T_DIVIDE || sym == t_op_and|| sym == T_EQUALS || sym == T_LESS || sym == T_GREATER ) {
+  // while (sym == T_MULTIPLY || sym == T_DIVIDE || sym == t_op_and || sym == T_EQUALS || sym == T_LESS || sym == T_GREATER ) {
+  while (sym == T_MULTIPLY || sym == T_DIVIDE || sym == t_op_and ) {
     token operator = sym;
-    relop op;
-    if ( sym == T_EQUALS || sym == T_LESS || sym == T_GREATER )
-    {
-      op = get_relop();
-    }
-    else
-    {
+    //relop op;
+    //if ( sym == T_EQUALS || sym == T_LESS || sym == T_GREATER )
+    //{
+    //  op = get_relop();
+    //}
+    //else
+    //{
       get_sym();
-    }
+    //}
     float f2 = factor();
     switch(operator) {
       case T_MULTIPLY:
@@ -621,13 +634,13 @@ term(void)
       case T_DIVIDE:
         f1 = f1 / f2;
         break;
-      case T_EQUALS:
-      case T_LESS:
-      case T_GREATER:
-      {
-        f1 = numeric_condition(f1, f2, op);
-        break;
-      }
+      //case T_EQUALS:
+      //case T_LESS:
+      //case T_GREATER:
+      //{
+      //  f1 = numeric_condition(f1, f2, op);
+      //  break;
+      //}
       default:
         if (operator == t_op_and)
         {
@@ -635,7 +648,7 @@ term(void)
         }
         else
         {
-          error("term: oops");    
+        error("term: oops");    
         }
     }
   }
@@ -653,21 +666,24 @@ numeric_expression(void)
     operator = sym;
     get_sym();
   }
+  // printf("get term 1\n");
   float t1 = term();
   if (operator == T_MINUS) {
     t1 = -1 * t1;
   }
-  while ( sym == T_PLUS || sym == T_MINUS || sym == t_op_or || sym == T_EQUALS || sym == T_LESS || sym == T_GREATER ) {
+  //while ( sym == T_PLUS || sym == T_MINUS || sym == t_op_or || sym == T_EQUALS || sym == T_LESS || sym == T_GREATER ) {
+  while ( sym == T_PLUS || sym == T_MINUS || sym == t_op_or ) {
     operator = sym;
-    relop op;
-    if ( sym == T_EQUALS || sym == T_LESS || sym == T_GREATER )
-    {
-      op = get_relop();
-    }
-    else
-    {
+    //relop op;
+    //if ( sym == T_EQUALS || sym == T_LESS || sym == T_GREATER )
+    //{
+    //  op = get_relop();
+    //}
+    //else
+    //{
       get_sym();
-    }
+    //}
+    // printf("get term 2\n");
     float t2 = term();
     switch(operator) {
       case T_PLUS:
@@ -676,13 +692,13 @@ numeric_expression(void)
       case T_MINUS:
         t1 = t1 - t2;
         break;
-      case T_EQUALS:
-      case T_LESS:
-      case T_GREATER:
-      {
-        t1 = numeric_condition( t1, t2, op );
-        break;
-      }
+      //case T_EQUALS:
+      //case T_LESS:
+      //case T_GREATER:
+      //{
+      //  t1 = numeric_condition( t1, t2, op );
+      //  break;
+      //}
       default:
         if ( operator == t_op_or )
         {
@@ -690,7 +706,7 @@ numeric_expression(void)
         }
         else
         {
-          error("expression: oops");
+        error("expression: oops");
         }
     }
   }

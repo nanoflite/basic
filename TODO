@@ -86,8 +86,9 @@ v Registry for tokens
                       ^ same for step
       v IF
   v Intercept on 3 places in parser: statememt (void), expression (numeric via factor, term) and string expression (string)
-. IF 1=1 AND 2=2 THEN PRINT "OK"
+v IF 1=1 AND 2=2 THEN PRINT "OK"
   ^ Does not work, gives false, why?
+  ! relation-expression resolution in factor() fixes this
 . expect is bad with implicit get_sym...better to that more clearly (what do these functions do? what size effects do they have?)
     Just better understand and use consistently
 . move internal functions and commands to registry format
