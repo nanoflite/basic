@@ -18,17 +18,20 @@ v Make string expressions possible
 
 
 . Add a few string functions (MID$, LEFT$, RIGHT$, LEN, SPC, TAB)
-    MID$:
+    v MID$:
       10 A$="SATURDAY MORNING"
       20 B$=MID$(A$,6,3): PRINT B$ (DAY is cut and printed out)
       30 B$=MID$(A$,1,8): PRINT B$ (same as LEFT$; SATURDAY is displayed)
       40 B$=MID$(A$,10): PRINT B$ (same as RIGHT$ or MID$(A$,10,7); MORNING is displayed)  
-      . 
+    . LEFT$
+    . RIGHT$
+    v LEN
+    . SPC
+    . TAB
 v We need string condition to compare strings in IF
 v PRINT Also needs to find out expression | string_expression (expression can be var as well, string_expression also)
     Same mechanism for both -> reusable
-. Rename parser.{c,h} to interpreter, rename functions
-. Refactor into core and use a registry to add statements and functions
+v Refactor into core and use a registry to add statements and functions
 v Rework the line saving
 v GOSUB / RETURN
 v FOR / NEXT / STEP
@@ -39,6 +42,7 @@ v FOR / NEXT / STEP
 . END
 . REM
 . A% (Integer variable support)
+. Rename parser.{c,h} to interpreter, rename functions
 . Try some basic programs
 . prep site and docs
 . release
@@ -71,15 +75,15 @@ v Refactor the folowing in the code into 1 function:
     tokenizer_char_pointer( cursor );
 v Registry for tokens
 
-. Registry for functions and statements (comamnds) (expandability)
+v Registry for functions and statements (comamnds) (expandability)
   v POC basic dispatch
   v basic dispatch for functions with 0 to 5 parameters
   v generic array.c / array.h to store tokens (register tokens) and basic functions
-  . register basic functions
+  v register basic functions
       v keywords
       v op
-      . functions
-      . string functions
+      v functions
+      v string functions
       v FOR A=1 TO 10 STEP 2
         ^ keyword
                 ^ just a token without a function -> but we need to regsiter
@@ -89,9 +93,10 @@ v Registry for tokens
 v IF 1=1 AND 2=2 THEN PRINT "OK"
   ^ Does not work, gives false, why?
   ! relation-expression resolution in factor() fixes this
-. expect is bad with implicit get_sym...better to that more clearly (what do these functions do? what size effects do they have?)
+v expect is bad with implicit get_sym...better to that more clearly (what do these functions do? what size effects do they have?)
     Just better understand and use consistently
-. move internal functions and commands to registry format
+v move internal functions and commands to registry format
 . add functions and statements (as per above list)
+. clean up dead code and commented out code
 . remove all glib usage (if any) and port to avr-gcc 
 

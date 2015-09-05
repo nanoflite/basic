@@ -167,7 +167,7 @@ static token t_keyword_next;
 static token t_op_or;
 static token t_op_and;
 
-typedef enum {
+//typedef enum {
   // T_FUNC_ABS = TOKEN_TYPE_END,
   // T_FUNC_SIN,
   // T_FUNC_COS,
@@ -180,8 +180,8 @@ typedef enum {
   // T_FUNC_EXP,
   // T_FUNC_ATN,
   // T_FUNC_NOT,
-  T_STRING_FUNC_CHR,
-  T_STRING_FUNC_MID$,
+  // T_STRING_FUNC_CHR,
+  // T_STRING_FUNC_MID$,
   //T_OP_OR,
   //T_OP_AND,
   // T_KEYWORD_PRINT,
@@ -201,7 +201,7 @@ typedef enum {
   // T_KEYWORD_STEP,
   // T_KEYWORD_NEXT,
   // T_STRING_FUNC_LEN
-} token_type_basic;
+//} token_type_basic;
 
 //add_token( T_FUNC_ABS, "ABS" );
 //add_token( T_FUNC_SIN, "SIN" );
@@ -233,8 +233,8 @@ typedef enum {
 // add_token( T_KEYWORD_LIST, "LIST" );
 // add_token( T_KEYWORD_RUN, "RUN" );
 // add_token( T_KEYWORD_END, "END" );
-add_token( T_STRING_FUNC_CHR, "CHR$" );
-add_token( T_STRING_FUNC_MID$, "MID$" );
+//add_token( T_STRING_FUNC_CHR, "CHR$" );
+//add_token( T_STRING_FUNC_MID$, "MID$" );
 
 // add_token( T_STRING_FUNC_LEN, "LEN" );
 
@@ -553,6 +553,29 @@ _and(float a, float b)
   return (float) ( (int) a & (int) b );
 }
 
+static int
+str_chr(basic_type* n, basic_type* rv)
+{
+  rv->kind = kind_string;
+  char *chr;
+  asprintf(&chr, "%c", (int) n->value.number);
+  rv->value.string = chr;
+  return 0;
+}
+
+static int
+str_mid(basic_type* str, basic_type* start, basic_type* length, basic_type* rv)
+{
+  rv->kind = kind_string;
+  int _start = (int) start->value.number;
+  int _length = (int) length->value.number;
+  char* source = str->value.string;
+  char* string = strdup(&source[_start]);
+  string[_length] = '\0'; 
+  rv->value.string = string;
+  return 0;
+}
+
 //token_to_function token_to_functions[] = 
 //{
 //  { T_FUNC_ABS, _abs },
@@ -810,23 +833,23 @@ do_list(basic_type* rv)
   return 0;
 }
 
-static char
-chr(void)
-{
-  get_sym();
-
-  int i =  (int) numeric_expression();
-
-  if ( i == 205 ) {
-    return '/';
-  }
-
-  if ( i == 206 ) {
-    return '\\';
-  }
-
-  return i;
-}
+//static char
+//chr(void)
+//{
+//  get_sym();
+//
+//  int i =  (int) numeric_expression();
+//
+//  if ( i == 205 ) {
+//    return '/';
+//  }
+//
+//  if ( i == 206 ) {
+//    return '\\';
+//  }
+//
+//  return i;
+//}
 
 static char*
 string_expression(void)
@@ -844,9 +867,9 @@ string_expression(void)
       accept(T_STRING);
       break;
 
-    case T_STRING_FUNC_CHR:
-      printf("%c", chr());
-      break;
+    //case T_STRING_FUNC_CHR:
+    //  printf("%c", chr());
+    //  break;
 
     case T_VARIABLE_STRING:
       var_name = tokenizer_get_variable_name();
@@ -855,26 +878,26 @@ string_expression(void)
       break;
 
     // TODO: register functions -> look up functions that return strings here!
-    case T_STRING_FUNC_MID$:
-      // 0. expect a left banana
-      accept(sym);
-      expect(T_LEFT_BANANA);
-      // 1. expect a string expression as first parameter (recurse into string_expression)
-      char *source = string_expression();
-      // 2. expect a comma
-      expect(T_COMMA);
-      // 3. expect an expression as second param
-      int from = (int) numeric_expression();
-      // 4. expect a comma
-      expect(T_COMMA);
-      // 5. expect an expression as third param
-      int to = (int) numeric_expression();
-      // 6. expect a right banana
-      expect(T_RIGHT_BANANA);
+    //case T_STRING_FUNC_MID$:
+    //  // 0. expect a left banana
+    //  accept(sym);
+    //  expect(T_LEFT_BANANA);
+    //  // 1. expect a string expression as first parameter (recurse into string_expression)
+    //  char *source = string_expression();
+    //  // 2. expect a comma
+    //  expect(T_COMMA);
+    //  // 3. expect an expression as second param
+    //  int from = (int) numeric_expression();
+    //  // 4. expect a comma
+    //  expect(T_COMMA);
+    //  // 5. expect an expression as third param
+    //  int to = (int) numeric_expression();
+    //  // 6. expect a right banana
+    //  expect(T_RIGHT_BANANA);
 
-      //TODO: Better MID$ implementation... optional third parameter
-      string = strdup(&source[from]);
-      string[to] = '\0'; 
+    //  //TODO: Better MID$ implementation... optional third parameter
+    //  string = strdup(&source[from]);
+    //  string[to] = '\0'; 
     default:
       //if (is_basic_function_token(sym))
       //{
@@ -1486,8 +1509,8 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   // tokenizer_register_token( &_T_KEYWORD_LIST );
   // tokenizer_register_token( &_T_KEYWORD_RUN );
   // tokenizer_register_token( &_T_KEYWORD_END );
-  tokenizer_register_token( &_T_STRING_FUNC_CHR );
-  tokenizer_register_token( &_T_STRING_FUNC_MID$ );
+  // tokenizer_register_token( &_T_STRING_FUNC_CHR );
+  // tokenizer_register_token( &_T_STRING_FUNC_MID$ );
   // tokenizer_register_token( &_T_STRING_FUNC_LEN );
 
 
@@ -1525,7 +1548,10 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   register_function_1(basic_function_type_numeric, "ATN", f_atn, kind_numeric);
   register_function_1(basic_function_type_numeric, "NOT", f_not, kind_numeric);
 
+  // BASIC string functions
   register_function_1(basic_function_type_numeric, "LEN", str_len, kind_string);
+  register_function_1(basic_function_type_string, "CHR$", str_chr, kind_numeric);
+  register_function_3(basic_function_type_string, "MID$", str_mid, kind_string, kind_numeric, kind_numeric);
 
   lines_init(__memory, __program_size);
   variables_init();
