@@ -168,18 +168,18 @@ static token t_op_or;
 static token t_op_and;
 
 typedef enum {
-  T_FUNC_ABS = TOKEN_TYPE_END,
-  T_FUNC_SIN,
-  T_FUNC_COS,
-  T_FUNC_RND,
-  T_FUNC_INT,
-  T_FUNC_TAN,
-  T_FUNC_SQR,
-  T_FUNC_SGN,
-  T_FUNC_LOG,
-  T_FUNC_EXP,
-  T_FUNC_ATN,
-  T_FUNC_NOT,
+  // T_FUNC_ABS = TOKEN_TYPE_END,
+  // T_FUNC_SIN,
+  // T_FUNC_COS,
+  // T_FUNC_RND,
+  // T_FUNC_INT,
+  // T_FUNC_TAN,
+  // T_FUNC_SQR,
+  // T_FUNC_SGN,
+  // T_FUNC_LOG,
+  // T_FUNC_EXP,
+  // T_FUNC_ATN,
+  // T_FUNC_NOT,
   T_STRING_FUNC_CHR,
   T_STRING_FUNC_MID$,
   //T_OP_OR,
@@ -203,18 +203,18 @@ typedef enum {
   // T_STRING_FUNC_LEN
 } token_type_basic;
 
-add_token( T_FUNC_ABS, "ABS" );
-add_token( T_FUNC_SIN, "SIN" );
-add_token( T_FUNC_COS, "COS" );
-add_token( T_FUNC_RND, "RND" );
-add_token( T_FUNC_INT, "INT" );
-add_token( T_FUNC_TAN, "TAN" );
-add_token( T_FUNC_SQR, "SQR" );
-add_token( T_FUNC_SGN, "SGN" );
-add_token( T_FUNC_LOG, "LOG" );
-add_token( T_FUNC_EXP, "EXP" );
-add_token( T_FUNC_ATN, "ATN" );
-add_token( T_FUNC_NOT, "NOT" );
+//add_token( T_FUNC_ABS, "ABS" );
+//add_token( T_FUNC_SIN, "SIN" );
+//add_token( T_FUNC_COS, "COS" );
+//add_token( T_FUNC_RND, "RND" );
+//add_token( T_FUNC_INT, "INT" );
+//add_token( T_FUNC_TAN, "TAN" );
+//add_token( T_FUNC_SQR, "SQR" );
+//add_token( T_FUNC_SGN, "SGN" );
+//add_token( T_FUNC_LOG, "LOG" );
+//add_token( T_FUNC_EXP, "EXP" );
+//add_token( T_FUNC_ATN, "ATN" );
+//add_token( T_FUNC_NOT, "NOT" );
 // add_token( T_OP_OR, "OR" );
 // add_token( T_OP_AND, "AND" );
 // add_token( T_KEYWORD_PRINT, "PRINT" );
@@ -413,57 +413,132 @@ error(const char *error_msg)
   exit(1);
 }
 
-static float
-_abs(float n)
+static int
+f_abs(basic_type* n, basic_type* rv)
 {
-  return fabs(n);
+  rv->kind = kind_numeric;
+  rv->value.number = fabs(n->value.number);
+  return 0;
 }
 
-static float
-_rnd(float n)
+static int
+f_rnd(basic_type* n, basic_type* rv)
 {
-  if (n > 0) {
+  rv->kind = kind_numeric;
+  if (n->value.number > 0)
+  {
     int random = rand();
-    float randomf = (random * 1.0) / RAND_MAX;
-    return randomf; 
+    rv->value.number = (random * 1.0) / RAND_MAX;
+    return 0;
   }
 
-  if (n < 0) {
-    srand(n);
-    return _rnd(1);
+  if (n->value.number < 0)
+  {
+    srand(n->value.number);
+    int random = rand();
+    rv->value.number = (random * 1.0) / RAND_MAX;
+    return 0;
   }
 
   time_t now;
   struct tm *tm;
   now = time(NULL);    
   tm = localtime(&now);
-  float randomf = (tm->tm_sec * 1.0) / 60;
-  return randomf;
+  rv->value.number = (tm->tm_sec * 1.0) / 60;
+  return 0;
 }
 
-static float
-_int(float n)
+static int
+f_int(basic_type* n, basic_type* rv)
 {
-  int i = (int) n;  
-  return 1.0 * i;
+  rv->kind = kind_numeric;
+  int i = (int) n->value.number;  
+  rv->value.number = 1.0 * i;
+  return 0;
 }
 
-static float
-_sqr(float n)
+static int
+f_sqr(basic_type* n, basic_type* rv)
 {
-  return (float) sqrt( (double) n );
+  rv->kind = kind_numeric;
+  rv->value.number = (float) sqrt( (double) n->value.number );
+  return 0;
 }
 
-static float
-_sgn(float n)
+static int
+f_sgn(basic_type* n, basic_type* rv)
 {
-  if (n < 0) {
-    return -1.0;
-  } else if (n > 0) {
-    return 1.0;
-  } else {
-    return 0.0;
+  rv->kind = kind_numeric;
+  if (n->value.number < 0)
+  {
+    rv->value.number = -1.0;
   }
+  else
+  if (n->value.number > 0)
+  {
+    rv->value.number = 1.0;
+  }
+  else
+  {
+    rv->value.number = 0.0;
+  }
+  return 0; 
+}
+
+static int
+f_not(basic_type* n, basic_type* rv)
+{
+  rv->kind = kind_numeric;
+  rv->value.number = (float) ( ~ (int) n->value.number );
+  return 0;
+}
+
+static int
+f_sin(basic_type* n, basic_type* rv)
+{
+  rv->kind = kind_numeric;
+  rv->value.number = sinf(n->value.number);
+  return 0;
+}
+
+static int
+f_cos(basic_type* n, basic_type* rv)
+{
+  rv->kind = kind_numeric;
+  rv->value.number = cosf(n->value.number);
+  return 0;
+}
+
+static int
+f_tan(basic_type* n, basic_type* rv)
+{
+  rv->kind = kind_numeric;
+  rv->value.number = tanf(n->value.number);
+  return 0;
+}
+
+static int
+f_log(basic_type* n, basic_type* rv)
+{
+  rv->kind = kind_numeric;
+  rv->value.number = logf(n->value.number);
+  return 0;
+}
+
+static int
+f_exp(basic_type* n, basic_type* rv)
+{
+  rv->kind = kind_numeric;
+  rv->value.number = expf(n->value.number);
+  return 0;
+}
+
+static int
+f_atn(basic_type* n, basic_type* rv)
+{
+  rv->kind = kind_numeric;
+  rv->value.number = atanf(n->value.number);
+  return 0;
 }
 
 static float
@@ -478,28 +553,22 @@ _and(float a, float b)
   return (float) ( (int) a & (int) b );
 }
 
-static float
-_not(float number)
-{
-  return (float) ( ~ (int) number );
-}
-
-token_to_function token_to_functions[] = 
-{
-  { T_FUNC_ABS, _abs },
-  { T_FUNC_SIN, sinf },
-  { T_FUNC_COS, cosf },
-  { T_FUNC_RND, _rnd },
-  { T_FUNC_INT, _int },
-  { T_FUNC_TAN, tanf },
-  { T_FUNC_SQR, _sqr },
-  { T_FUNC_SGN, _sgn },
-  { T_FUNC_LOG, logf },
-  { T_FUNC_EXP, expf },
-  { T_FUNC_ATN, atanf },
-  { T_FUNC_NOT, _not },
-  { T_EOF, NULL }
-};
+//token_to_function token_to_functions[] = 
+//{
+//  { T_FUNC_ABS, _abs },
+//  { T_FUNC_SIN, sinf },
+//  { T_FUNC_COS, cosf },
+//  { T_FUNC_RND, _rnd },
+//  { T_FUNC_INT, _int },
+//  { T_FUNC_TAN, tanf },
+//  { T_FUNC_SQR, _sqr },
+//  { T_FUNC_SGN, _sgn },
+//  { T_FUNC_LOG, logf },
+//  { T_FUNC_EXP, expf },
+//  { T_FUNC_ATN, atanf },
+//  { T_FUNC_NOT, _not },
+//  { T_EOF, NULL }
+//};
 
 static bool
 accept(token t)
@@ -524,33 +593,33 @@ expect(token t)
   return false;
 }
 
-static bool
-is_function_token(token sym)
-{
-  for(size_t i=0; token_to_functions[i]._token != T_EOF;i++) {
-    if (sym == token_to_functions[i]._token) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-static function
-get_function(token sym)
-{
-  token_to_function ttf;
-  for(size_t i = 0;; i++) {
-    ttf = token_to_functions[i];
-    if (ttf._token == T_EOF) {
-      break;
-    }
-    if (ttf._token == sym) {
-      return ttf._function;
-    }
-  }   
-  return NULL;
-}
+//static bool
+//is_function_token(token sym)
+//{
+//  for(size_t i=0; token_to_functions[i]._token != T_EOF;i++) {
+//    if (sym == token_to_functions[i]._token) {
+//      return true;
+//    }
+//  }
+//
+//  return false;
+//}
+//
+//static function
+//get_function(token sym)
+//{
+//  token_to_function ttf;
+//  for(size_t i = 0;; i++) {
+//    ttf = token_to_functions[i];
+//    if (ttf._token == T_EOF) {
+//      break;
+//    }
+//    if (ttf._token == sym) {
+//      return ttf._function;
+//    }
+//  }   
+//  return NULL;
+//}
 
 static float
 factor(void)
@@ -559,15 +628,16 @@ factor(void)
 
   float number;
   basic_function* bf;
-  if (is_function_token(sym)) {
-    // printf("function token\n");
-    token function_sym = sym;
-    accept(sym);
-    expect(T_LEFT_BANANA);
-    function func = get_function(function_sym);
-    number = func(numeric_expression());
-    expect(T_RIGHT_BANANA);
-  } else if ( (bf = find_basic_function_by_type(sym, basic_function_type_numeric)) != NULL ) {
+//  if (is_function_token(sym)) {
+//    // printf("function token\n");
+//    token function_sym = sym;
+//    accept(sym);
+//    expect(T_LEFT_BANANA);
+//    function func = get_function(function_sym);
+//    number = func(numeric_expression());
+//    expect(T_RIGHT_BANANA);
+//  } else if ( (bf = find_basic_function_by_type(sym, basic_function_type_numeric)) != NULL ) {
+  if ( (bf = find_basic_function_by_type(sym, basic_function_type_numeric)) != NULL ) {
     // printf("basic function\n");
     basic_type rv;
     basic_dispatch_function( bf, &rv);
@@ -1386,18 +1456,18 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
 
   tokenizer_setup();
 
-  tokenizer_register_token( &_T_FUNC_ABS );
-  tokenizer_register_token( &_T_FUNC_SIN );
-  tokenizer_register_token( &_T_FUNC_COS );
-  tokenizer_register_token( &_T_FUNC_RND );
-  tokenizer_register_token( &_T_FUNC_INT );
-  tokenizer_register_token( &_T_FUNC_TAN );
-  tokenizer_register_token( &_T_FUNC_SQR );
-  tokenizer_register_token( &_T_FUNC_SGN );
-  tokenizer_register_token( &_T_FUNC_LOG );
-  tokenizer_register_token( &_T_FUNC_EXP );
-  tokenizer_register_token( &_T_FUNC_ATN );
-  tokenizer_register_token( &_T_FUNC_NOT );
+  // tokenizer_register_token( &_T_FUNC_ABS );
+  // tokenizer_register_token( &_T_FUNC_SIN );
+  // tokenizer_register_token( &_T_FUNC_COS );
+  // tokenizer_register_token( &_T_FUNC_RND );
+  // tokenizer_register_token( &_T_FUNC_INT );
+  // tokenizer_register_token( &_T_FUNC_TAN );
+  // tokenizer_register_token( &_T_FUNC_SQR );
+  // tokenizer_register_token( &_T_FUNC_SGN );
+  // tokenizer_register_token( &_T_FUNC_LOG );
+  // tokenizer_register_token( &_T_FUNC_EXP );
+  // tokenizer_register_token( &_T_FUNC_ATN );
+  // tokenizer_register_token( &_T_FUNC_NOT );
   // tokenizer_register_token( &_T_OP_OR );
   // tokenizer_register_token( &_T_OP_AND );
   // tokenizer_register_token( &_T_KEYWORD_PRINT );
@@ -1418,9 +1488,10 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   // tokenizer_register_token( &_T_KEYWORD_END );
   tokenizer_register_token( &_T_STRING_FUNC_CHR );
   tokenizer_register_token( &_T_STRING_FUNC_MID$ );
-  
   // tokenizer_register_token( &_T_STRING_FUNC_LEN );
-  register_function_1(basic_function_type_numeric, "LEN", str_len, kind_string);
+
+
+  // BASIC keywords
   t_keyword_print = register_function_0(basic_function_type_keyword, "PRINT", do_print);
   t_keyword_list = register_function_0(basic_function_type_keyword, "LIST", do_list);
   t_keyword_goto = register_function_0(basic_function_type_keyword, "GOTO", do_goto);
@@ -1435,9 +1506,27 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   t_keyword_next = register_function_0(basic_function_type_keyword, "NEXT", do_next);
   t_keyword_end = register_function_0(basic_function_type_keyword, "END", do_end);
   t_keyword_let = register_function_0(basic_function_type_keyword, "LET", do_let);
+
+  // LOGICAL and BINARY operators
   t_op_or = register_token("OR", "OR");
   t_op_and = register_token("AND", "AND");
  
+  // BASIC functions 
+  register_function_1(basic_function_type_numeric, "ABS", f_abs, kind_numeric);
+  register_function_1(basic_function_type_numeric, "SIN", f_sin, kind_numeric);
+  register_function_1(basic_function_type_numeric, "COS", f_cos, kind_numeric);
+  register_function_1(basic_function_type_numeric, "RND", f_rnd, kind_numeric);
+  register_function_1(basic_function_type_numeric, "INT", f_int, kind_numeric);
+  register_function_1(basic_function_type_numeric, "TAN", f_tan, kind_numeric);
+  register_function_1(basic_function_type_numeric, "SQR", f_sqr, kind_numeric);
+  register_function_1(basic_function_type_numeric, "SGN", f_sgn, kind_numeric);
+  register_function_1(basic_function_type_numeric, "LOG", f_log, kind_numeric);
+  register_function_1(basic_function_type_numeric, "EXP", f_exp, kind_numeric);
+  register_function_1(basic_function_type_numeric, "ATN", f_atn, kind_numeric);
+  register_function_1(basic_function_type_numeric, "NOT", f_not, kind_numeric);
+
+  register_function_1(basic_function_type_numeric, "LEN", str_len, kind_string);
+
   lines_init(__memory, __program_size);
   variables_init();
 }
