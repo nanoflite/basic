@@ -23,11 +23,15 @@ v Make string expressions possible
       20 B$=MID$(A$,6,3): PRINT B$ (DAY is cut and printed out)
       30 B$=MID$(A$,1,8): PRINT B$ (same as LEFT$; SATURDAY is displayed)
       40 B$=MID$(A$,10): PRINT B$ (same as RIGHT$ or MID$(A$,10,7); MORNING is displayed)  
-    . LEFT$
-    . RIGHT$
+    v LEFT$
+    v RIGHT$
     v LEN
+. Expand the PRINT function
+    . PRINT A$; MID$(...); "WAFFEL"
+    . PRINT "STOMME" SPC(10) "BOEFEL"
     . SPC
     . TAB
+    . http://www.antonis.de/qbebooks/gwbasman/
 v We need string condition to compare strings in IF
 v PRINT Also needs to find out expression | string_expression (expression can be var as well, string_expression also)
     Same mechanism for both -> reusable
@@ -43,6 +47,8 @@ v FOR / NEXT / STEP
 . REM
 . A% (Integer variable support)
 . Rename parser.{c,h} to interpreter, rename functions
+. Modular: keywords+print, numeric functions, string functions, example on expand
+. printf -> registered put char (we need that for input, get anyhow)
 . Try some basic programs
 . prep site and docs
 . release

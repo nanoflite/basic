@@ -149,6 +149,8 @@ typedef struct {
 static array* basic_tokens = NULL;
 static array* basic_functions = NULL;
 static token t_keyword_print;
+static token t_keyword_spc;
+static token t_keyword_tab;
 static token t_keyword_goto;
 static token t_keyword_if;
 static token t_keyword_then;
@@ -575,6 +577,25 @@ str_mid(basic_type* str, basic_type* start, basic_type* length, basic_type* rv)
   rv->value.string = string;
   return 0;
 }
+
+static int
+str_right(basic_type* str, basic_type* length, basic_type* rv)
+{
+  rv->kind = kind_string;
+  char* source = str->value.string;
+  rv->value.string = strdup(&source[strlen(source) - (int) length->value.number]);
+  return 0;
+}
+
+static int
+str_left(basic_type* str, basic_type* length, basic_type* rv)
+{
+  rv->kind = kind_string;
+  rv->value.string = strdup(str->value.string);
+  rv->value.string[(int) length->value.number] = '\0';
+  return 0;
+}
+
 
 //token_to_function token_to_functions[] = 
 //{
@@ -1515,7 +1536,6 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
 
 
   // BASIC keywords
-  t_keyword_print = register_function_0(basic_function_type_keyword, "PRINT", do_print);
   t_keyword_list = register_function_0(basic_function_type_keyword, "LIST", do_list);
   t_keyword_goto = register_function_0(basic_function_type_keyword, "GOTO", do_goto);
   t_keyword_gosub = register_function_0(basic_function_type_keyword, "GOSUB", do_gosub); 
@@ -1533,6 +1553,11 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   // LOGICAL and BINARY operators
   t_op_or = register_token("OR", "OR");
   t_op_and = register_token("AND", "AND");
+
+  // Output related
+  t_keyword_print = register_function_0(basic_function_type_keyword, "PRINT", do_print);
+  t_keyword_spc = register_token("SPC", "SPC");
+  t_keyword_tab = register_token("TAB", "TAB");
  
   // BASIC functions 
   register_function_1(basic_function_type_numeric, "ABS", f_abs, kind_numeric);
@@ -1552,6 +1577,8 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   register_function_1(basic_function_type_numeric, "LEN", str_len, kind_string);
   register_function_1(basic_function_type_string, "CHR$", str_chr, kind_numeric);
   register_function_3(basic_function_type_string, "MID$", str_mid, kind_string, kind_numeric, kind_numeric);
+  register_function_2(basic_function_type_string, "LEFT$", str_left, kind_string, kind_numeric);
+  register_function_2(basic_function_type_string, "RIGHT$", str_right, kind_string, kind_numeric);
 
   lines_init(__memory, __program_size);
   variables_init();
