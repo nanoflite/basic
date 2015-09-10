@@ -7,6 +7,8 @@
 #include <time.h>
 #include <execinfo.h>
 
+#include <readline/readline.h>
+
 #include "tokenizer.h"
 #include "variables.h"
 #include "lines.h"
@@ -167,6 +169,7 @@ static token t_keyword_for;
 static token t_keyword_to;
 static token t_keyword_step;
 static token t_keyword_next;
+static token t_keyword_input;
 static token t_op_or;
 static token t_op_and;
 
@@ -414,6 +417,24 @@ error(const char *error_msg)
   free (strings);
 
   exit(1);
+}
+
+  static void
+expression_print(expression_result* expr)
+{ 
+  if (expr->type == expression_type_string)
+  {
+    printf("%s", expr->value.string);
+  }
+  else
+    if (expr->type == expression_type_numeric)
+    {
+      printf("%f", expr->value.numeric);
+    }
+    else
+    {
+      error("unknown expression");
+    }
 }
 
 static int
@@ -973,20 +994,7 @@ do_print(basic_type* rv)
     {
       expression_result expr;
       expression(&expr);
-
-      if (expr.type == expression_type_string)
-      {
-        printf("%s", expr.value.string);
-      }
-      else
-        if (expr.type == expression_type_numeric)
-        {
-          printf("%f", expr.value.numeric);
-        }
-        else
-        {
-          error("unknown expression");
-        }
+      expression_print(&expr);
     }
     (sym == T_SEMICOLON) ? accept(T_SEMICOLON) : putchar('\n');
   }
@@ -1404,9 +1412,7 @@ do_if(basic_type* rv)
   return 0;
 }
 
-//static void
-//do_let(void)
-static int
+  static int
 do_let(basic_type* rv)
 {
   if (sym != T_VARIABLE_NUMBER && sym != T_VARIABLE_STRING) {
@@ -1434,6 +1440,55 @@ do_let(basic_type* rv)
 
   return 0;
 }
+
+  static int
+do_input(basic_type* rv)
+{
+  bool prompt = false;
+  expression_result expr;
+
+  if (sym != T_VARIABLE_NUMBER && sym != T_VARIABLE_STRING) {
+    expression(&expr);
+    expect(T_COMMA);
+    prompt = true;
+  }
+
+  if (sym != T_VARIABLE_NUMBER && sym != T_VARIABLE_STRING) {
+    error("Expected a variable");
+    return 0;
+  }
+
+  char* name;
+  token type = sym; 
+  if (type == T_VARIABLE_NUMBER) {
+    name = tokenizer_get_variable_name();
+    accept(T_VARIABLE_NUMBER);
+  }
+
+  if (type == T_VARIABLE_STRING) {
+    name = tokenizer_get_variable_name();
+    accept(T_VARIABLE_STRING);
+  }
+
+  if (prompt)
+  {
+    expression_print(&expr);
+  }
+  char* line = readline( prompt ? "" : "?" );
+
+  if (type == T_VARIABLE_NUMBER) {
+    char* t;
+    float value = strtof(line, &t); 
+    variable_set_numeric(name, value);
+  }
+
+  if (type == T_VARIABLE_STRING) {
+    variable_set_string(name, line);
+  }
+
+  return 0;
+}
+
 
 static void
 parse_line(void)
@@ -1577,6 +1632,7 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   t_keyword_next = register_function_0(basic_function_type_keyword, "NEXT", do_next);
   t_keyword_end = register_function_0(basic_function_type_keyword, "END", do_end);
   t_keyword_let = register_function_0(basic_function_type_keyword, "LET", do_let);
+  t_keyword_input = register_function_0(basic_function_type_keyword, "INPUT", do_input);
 
   // LOGICAL and BINARY operators
   t_op_or = register_token("OR", "OR");
