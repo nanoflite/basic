@@ -39,12 +39,13 @@ v Refactor into core and use a registry to add statements and functions
 v Rework the line saving
 v GOSUB / RETURN
 v FOR / NEXT / STEP
-. INPUT / GET (inchar, outchar)
+v INPUT 
+v GET (inchar, outchar)
 . DIM
 . DATA / READ
 . CLEAR
-. END
-. REM
+v END
+v REM
 . A% (Integer variable support)
 . Rename parser.{c,h} to interpreter, rename functions
 . Modular: keywords+print, numeric functions, string functions, example on expand
@@ -105,4 +106,4 @@ v move internal functions and commands to registry format
 . add functions and statements (as per above list)
 . clean up dead code and commented out code
 . remove all glib usage (if any) and port to avr-gcc 
-
+. string are 256 long

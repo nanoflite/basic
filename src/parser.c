@@ -13,6 +13,7 @@
 #include "variables.h"
 #include "lines.h"
 #include "array.h"
+#include "kbhit.h"
 
 /*
   line = [number] statement [ : statement ] CR
@@ -157,11 +158,8 @@ static token t_keyword_tab;
 static token t_keyword_goto;
 static token t_keyword_if;
 static token t_keyword_then;
-static token t_keyword_let;
-// static token t_keyword_input;
 static token t_keyword_gosub;
 static token t_keyword_return;
-// static token t_keyword_clear;
 static token t_keyword_list;
 static token t_keyword_run;
 static token t_keyword_end;
@@ -169,80 +167,10 @@ static token t_keyword_for;
 static token t_keyword_to;
 static token t_keyword_step;
 static token t_keyword_next;
-static token t_keyword_input;
+static token t_keyword_rem;
+// static token t_keyword_clear;
 static token t_op_or;
 static token t_op_and;
-
-//typedef enum {
-  // T_FUNC_ABS = TOKEN_TYPE_END,
-  // T_FUNC_SIN,
-  // T_FUNC_COS,
-  // T_FUNC_RND,
-  // T_FUNC_INT,
-  // T_FUNC_TAN,
-  // T_FUNC_SQR,
-  // T_FUNC_SGN,
-  // T_FUNC_LOG,
-  // T_FUNC_EXP,
-  // T_FUNC_ATN,
-  // T_FUNC_NOT,
-  // T_STRING_FUNC_CHR,
-  // T_STRING_FUNC_MID$,
-  //T_OP_OR,
-  //T_OP_AND,
-  // T_KEYWORD_PRINT,
-  // T_KEYWORD_GOTO,
-  // T_KEYWORD_IF,
-  // T_KEYWORD_THEN,
-  // T_KEYWORD_LET,
-  // T_KEYWORD_INPUT,
-  // T_KEYWORD_GOSUB,
-  // T_KEYWORD_RETURN,
-  // T_KEYWORD_CLEAR,
-  // T_KEYWORD_LIST,
-  // T_KEYWORD_RUN,
-  // T_KEYWORD_END,
-  // T_KEYWORD_FOR,
-  // T_KEYWORD_TO,
-  // T_KEYWORD_STEP,
-  // T_KEYWORD_NEXT,
-  // T_STRING_FUNC_LEN
-//} token_type_basic;
-
-//add_token( T_FUNC_ABS, "ABS" );
-//add_token( T_FUNC_SIN, "SIN" );
-//add_token( T_FUNC_COS, "COS" );
-//add_token( T_FUNC_RND, "RND" );
-//add_token( T_FUNC_INT, "INT" );
-//add_token( T_FUNC_TAN, "TAN" );
-//add_token( T_FUNC_SQR, "SQR" );
-//add_token( T_FUNC_SGN, "SGN" );
-//add_token( T_FUNC_LOG, "LOG" );
-//add_token( T_FUNC_EXP, "EXP" );
-//add_token( T_FUNC_ATN, "ATN" );
-//add_token( T_FUNC_NOT, "NOT" );
-// add_token( T_OP_OR, "OR" );
-// add_token( T_OP_AND, "AND" );
-// add_token( T_KEYWORD_PRINT, "PRINT" );
-// add_token( T_KEYWORD_GOTO, "GOTO" );
-// add_token( T_KEYWORD_IF, "IF" );
-// add_token( T_KEYWORD_THEN, "THEN" );
-// add_token( T_KEYWORD_LET, "LET" );
-// add_token( T_KEYWORD_INPUT, "INPUT" );
-// add_token( T_KEYWORD_GOSUB, "GOSUB" );
-// add_token( T_KEYWORD_RETURN, "RETURN" );
-// add_token( T_KEYWORD_FOR, "FOR" );
-// add_token( T_KEYWORD_TO, "TO" );
-// add_token( T_KEYWORD_STEP, "STEP" );
-// add_token( T_KEYWORD_NEXT, "NEXT" );
-// add_token( T_KEYWORD_CLEAR, "CLEAR" );
-// add_token( T_KEYWORD_LIST, "LIST" );
-// add_token( T_KEYWORD_RUN, "RUN" );
-// add_token( T_KEYWORD_END, "END" );
-//add_token( T_STRING_FUNC_CHR, "CHR$" );
-//add_token( T_STRING_FUNC_MID$, "MID$" );
-
-// add_token( T_STRING_FUNC_LEN, "LEN" );
 
 static uint16_t __line;
 static char* __cursor;
@@ -296,8 +224,6 @@ typedef struct
   char* cursor;
 } stack_frame_gosub;
 
-//static bool is_basic_function_token(token sym);
-//static basic_function* get_basic_function(token sym);
 static int basic_dispatch_function(basic_function* function, basic_type* rv);
 static basic_function* find_basic_function_by_type(token sym, basic_function_type type);
 
@@ -309,7 +235,9 @@ token register_function_3(basic_function_type type, char* keyword, function_3 fu
 token register_function_4(basic_function_type type, char* keyword, function_4 function, kind v1, kind v2, kind v3, kind v4);
 token register_function_5(basic_function_type type, char* keyword, function_5 function, kind v1, kind v2, kind v3, kind v4, kind v5);
 
+static char* string_term(void);
 int str_len(basic_type* str, basic_type* rv);
+int str_asc(basic_type* str, basic_type* rv);
 
 typedef enum {
   OP_NOP,
@@ -317,47 +245,19 @@ typedef enum {
   OP_LE,
   OP_EQ,
   OP_GE,
-  OP_GT
+  OP_GT,
+  OP_NE
 } relop;
 
+static bool string_condition(char *left, char *right, relop op);
 static bool numeric_condition(float left, float right, relop op);
 static relop get_relop(void);
-
-// size_t __TOKEN_I = TOKEN_TYPE_END + 1000;
-
-// #define __TOKEN_I (TOKEN_TYPE_END + 1000)
-
-/*
-#define token_id 0
-
-#define register_function_1(t, name, f, v1) \
-  add_token( token_id, name ); \
-  basic_function bf_##f = { \
-    .token = token_id, \
-    .type = basic_function_type_##t, \
-    .nr_arguments = 1, \
-    .kind_1 = kind_##v1, \
-    .function.function_1 = f \
-  }; \
-*/
-/*
-basic_function bf_len = {
-  .token = T_STRING_FUNC_LEN,
-  .type = basic_function_type_numeric,
-  .nr_arguments = 1,
-  .kind_1 = kind_string,
-  .function.function_1 = str_len
-};
-*/
-// register_function_1(numeric, "LEN", str_len, string);
 
 token sym;
 static void
 get_sym(void)
 {
   sym = tokenizer_get_next_token();
-  // printf("token: %ld\n", sym);
-  // printf("token: %s\n", tokenizer_token_name( sym ) );
 }
 
 static void
@@ -378,9 +278,19 @@ expression(expression_result *result)
   char *string = string_expression();
   if ( NULL != string )
   {
-    // printf("string");
-    result->type = expression_type_string;
-    result->value.string = string;
+    // Got string, check for relop and apply
+    relop op = get_relop();
+    if ( op == OP_NOP )
+    {
+      result->type = expression_type_string;
+      result->value.string = string;
+    }
+    else
+    {
+      char *string_right = string_expression();
+      result->type = expression_type_numeric;
+      result->value.numeric = string_condition(string, string_right, op);
+    }
   }
   else
   {
@@ -618,24 +528,6 @@ str_left(basic_type* str, basic_type* length, basic_type* rv)
   return 0;
 }
 
-
-//token_to_function token_to_functions[] = 
-//{
-//  { T_FUNC_ABS, _abs },
-//  { T_FUNC_SIN, sinf },
-//  { T_FUNC_COS, cosf },
-//  { T_FUNC_RND, _rnd },
-//  { T_FUNC_INT, _int },
-//  { T_FUNC_TAN, tanf },
-//  { T_FUNC_SQR, _sqr },
-//  { T_FUNC_SGN, _sgn },
-//  { T_FUNC_LOG, logf },
-//  { T_FUNC_EXP, expf },
-//  { T_FUNC_ATN, atanf },
-//  { T_FUNC_NOT, _not },
-//  { T_EOF, NULL }
-//};
-
 static bool
 accept(token t)
 {
@@ -659,52 +551,16 @@ expect(token t)
   return false;
 }
 
-//static bool
-//is_function_token(token sym)
-//{
-//  for(size_t i=0; token_to_functions[i]._token != T_EOF;i++) {
-//    if (sym == token_to_functions[i]._token) {
-//      return true;
-//    }
-//  }
-//
-//  return false;
-//}
-//
-//static function
-//get_function(token sym)
-//{
-//  token_to_function ttf;
-//  for(size_t i = 0;; i++) {
-//    ttf = token_to_functions[i];
-//    if (ttf._token == T_EOF) {
-//      break;
-//    }
-//    if (ttf._token == sym) {
-//      return ttf._function;
-//    }
-//  }   
-//  return NULL;
-//}
+static float factor(void);
 
 static float
-factor(void)
+numeric_factor(void)
 {
   // printf("  factor: %ld\n", sym);
 
   float number;
   basic_function* bf;
-//  if (is_function_token(sym)) {
-//    // printf("function token\n");
-//    token function_sym = sym;
-//    accept(sym);
-//    expect(T_LEFT_BANANA);
-//    function func = get_function(function_sym);
-//    number = func(numeric_expression());
-//    expect(T_RIGHT_BANANA);
-//  } else if ( (bf = find_basic_function_by_type(sym, basic_function_type_numeric)) != NULL ) {
   if ( (bf = find_basic_function_by_type(sym, basic_function_type_numeric)) != NULL ) {
-    // printf("basic function\n");
     basic_type rv;
     basic_dispatch_function( bf, &rv);
     if (rv.kind != kind_numeric)
@@ -713,22 +569,16 @@ factor(void)
     }
     number = rv.value.number;
   } else if (sym == T_NUMBER) {
-    // printf("number\n");
     number = tokenizer_get_number();
     accept(T_NUMBER);
   } else if (sym == T_VARIABLE_NUMBER) {
-    // printf("variable number\n");
-    // printf("NUMBER VAR\n");
     char* var_name = tokenizer_get_variable_name();
-    // printf("Var NAME: '%s'\n", var_name);
     number = variable_get_numeric(var_name);
-    // printf("number: %f\n", number);
     accept(T_VARIABLE_NUMBER);
   } else if (accept(T_LEFT_BANANA)) {
     number = numeric_expression();
     expect(T_RIGHT_BANANA);
   } else {
-    // printf("sym: %ld\n", sym);
     error("Factor: syntax error");
     get_sym();
   }
@@ -742,26 +592,33 @@ factor(void)
 
   return number; 
 }
+static float
+factor(void)
+{
+  if ( sym == T_STRING || sym == T_VARIABLE_STRING ) {
+    char* s1 = string_term(); 
+    relop op = get_relop();
+    if (op == OP_NOP)
+    {
+      error("Expecting a relop.");
+      return 0;
+    }
+    char* s2 = string_term();
+    return string_condition(s1, s2, op);
+  } else {
+    return numeric_factor();
+  }
+}
 
 static float
 term(void)
 {
-
   // printf("term\n");
 
   float f1 = factor();
-  // while (sym == T_MULTIPLY || sym == T_DIVIDE || sym == t_op_and || sym == T_EQUALS || sym == T_LESS || sym == T_GREATER ) {
   while (sym == T_MULTIPLY || sym == T_DIVIDE || sym == t_op_and ) {
     token operator = sym;
-    //relop op;
-    //if ( sym == T_EQUALS || sym == T_LESS || sym == T_GREATER )
-    //{
-    //  op = get_relop();
-    //}
-    //else
-    //{
-      get_sym();
-    //}
+    get_sym();
     float f2 = factor();
     switch(operator) {
       case T_MULTIPLY:
@@ -770,13 +627,6 @@ term(void)
       case T_DIVIDE:
         f1 = f1 / f2;
         break;
-      //case T_EQUALS:
-      //case T_LESS:
-      //case T_GREATER:
-      //{
-      //  f1 = numeric_condition(f1, f2, op);
-      //  break;
-      //}
       default:
         if (operator == t_op_and)
         {
@@ -794,7 +644,6 @@ term(void)
 static float
 numeric_expression(void)
 {
-
   // printf("numeric expression?\n");
 
   token operator = T_PLUS;
@@ -807,19 +656,9 @@ numeric_expression(void)
   if (operator == T_MINUS) {
     t1 = -1 * t1;
   }
-  //while ( sym == T_PLUS || sym == T_MINUS || sym == t_op_or || sym == T_EQUALS || sym == T_LESS || sym == T_GREATER ) {
   while ( sym == T_PLUS || sym == T_MINUS || sym == t_op_or ) {
     operator = sym;
-    //relop op;
-    //if ( sym == T_EQUALS || sym == T_LESS || sym == T_GREATER )
-    //{
-    //  op = get_relop();
-    //}
-    //else
-    //{
-      get_sym();
-    //}
-    // printf("get term 2\n");
+    get_sym();
     float t2 = term();
     switch(operator) {
       case T_PLUS:
@@ -828,13 +667,6 @@ numeric_expression(void)
       case T_MINUS:
         t1 = t1 - t2;
         break;
-      //case T_EQUALS:
-      //case T_LESS:
-      //case T_GREATER:
-      //{
-      //  t1 = numeric_condition( t1, t2, op );
-      //  break;
-      //}
       default:
         if ( operator == t_op_or )
         {
@@ -865,8 +697,6 @@ list_out(uint16_t number, char* contents)
   printf("%d %s\n", number, contents);
 }
 
-//static void
-//do_list(void)
 static int
 do_list(basic_type* rv)
 {
@@ -876,29 +706,9 @@ do_list(basic_type* rv)
   return 0;
 }
 
-//static char
-//chr(void)
-//{
-//  get_sym();
-//
-//  int i =  (int) numeric_expression();
-//
-//  if ( i == 205 ) {
-//    return '/';
-//  }
-//
-//  if ( i == 206 ) {
-//    return '\\';
-//  }
-//
-//  return i;
-//}
-
 static char*
-string_expression(void)
+string_term(void)
 {
-  // puts("string_expression\n");
-
   char *string = NULL;
   char *var_name;
 
@@ -906,57 +716,14 @@ string_expression(void)
   {
     case T_STRING:
       string = strdup(tokenizer_get_string());
-      // printf("Found string: '%s'\n", string);
       accept(T_STRING);
       break;
-
-    //case T_STRING_FUNC_CHR:
-    //  printf("%c", chr());
-    //  break;
-
     case T_VARIABLE_STRING:
       var_name = tokenizer_get_variable_name();
       string = variable_get_string(var_name);
       accept(T_VARIABLE_STRING);
       break;
-
-    // TODO: register functions -> look up functions that return strings here!
-    //case T_STRING_FUNC_MID$:
-    //  // 0. expect a left banana
-    //  accept(sym);
-    //  expect(T_LEFT_BANANA);
-    //  // 1. expect a string expression as first parameter (recurse into string_expression)
-    //  char *source = string_expression();
-    //  // 2. expect a comma
-    //  expect(T_COMMA);
-    //  // 3. expect an expression as second param
-    //  int from = (int) numeric_expression();
-    //  // 4. expect a comma
-    //  expect(T_COMMA);
-    //  // 5. expect an expression as third param
-    //  int to = (int) numeric_expression();
-    //  // 6. expect a right banana
-    //  expect(T_RIGHT_BANANA);
-
-    //  //TODO: Better MID$ implementation... optional third parameter
-    //  string = strdup(&source[from]);
-    //  string[to] = '\0'; 
     default:
-      //if (is_basic_function_token(sym))
-      //{
-      //  basic_function* bf = get_basic_function(sym);
-      //  if (bf->type == basic_function_type_string)
-      //  {
-      //    // printf("string_expression function\n");
-      //    basic_type rv;
-      //    basic_dispatch_function( get_basic_function(sym), &rv);
-      //    if (rv.kind != kind_string)
-      //    {
-      //      error("Expected string.");
-      //    }
-      //    string = rv.value.string;
-      //  }
-      //
       {
         basic_function* bf = find_basic_function_by_type(sym, basic_function_type_string);
         if ( bf != NULL )
@@ -975,6 +742,24 @@ string_expression(void)
 
   return string;
 }
+
+static char*
+string_expression(void)
+{
+  char* s1 = string_term();
+
+  while (sym == T_PLUS)
+  {
+    accept(T_PLUS);
+    char *s2 = string_term();
+    size_t len = strlen(s1) + strlen(s2) + 1;
+    s1 = realloc(s1, len);
+    s1 = strcat(s1, s2);
+  }
+ 
+  return s1; 
+}
+
 
   static int
 do_print(basic_type* rv)
@@ -998,6 +783,8 @@ do_print(basic_type* rv)
     }
     (sym == T_SEMICOLON) ? accept(T_SEMICOLON) : putchar('\n');
   }
+
+  fflush(stdout);
 
   return 0;
 }
@@ -1026,8 +813,6 @@ do_tab(basic_type* n, basic_type* rv)
   return 0;
 }
 
-//static void
-//do_goto(void)
 static int
 do_goto(basic_type* rv)
 {
@@ -1052,8 +837,6 @@ do_goto(basic_type* rv)
   return 0;
 }
 
-//  static void
-//do_gosub(void)
 static int
 do_gosub(basic_type* rv)
 {
@@ -1087,8 +870,6 @@ do_gosub(basic_type* rv)
   return 0;
 }
 
-//  static void
-//do_return(void)
 static int
 do_return(basic_type* rv)
 {
@@ -1112,8 +893,6 @@ do_return(basic_type* rv)
   return 0;
 }
 
-//  static void
-//do_for(void)
 static int
 do_for(basic_type* rv)
 {
@@ -1163,8 +942,6 @@ do_for(basic_type* rv)
   return 0;
 }
 
-//  static void
-//do_next(void)
 static int
 do_next(basic_type* rv)
 {
@@ -1194,12 +971,10 @@ do_next(basic_type* rv)
   float value = variable_get_numeric(f->variable_name) + f->step;
   if ( (f->step > 0 && value > f->end_value) || (f->step < 0 && value < f->end_value) )
   {
-      // printf("for done\n");
       __stack_p += sizeof(stack_frame_for);
       return 0;
   }
 
-  // printf("n: %s\n", f->variable_name);
   variable_set_numeric(f->variable_name, value); 
 
   __line = f->line;
@@ -1215,11 +990,18 @@ do_end(basic_type* rv)
   return 0;
 }
 
+static int
+do_rem(basic_type* rv)
+{
+  accept(t_keyword_rem);
+  set_line(lines_next(__line));
+  get_sym();
+  return 0;
+}
+
 static void parse_line(void);
 static void statement(void);
 
-//static void
-//do_run(void)
 static int
 do_run(basic_type* rv)
 {
@@ -1257,6 +1039,12 @@ get_relop(void)
     if (sym == T_EQUALS) {
       accept(T_EQUALS);
       return OP_LE;
+    }
+    else
+    if (sym == T_GREATER)
+    {
+      accept(T_GREATER);
+      return OP_NE;
     }
     return OP_LT;
   }
@@ -1298,6 +1086,8 @@ numeric_condition(float left, float right, relop op)
       return left >= right;
     case OP_GT:
       return left > right;  
+    case OP_NE:
+      return left != right;
   }
 
   return false;
@@ -1320,6 +1110,8 @@ string_condition(char *left, char *right, relop op)
       return comparison <= 0;
     case OP_EQ:
       return comparison == 0;
+    case OP_NE:
+      return comparison != 0;
     case OP_GE:
       return comparison >= 0;
     case OP_GT:
@@ -1359,27 +1151,18 @@ move_to_next_statement(void)
   }
 }
 
-//static void
-//do_if(void)
 static int
 do_if(basic_type* rv)
 {
-  // printf("do if\n");
-  // accept(t_keyword_if);
 
   expression_result left_side, right_side;
   bool result;
 
-  // get_sym();
-
-  // float left_side = numeric_expression();
   expression(&left_side);
 
   if ( left_side.type == expression_type_string )
   {
     relop op = get_relop();
-  // float right_side = numeric_expression();
-  // get_sym();
     expression(&right_side);
     result = condition(&left_side, &right_side, op);
   }
@@ -1388,24 +1171,26 @@ do_if(basic_type* rv)
     result = left_side.value.numeric == 1.0;
   }
 
-  //printf("left: %f, op: %d, right: %f\n", left_side.value.numeric, op, right_side.value.numeric);
-
-  // printf("sym: %ld\n", sym);
-
   if (sym != t_keyword_then) {
     error("IF without THEN.");
     return 0;
   } 
   
-  // printf("check condition\n");
-
   if (result) {
-    // printf("condition reached");
     get_sym();
-    statement();
+
+    if ( sym == T_NUMBER )
+    {
+      float line_number = tokenizer_get_number();
+      accept(T_NUMBER);
+      set_line(line_number);
+    }
+    else
+    { 
+      statement();
+    }
+
   } else {
-    // printf("condition not reached");
-    // move to next line or statement
     move_to_next_statement();
   }
 
@@ -1422,7 +1207,6 @@ do_let(basic_type* rv)
 
   if (sym == T_VARIABLE_NUMBER) {
     char *name = tokenizer_get_variable_name();
-    // printf("I got this name: %s\n", name);
     get_sym();
     expect(T_EQUALS);
     float value = numeric_expression();
@@ -1431,7 +1215,6 @@ do_let(basic_type* rv)
 
   if (sym == T_VARIABLE_STRING) {
     char *name = tokenizer_get_variable_name();
-    // printf("I got this name: %s\n", name);
     get_sym();
     expect(T_EQUALS);
     char *value = string_expression();
@@ -1489,6 +1272,31 @@ do_input(basic_type* rv)
   return 0;
 }
 
+  static int
+do_get(basic_type* rv)
+{
+  if (sym != T_VARIABLE_STRING) {
+    error("Expected a string variable");
+    return 0;
+  }
+
+  char* name = tokenizer_get_variable_name();
+  accept(T_VARIABLE_STRING);
+
+  char c[4] = "";
+  if (kbhit())
+  {
+    int ch = getchar();
+    if ( ch == 10 ) {
+      ch = 13;
+    } 
+    snprintf(c, sizeof(c), "%c", ch);
+  }
+  variable_set_string(name, c);
+
+  return 0;
+}
+
 
 static void
 parse_line(void)
@@ -1501,49 +1309,11 @@ parse_line(void)
 static void
 statement(void)
 {
-  // puts("statement");
-  // printf("\tdiag: symbol: %ld\n", sym);
   switch(sym) {
-    //case T_KEYWORD_LIST:
-    //  do_list();
-    //  break;
-    // case T_KEYWORD_PRINT:
-    //  do_print(NULL);
-    //  break;
-    // case T_KEYWORD_GOTO:
-    //  do_goto();
-    //  break;
-    //case T_KEYWORD_GOSUB:
-    //  do_gosub();
-    //  break;
-    // case T_KEYWORD_RETURN:
-    //  do_return();
-    //  break;
-    //case T_KEYWORD_RUN:
-    //  do_run();
-    //  break;
-    //case T_KEYWORD_IF:
-    //  do_if();
-    //  break;
-    //case T_KEYWORD_FOR:
-    //  do_for();
-    //  break;
-    // case T_KEYWORD_NEXT:
-    //  do_next();
-    //  break;
-    //case T_KEYWORD_END:
-    //  __RUNNING = false;
-    //  break;
     case T_ERROR:
       error("Oh no... T_ERROR");
       break;
-    // case T_KEYWORD_LET:
-    //  get_sym();
     default:
-//      if (sym == t_keyword_print)
-//      {
-//        do_print(NULL);
-//      }
       {
         basic_function* bf = find_basic_function_by_type(sym, basic_function_type_keyword);
         if ( bf != NULL )
@@ -1558,11 +1328,6 @@ statement(void)
       }
       break;
   }
-  /*
-  // TODO:
-  statement_func func = statement_get_func(sym);
-  func();
-  */
 }
 
 
@@ -1583,41 +1348,6 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
 
   tokenizer_setup();
 
-  // tokenizer_register_token( &_T_FUNC_ABS );
-  // tokenizer_register_token( &_T_FUNC_SIN );
-  // tokenizer_register_token( &_T_FUNC_COS );
-  // tokenizer_register_token( &_T_FUNC_RND );
-  // tokenizer_register_token( &_T_FUNC_INT );
-  // tokenizer_register_token( &_T_FUNC_TAN );
-  // tokenizer_register_token( &_T_FUNC_SQR );
-  // tokenizer_register_token( &_T_FUNC_SGN );
-  // tokenizer_register_token( &_T_FUNC_LOG );
-  // tokenizer_register_token( &_T_FUNC_EXP );
-  // tokenizer_register_token( &_T_FUNC_ATN );
-  // tokenizer_register_token( &_T_FUNC_NOT );
-  // tokenizer_register_token( &_T_OP_OR );
-  // tokenizer_register_token( &_T_OP_AND );
-  // tokenizer_register_token( &_T_KEYWORD_PRINT );
-  // tokenizer_register_token( &_T_KEYWORD_GOTO );
-  // tokenizer_register_token( &_T_KEYWORD_IF );
-  // tokenizer_register_token( &_T_KEYWORD_THEN );
-  // tokenizer_register_token( &_T_KEYWORD_LET );
-  // tokenizer_register_token( &_T_KEYWORD_INPUT );
-  // tokenizer_register_token( &_T_KEYWORD_GOSUB );
-  // tokenizer_register_token( &_T_KEYWORD_RETURN );
-  // tokenizer_register_token( &_T_KEYWORD_FOR );
-  // tokenizer_register_token( &_T_KEYWORD_TO );
-  // tokenizer_register_token( &_T_KEYWORD_STEP );
-  // tokenizer_register_token( &_T_KEYWORD_NEXT );
-  // tokenizer_register_token( &_T_KEYWORD_CLEAR );
-  // tokenizer_register_token( &_T_KEYWORD_LIST );
-  // tokenizer_register_token( &_T_KEYWORD_RUN );
-  // tokenizer_register_token( &_T_KEYWORD_END );
-  // tokenizer_register_token( &_T_STRING_FUNC_CHR );
-  // tokenizer_register_token( &_T_STRING_FUNC_MID$ );
-  // tokenizer_register_token( &_T_STRING_FUNC_LEN );
-
-
   // BASIC keywords
   t_keyword_list = register_function_0(basic_function_type_keyword, "LIST", do_list);
   t_keyword_goto = register_function_0(basic_function_type_keyword, "GOTO", do_goto);
@@ -1631,8 +1361,11 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   t_keyword_step = register_token("STEP", "STEP");
   t_keyword_next = register_function_0(basic_function_type_keyword, "NEXT", do_next);
   t_keyword_end = register_function_0(basic_function_type_keyword, "END", do_end);
-  t_keyword_let = register_function_0(basic_function_type_keyword, "LET", do_let);
-  t_keyword_input = register_function_0(basic_function_type_keyword, "INPUT", do_input);
+  t_keyword_rem = register_function_0(basic_function_type_keyword, "REM", do_rem);
+  
+  register_function_0(basic_function_type_keyword, "LET", do_let);
+  register_function_0(basic_function_type_keyword, "INPUT", do_input);
+  register_function_0(basic_function_type_keyword, "GET", do_get);
 
   // LOGICAL and BINARY operators
   t_op_or = register_token("OR", "OR");
@@ -1642,8 +1375,6 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   t_keyword_print = register_function_0(basic_function_type_keyword, "PRINT", do_print);
   t_keyword_spc = register_function_1(basic_function_type_print, "SPC", do_spc, kind_numeric);
   t_keyword_tab = register_function_1(basic_function_type_print, "TAB", do_tab, kind_numeric);
-  // t_keyword_spc = register_token("SPC", "SPC");
-  // t_keyword_tab = register_token("TAB", "TAB");
  
   // BASIC functions 
   register_function_1(basic_function_type_numeric, "ABS", f_abs, kind_numeric);
@@ -1665,6 +1396,7 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   register_function_3(basic_function_type_string, "MID$", str_mid, kind_string, kind_numeric, kind_numeric);
   register_function_2(basic_function_type_string, "LEFT$", str_left, kind_string, kind_numeric);
   register_function_2(basic_function_type_string, "RIGHT$", str_right, kind_string, kind_numeric);
+  register_function_1(basic_function_type_numeric, "ASC", str_asc, kind_string);
 
   lines_init(__memory, __program_size);
   variables_init();
@@ -1675,7 +1407,6 @@ basic_eval(char *line_string)
 {
   tokenizer_init( line_string );
   get_sym();
-  // printf("diag: symbol: %ld\n", sym);
   if (sym == T_NUMBER ) {
     float line_number = tokenizer_get_number();
     char* line = tokenizer_char_pointer(NULL);
@@ -1733,7 +1464,6 @@ register_token(char* name , char* keyword)
   token.keyword = keyword;
 
   // printf("token '%s' = %ld\n", keyword, token.token);
-
   tokenizer_register_token(&token);
 
   return token.token;
@@ -1850,26 +1580,6 @@ register_function_5(basic_function_type type, char* keyword, function_5 function
   return t;
 }
 
-//static bool
-//is_basic_function_token(token sym)
-//{
-//  return sym >= TOKEN_TYPE_END + 1000;
-//}
-//
-//static basic_function*
-//get_basic_function(token sym)
-//{
-//  for(size_t i=0; i<array_size(basic_functions); i++)
-//  {
-//    basic_function* bf = (basic_function*) array_get(basic_functions, i);
-//    if (bf->token == sym)
-//    {
-//      return bf;
-//    }
-//  }
-//  return NULL;
-//}
-
 static basic_function*
 find_basic_function_by_type(token sym, basic_function_type type)
 {
@@ -1884,24 +1594,19 @@ find_basic_function_by_type(token sym, basic_function_type type)
   return NULL;
 }
 
-
-
   static void
 get_parameter(kind k, basic_type* v)
 {
-
   // printf("get_parameter %d\n", k);
 
   if (k == kind_string)
   {
-    // printf("go get string\n");
     char *s = string_expression();
     v->kind = kind_string;
     v->value.string = s;
   }
   else
   {
-    // printf("go get numeric\n");
     float n = numeric_expression();
     v->kind = kind_numeric;
     v->value.number = n;
@@ -1912,7 +1617,6 @@ static int
 basic_dispatch_function(basic_function* function, basic_type* rv)
 {
   basic_type v1, v2, v3, v4, v5;
-  // printf("nr arguments: %ld\n", function->nr_arguments);
   switch (function->nr_arguments)
   {
     case 0:
@@ -1989,8 +1693,15 @@ basic_dispatch_function(basic_function* function, basic_type* rv)
 int
 str_len(basic_type* str, basic_type* rv)
 {
-  // printf("In str_len: t:%d, v:'%s'\n", str->kind, str->value.string);
   rv->kind = kind_numeric;
   rv->value.number = (int) strlen(str->value.string);
+  return 0;
+}
+
+int
+str_asc(basic_type* str, basic_type* rv)
+{
+  rv->kind = kind_numeric;
+  rv->value.number = (int) *(str->value.string);
   return 0;
 }
