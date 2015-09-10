@@ -26,12 +26,12 @@ v Make string expressions possible
     v LEFT$
     v RIGHT$
     v LEN
-. Expand the PRINT function
-    . PRINT A$; MID$(...); "WAFFEL"
-    . PRINT "STOMME" SPC(10) "BOEFEL"
-    . SPC
-    . TAB
-    . http://www.antonis.de/qbebooks/gwbasman/
+v Expand the PRINT function
+    v PRINT A$; MID$(...); "WAFFEL"
+    v PRINT "STOMME" SPC(10) "BOEFEL"
+    v SPC
+    v TAB
+    v http://www.antonis.de/qbebooks/gwbasman/
 v We need string condition to compare strings in IF
 v PRINT Also needs to find out expression | string_expression (expression can be var as well, string_expression also)
     Same mechanism for both -> reusable

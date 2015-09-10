@@ -99,7 +99,8 @@ typedef enum {
   basic_function_type_keyword,
   basic_function_type_op,
   basic_function_type_numeric,
-  basic_function_type_string
+  basic_function_type_string,
+  basic_function_type_print
 } basic_function_type;
 
 typedef enum {
@@ -954,39 +955,66 @@ string_expression(void)
   return string;
 }
 
-/*
-static void
-do_print(void)
-*/
   static int
 do_print(basic_type* rv)
 {
-  //accept(T_KEYWORD_PRINT);
+
   accept(t_keyword_print);
 
-  expression_result expr;
-  expression(&expr);
-
-  if (expr.type == expression_type_string)
+  while (sym != T_EOF && sym != T_COLON)
   {
-    printf("%s", expr.value.string);
-  }
-  else
-  if (expr.type == expression_type_numeric)
-  {
-    printf("%f", expr.value.numeric);
-  }
-  else
-  {
-    error("unknown expression");
+    basic_function* bf = find_basic_function_by_type(sym, basic_function_type_print);
+    if ( bf != NULL )
+    {
+      basic_type rv;
+      basic_dispatch_function( bf, &rv);
+    }
+    else
+    {
+      expression_result expr;
+      expression(&expr);
+
+      if (expr.type == expression_type_string)
+      {
+        printf("%s", expr.value.string);
+      }
+      else
+        if (expr.type == expression_type_numeric)
+        {
+          printf("%f", expr.value.numeric);
+        }
+        else
+        {
+          error("unknown expression");
+        }
+    }
+    (sym == T_SEMICOLON) ? accept(T_SEMICOLON) : putchar('\n');
   }
 
-  if (sym != T_SEMICOLON) {
-    printf("\n");
-  } else {
-    accept(T_SEMICOLON);
-  }
+  return 0;
+}
 
+static int
+do_spc(basic_type* n, basic_type* rv)
+{
+  for(size_t i=0; i<n->value.number;i++)
+  {
+    putchar(' ');
+  }
+  rv->kind = kind_numeric;
+  rv->value.number = 0;
+  return 0;
+}
+
+static int
+do_tab(basic_type* n, basic_type* rv)
+{
+  for(size_t i=0; i<n->value.number;i++)
+  {
+    putchar('\t');
+  }
+  rv->kind = kind_numeric;
+  rv->value.number = 0;
   return 0;
 }
 
@@ -1556,8 +1584,10 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
 
   // Output related
   t_keyword_print = register_function_0(basic_function_type_keyword, "PRINT", do_print);
-  t_keyword_spc = register_token("SPC", "SPC");
-  t_keyword_tab = register_token("TAB", "TAB");
+  t_keyword_spc = register_function_1(basic_function_type_print, "SPC", do_spc, kind_numeric);
+  t_keyword_tab = register_function_1(basic_function_type_print, "TAB", do_tab, kind_numeric);
+  // t_keyword_spc = register_token("SPC", "SPC");
+  // t_keyword_tab = register_token("TAB", "TAB");
  
   // BASIC functions 
   register_function_1(basic_function_type_numeric, "ABS", f_abs, kind_numeric);
