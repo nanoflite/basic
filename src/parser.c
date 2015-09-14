@@ -168,6 +168,7 @@ static token t_keyword_to;
 static token t_keyword_step;
 static token t_keyword_next;
 static token t_keyword_rem;
+static token t_keyword_dim;
 // static token t_keyword_clear;
 static token t_op_or;
 static token t_op_and;
@@ -999,6 +1000,67 @@ do_rem(basic_type* rv)
   return 0;
 }
 
+  static int
+do_dim(basic_type* rv)
+{
+  accept(t_keyword_dim);
+
+  printf("dim\n");
+
+  while (sym != T_EOF)
+  {
+
+    printf("while\n");
+
+    // get_sym();
+    printf(" s: %ld (%d,%d)\n", sym, T_VARIABLE_NUMBER, T_VARIABLE_STRING);
+    if ( sym == T_VARIABLE_NUMBER || sym == T_VARIABLE_STRING )
+    {
+      size_t vector[5];
+      size_t dimensions = 0;
+      char* name = tokenizer_get_variable_name();
+
+      size_t name_len = strlen(name);
+      name = realloc(name, name_len + 2);
+      strcat(name, "(");
+      printf(" n: %s\n", name);
+      accept(sym);
+      expect(T_LEFT_BANANA); 
+      while (sym != T_RIGHT_BANANA)
+      {
+        printf(" s: %ld\n", sym);
+        expect(T_NUMBER);
+        float n = tokenizer_get_number();
+        printf(" d: %f\n", n);
+        vector[dimensions] = n;
+        dimensions++;
+        if (dimensions>5)
+        {
+          error("DIM up to 5 dimensions.");
+          return -1;
+        }
+        accept(T_NUMBER);
+        if (sym == T_COMMA)
+        {
+          accept(T_COMMA);
+        }
+      }
+      expect(T_RIGHT_BANANA);
+
+      printf("DIM for %s: %ld dimension(s)\n", name, dimensions);
+      variable_array_init(name, dimensions, vector);
+    }
+
+    if (sym == T_COMMA)
+    {
+      accept(T_COMMA);
+    }
+
+  }
+
+  return 0;
+}
+
 static void parse_line(void);
 static void statement(void);
 
@@ -1362,6 +1424,7 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   t_keyword_next = register_function_0(basic_function_type_keyword, "NEXT", do_next);
   t_keyword_end = register_function_0(basic_function_type_keyword, "END", do_end);
   t_keyword_rem = register_function_0(basic_function_type_keyword, "REM", do_rem);
+  t_keyword_dim = register_function_0(basic_function_type_keyword, "DIM", do_dim);
   
   register_function_0(basic_function_type_keyword, "LET", do_let);
   register_function_0(basic_function_type_keyword, "INPUT", do_input);

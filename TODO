@@ -42,10 +42,11 @@ v FOR / NEXT / STEP
 v INPUT 
 v GET (inchar, outchar)
 . DIM
-. DATA / READ
+. DATA / READ / RESTORE
 . CLEAR
 v END
 v REM
+. Optional parameters, e.g. MID$(A$, 10), MID$(A$, 1, 6)
 . A% (Integer variable support)
 . Rename parser.{c,h} to interpreter, rename functions
 . Modular: keywords+print, numeric functions, string functions, example on expand

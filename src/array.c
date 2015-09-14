@@ -21,6 +21,14 @@ array_new(size_t element_size)
   return a;
 }
 
+  array*
+array_alloc(array* array, size_t size)
+{
+  array->size = size;
+  array->ptr = realloc(array->ptr, array->element_size * array->size);
+  return array;
+}
+
   void
 array_destroy(array* array)
 {
@@ -42,6 +50,14 @@ array_push(array* array, void* value)
 array_get(array* array, size_t index)
 {
   return array->ptr + index * array->element_size;
+}
+
+  void*
+array_set(array* array, size_t index, void* value)
+{
+  void* element = array_get(array, index);
+  memcpy(element, value, array->element_size);
+  return element;
 }
 
   size_t

@@ -24,4 +24,10 @@ variable* variable_set_numeric(char* name, float value);
 
 variable_type variable_get_type(char* name);
 
+variable* variable_array_init(char* name, size_t dimensions, size_t* vector);
+variable* variable_array_set_string(char *name, char *value, size_t* vector);
+char* variable_array_get_string(char *name, size_t* vector);
+variable* variable_array_set_numeric(char *name, float value, size_t* vector);
+float variable_array_get_numeric(char *name, size_t* vector);
+
 #endif // __VARIABLES_H__
