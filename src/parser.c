@@ -239,6 +239,7 @@ token register_function_5(basic_function_type type, char* keyword, function_5 fu
 static char* string_term(void);
 int str_len(basic_type* str, basic_type* rv);
 int str_asc(basic_type* str, basic_type* rv);
+int dump(basic_type* rv);
 
 typedef enum {
   OP_NOP,
@@ -544,7 +545,7 @@ accept(token t)
 static bool
 expect(token t)
 {
-  // printf("expect %ld\n", t);
+  printf("expect %ld, have %ld\n", t, sym);
   if (accept(t)) {
     return true;
   }
@@ -1000,6 +1001,33 @@ do_rem(basic_type* rv)
   return 0;
 }
 
+  static size_t
+get_vector(size_t* vector)
+{
+  printf("get vector\n");
+  size_t dimensions = 0;
+  while (sym != T_RIGHT_BANANA)
+  {
+    printf(" s: %ld\n", sym);
+    expect(T_NUMBER);
+    float n = tokenizer_get_number();
+    printf(" d: %f\n", n);
+    vector[dimensions] = n;
+    dimensions++;
+    if (dimensions>5)
+    {
+      error("DIM up to 5 dimensions.");
+      return dimensions;
+    }
+    accept(T_NUMBER);
+    if (sym == T_COMMA)
+    {
+      accept(T_COMMA);
+    }
+  }
+  return dimensions;
+}
+
   static int
 do_dim(basic_type* rv)
 {
@@ -1016,8 +1044,8 @@ do_dim(basic_type* rv)
     printf(" s: %ld (%d,%d)\n", sym, T_VARIABLE_NUMBER, T_VARIABLE_STRING);
     if ( sym == T_VARIABLE_NUMBER || sym == T_VARIABLE_STRING )
     {
+      variable_type type = (sym == T_VARIABLE_STRING) ? variable_type_numeric : variable_type_string ;
       size_t vector[5];
-      size_t dimensions = 0;
       char* name = tokenizer_get_variable_name();
 
       size_t name_len = strlen(name);
@@ -1026,6 +1054,7 @@ do_dim(basic_type* rv)
       printf(" n: %s\n", name);
       accept(sym);
       expect(T_LEFT_BANANA); 
+      /*
       while (sym != T_RIGHT_BANANA)
       {
         printf(" s: %ld\n", sym);
@@ -1045,10 +1074,12 @@ do_dim(basic_type* rv)
           accept(T_COMMA);
         }
       }
+      */
+      size_t dimensions = get_vector(vector);
       expect(T_RIGHT_BANANA);
 
       printf("DIM for %s: %ld dimension(s)\n", name, dimensions);
-      variable_array_init(name, dimensions, vector);
+      variable_array_init(name, type, dimensions, vector);
     }
 
     if (sym == T_COMMA)
@@ -1262,25 +1293,55 @@ do_if(basic_type* rv)
   static int
 do_let(basic_type* rv)
 {
+  printf("do let\n");
+
+  bool is_array = false;
+  size_t vector[5];
+
   if (sym != T_VARIABLE_NUMBER && sym != T_VARIABLE_STRING) {
     error("Expected a variable");
     return 0;
   }
 
-  if (sym == T_VARIABLE_NUMBER) {
-    char *name = tokenizer_get_variable_name();
-    get_sym();
-    expect(T_EQUALS);
+  char *name = tokenizer_get_variable_name();
+  token var_type = sym;
+  get_sym();
+  if (sym == T_LEFT_BANANA)
+  {
+    is_array = true;
+    printf("is array\n");  
+    name = realloc(name, strlen(name)+2);
+    name = strcat(name, "(");
+    expect(T_LEFT_BANANA);
+    get_vector(vector);
+    expect(T_RIGHT_BANANA);
+  }
+  printf("name: %s\n", name);
+
+  expect(T_EQUALS);
+  
+  if (var_type == T_VARIABLE_NUMBER) {
     float value = numeric_expression();
-    variable_set_numeric(name, value);
+    if (is_array)
+    {
+      variable_array_set_numeric(name, value, vector);
+    }
+    else
+    {
+      variable_set_numeric(name, value);
+    }
   }
 
-  if (sym == T_VARIABLE_STRING) {
-    char *name = tokenizer_get_variable_name();
-    get_sym();
-    expect(T_EQUALS);
+  if (var_type == T_VARIABLE_STRING) {
     char *value = string_expression();
-    variable_set_string(name, value);
+    if (is_array)
+    {
+      variable_array_set_string(name, value, vector);
+    }
+    else
+    {
+      variable_set_string(name, value);
+    }
   }
 
   return 0;
@@ -1460,6 +1521,9 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   register_function_2(basic_function_type_string, "LEFT$", str_left, kind_string, kind_numeric);
   register_function_2(basic_function_type_string, "RIGHT$", str_right, kind_string, kind_numeric);
   register_function_1(basic_function_type_numeric, "ASC", str_asc, kind_string);
+
+  // DEBUG
+  register_function_0(basic_function_type_keyword, "DUMP", dump);
 
   lines_init(__memory, __program_size);
   variables_init();
@@ -1766,5 +1830,17 @@ str_asc(basic_type* str, basic_type* rv)
 {
   rv->kind = kind_numeric;
   rv->value.number = (int) *(str->value.string);
+  return 0;
+}
+
+void dump_var(variable* var, void* context)
+{
+  variable_dump(var);
+}
+
+int
+dump(basic_type* rv)
+{
+  variables_each(dump_var, NULL);
   return 0;
 }

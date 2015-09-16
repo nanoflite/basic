@@ -114,7 +114,7 @@ dictionary_del(dictionary* d, char* name)
 }
 
 void
-dictionary_each(dictionary* d, dictionary_each_cb cb)
+dictionary_each(dictionary* d, dictionary_each_cb cb, void* context)
 {
 
   if (!cb) {
@@ -124,7 +124,7 @@ dictionary_each(dictionary* d, dictionary_each_cb cb)
   for(size_t i=0; i < HASHSIZE; i++) {
     entry* entry = d->hashtab[i];
     while(entry) {
-      cb(entry->name, entry->value);
+      cb(entry->name, entry->value, context);
       entry = entry->next;
     }
   }
@@ -146,6 +146,6 @@ dictionary_new()
 void
 dictionary_destroy(dictionary* d, dictionary_each_cb free_cb)
 {
-  dictionary_each(d, free_cb);
+  dictionary_each(d, free_cb, NULL);
   free(d);
 }
