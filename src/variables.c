@@ -96,12 +96,12 @@ calc_size(variable* var, size_t n)
 {
   if ( n >= var->nr_dimensions )
   {
-    puts("OOOOPS");
-    return 0;
+    // puts("OOOOPS");
+    return 1;
   }
 
   size_t size = 1;
-  for(size_t i=0; i < n; i++)
+  for(size_t i=0; i <= n; i++)
   {
     size *= var->dimensions[i];
   }
@@ -204,14 +204,23 @@ n. dimensional
     i(n) = index(n) // P(n-2)
 
 */
-  
-  for(size_t i=0; i<var->nr_dimensions; i++)
+  // printf("calc vector\n"); 
+  for(size_t i = 0; i<5; i++)
   {
-    size_t size = calc_size(var, var->nr_dimensions -1 - i);
+    vector[i] = 0;
+  }
+  for(size_t i = 0; i<var->nr_dimensions; i++)
+  {
+    // printf("i=%ld, dimensions=%ld, index=%ld\n", i, var->nr_dimensions, index);
+    size_t size = calc_size(var, var->nr_dimensions - 1 - i - 1);
+    // printf("size=%ld\n", size);
+
     size_t in = index / size;
-    printf("i%ld = %ld\n", i, in);
+    // printf("v%ld=%ld\n", (var->nr_dimensions-i-1), in);
+    vector[var->nr_dimensions-i-1] = in;
     index = index - in * size;
   }
+  
 }
 
 variable*
@@ -315,11 +324,20 @@ variable_dump(variable* var)
     {    
       printf("\tsize%ld: %ld\n", d, var->dimensions[d]);
     }
+    printf("array size: %ld\n", array_size(var->array));
     for(size_t i=0; i<array_size(var->array); i++)
     {
-      printf("index %ld:\n", i);
-      size_t vector;
-      calc_vector(var, i, &vector);
+      size_t vector[5];
+      calc_vector(var, i, vector);
+      printf("\t%s%ld,%ld,%ld,%ld,%ld) = ", var->name, vector[0], vector[1], vector[2], vector[3], vector[4]);
+      if (var->type == variable_type_string)
+      {
+        printf("%s\n", (var->value.string) ? var->value.string : "");
+      }
+      else
+      {
+        printf("%f\n", var->value.num); 
+      }
     }
   }
   else
