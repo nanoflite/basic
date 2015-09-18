@@ -546,7 +546,7 @@ accept(token t)
 static bool
 expect(token t)
 {
-  printf("expect %ld, have %ld\n", t, sym);
+  // printf("expect %ld, have %ld\n", t, sym);
   if (accept(t)) {
     return true;
   }
@@ -579,10 +579,10 @@ numeric_factor(void)
       get_sym();
       if (sym == T_LEFT_BANANA)
       {
-        printf("is array\n");  
+        // printf("is array\n");  
         var_name = realloc(var_name, strlen(var_name)+2);
         var_name = strcat(var_name, "(");
-        printf("name: %s\n", var_name);
+        // printf("name: %s\n", var_name);
         accept(T_LEFT_BANANA);
         size_t vector[5];
         get_vector(vector);
@@ -742,10 +742,10 @@ string_term(void)
       get_sym();
       if (sym == T_LEFT_BANANA)
       {
-        printf("is array\n");  
+        // printf("is array\n");  
         var_name = realloc(var_name, strlen(var_name)+2);
         var_name = strcat(var_name, "(");
-        printf("name: %s\n", var_name);
+        // printf("name: %s\n", var_name);
         accept(T_LEFT_BANANA);
         size_t vector[5];
         get_vector(vector);
@@ -1041,15 +1041,15 @@ get_vector(size_t* vector)
   {
     vector[i] = 0;
   }
-  printf("get vector\n");
+  // printf("get vector\n");
   size_t dimensions = 0;
   while (sym != T_RIGHT_BANANA)
   {
-    printf(" s: %ld\n", sym);
+    // printf(" s: %ld\n", sym);
     // expect(T_NUMBER);
     // float n = tokenizer_get_number();
     float n = numeric_expression();
-    printf(" dim %ld = %d\n", dimensions, (int) n);
+    // printf(" dim %ld = %d\n", dimensions, (int) n);
     vector[dimensions] = n;
     dimensions++;
     if (dimensions>5)
@@ -1071,15 +1071,15 @@ do_dim(basic_type* rv)
 {
   accept(t_keyword_dim);
 
-  printf("dim\n");
+  // printf("dim\n");
 
-  while (sym != T_EOF)
+  while (sym != T_EOF && sym != T_COLON)
   {
 
-    printf("while\n");
+    // printf("while\n");
 
     // get_sym();
-    printf(" s: %ld (%d,%d)\n", sym, T_VARIABLE_NUMBER, T_VARIABLE_STRING);
+    // printf(" s: %ld (%d,%d)\n", sym, T_VARIABLE_NUMBER, T_VARIABLE_STRING);
     if ( sym == T_VARIABLE_NUMBER || sym == T_VARIABLE_STRING )
     {
       variable_type type = (sym == T_VARIABLE_STRING) ? variable_type_string : variable_type_numeric ;
@@ -1089,13 +1089,13 @@ do_dim(basic_type* rv)
       size_t name_len = strlen(name);
       name = realloc(name, name_len + 2);
       strcat(name, "(");
-      printf(" n: %s\n", name);
+      // printf(" n: %s\n", name);
       accept(sym);
       expect(T_LEFT_BANANA); 
       size_t dimensions = get_vector(vector);
       expect(T_RIGHT_BANANA);
 
-      printf("DIM for %s: %ld dimension(s)\n", name, dimensions);
+      // printf("DIM for %s: %ld dimension(s)\n", name, dimensions);
       variable_array_init(name, type, dimensions, vector);
     }
 
@@ -1310,7 +1310,7 @@ do_if(basic_type* rv)
   static int
 do_let(basic_type* rv)
 {
-  printf("do let\n");
+  // printf("do let\n");
 
   bool is_array = false;
   size_t vector[5];
@@ -1326,14 +1326,14 @@ do_let(basic_type* rv)
   if (sym == T_LEFT_BANANA)
   {
     is_array = true;
-    printf("is array\n");  
+    // printf("is array\n");  
     name = realloc(name, strlen(name)+2);
     name = strcat(name, "(");
     accept(T_LEFT_BANANA);
     get_vector(vector);
     expect(T_RIGHT_BANANA);
   }
-  printf("name: %s\n", name);
+  // printf("name: %s\n", name);
 
   expect(T_EQUALS);
   

@@ -25,6 +25,8 @@ struct variable
 
 dictionary *_dictionary = NULL;
 
+static void vector_print(size_t* vector, size_t dimensions);
+
 bool
 variables_init(void)
 {
@@ -129,81 +131,6 @@ calc_index(variable* var, size_t* vector)
   static void
 calc_vector(variable* var, size_t index, size_t* vector)
 {
-/*
-
-1. dimensional
-
-    a[10]
-    a[i] = a[i]
-
-    v = (i)
-
-2. dimensional
-
-    dim a[10][3]
-      i   j
-    a[i][j] = a[i*10+3]
-
-    dim a[s1][s2]
-          i   j
-    a[i][j] = a[i*s1+j]
-
-    v = (  i - ( i % s1 ) / s1    ,i % s1 )
-
-    i = 3
-    j = 2
-    index = 3 * 10 + 2 = 32
-
-    j -> 32 % 10 = 2
-    32 - ( 32 % 10 ) = 30
-    i -> 30 / 10 = 3
-    
-
-3. dimensional
-
-    dim a[s1][s2][s3]
-          i   j   k
-    a[i][j][k] = a[ i*s1*s2 + j*s1 + k ]
-
-    index = i*s1*s2 + j*s1 + k
-    
-    i = index / (s1*s2)
-    j = ( index - i * s1 * s2 ) / s2
-    k = index - i * s1 *s2 - j * s1
-
-    s1 = 7, s2 = 9, s3 = 4
-    i = 5
-    j = 8
-    k = 2
-    index = 5*7*9 + 8*7 + 2 =  373
-  
-    i = 373 / (7*9) = 5
-    j = ( 373 - 5*7*9 ) / 7 = 8
-    k = 373 - 5*7*9 - 8*7 = 2
-
-n. dimensional
-
-    dim a[s1][s2]...[sn]
-          i0  i1     in
-
-    P(n) = s1*s2*...*sn
-    a[i0][i1]...[in] = a[ i0*P(n-1) + i1*P(n-2) + in ]
-
-    index = i0*P(n-1) + i1*P(n-2) + in 
-
-    index0 = index
-    i0 = index // P(n-1)
-
-    index1 = index - i0 * (Pn-1)
-    i1 = ( index - i0 * P(n-1 ) // P(n-2)
-    i1 = index1 // P(n-2)   
-
-     
-    Pn = s1*s2*...sn
-    index(n) = index(n-1) - i(n-1) * P(n-1)
-    i(n) = index(n) // P(n-2)
-
-*/
   // printf("calc vector\n"); 
   for(size_t i = 0; i<5; i++)
   {
@@ -306,6 +233,19 @@ variables_each(variables_each_cb each, void* context)
   dictionary_each(_dictionary, each_v, &ctx);
 }
 
+  static void
+vector_print(size_t* vector, size_t dimensions)
+{
+  for(size_t j=0; j<dimensions; j++)
+  {
+    printf("%ld", vector[j]);
+    if ( j < dimensions - 1 )
+    {
+      printf(",");
+    }
+  }
+}
+
 void
 variable_dump(variable* var)
 {
@@ -322,21 +262,24 @@ variable_dump(variable* var)
     printf("\tdimensions: %ld\n", var->nr_dimensions);
     for(size_t d=0; d<var->nr_dimensions; d++)
     {    
-      printf("\tsize%ld: %ld\n", d, var->dimensions[d]);
+      printf("\tdim %ld size = %ld\n", d, var->dimensions[d]);
     }
-    printf("array size: %ld\n", array_size(var->array));
+    printf("\tarray size: %ld\n", array_size(var->array));
     for(size_t i=0; i<array_size(var->array); i++)
     {
       size_t vector[5];
       calc_vector(var, i, vector);
-      printf("\t%s%ld,%ld,%ld,%ld,%ld) = ", var->name, vector[0], vector[1], vector[2], vector[3], vector[4]);
+      printf("\t%3ld %s", i, var->name);
+      vector_print(vector, var->nr_dimensions);
+      printf(") = ");
+      variable_value* val = array_get(var->array, i);
       if (var->type == variable_type_string)
       {
-        printf("%s\n", (var->value.string) ? var->value.string : "");
+        printf("%s\n", (val->string) ? val->string : "");
       }
       else
       {
-        printf("%f\n", var->value.num); 
+        printf("%f\n", val->num); 
       }
     }
   }
