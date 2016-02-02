@@ -169,6 +169,10 @@ static token t_keyword_step;
 static token t_keyword_next;
 static token t_keyword_rem;
 static token t_keyword_dim;
+static token t_keyword_data;
+static token t_keyword_read;
+static token t_keyword_restore;
+
 // static token t_keyword_clear;
 static token t_op_or;
 static token t_op_and;
@@ -183,6 +187,15 @@ static size_t __program_size;
 static size_t __stack_p;
 
 bool __RUNNING = false;
+
+typedef struct
+{
+  bool inited;
+  uint16_t line;
+  char* cursor;
+} data_pointer;
+
+static data_pointer __data;
 
 typedef union
 {
@@ -241,6 +254,7 @@ static char* string_term(void);
 int str_len(basic_type* str, basic_type* rv);
 int str_asc(basic_type* str, basic_type* rv);
 int dump(basic_type* rv);
+static void move_to_next_statement(void);
 
 typedef enum {
   OP_NOP,
@@ -1109,6 +1123,117 @@ do_dim(basic_type* rv)
   return 0;
 }
 
+  static int
+do_data(basic_type* rv)
+{
+  printf("data\n");
+  accept(t_keyword_data);
+  move_to_next_statement();
+  return 0;
+}
+
+/*
+  __line = lines_first();
+  __cursor = lines_get_contents(__line);
+  tokenizer_init( __cursor );
+  __RUNNING = true;
+  while (__cursor && __RUNNING)
+  {
+    get_sym();
+    if ( sym == T_EOF ) {
+      __line = lines_next(__line);
+*/
+  static char*
+_data_read(void)
+{
+  // printf("data read\n");
+  // init
+  if ( ! __data.inited )
+  {
+    // printf("data init\n");
+    __data.line = lines_first();
+    __data.cursor = lines_get_contents(__data.line);
+    __data.inited = true;
+
+    // printf("find first data\n");
+    // TODO: Loop over all lines (where is the next line?)
+    tokenizer_init( __data.cursor );
+    bool found_data = false;
+    while (__data.cursor && ! found_data)
+    {
+      // printf("get_sym\n");
+      get_sym();
+      // printf("sym == %ld\n", sym);
+      while (sym != T_EOF)
+      {
+        // printf("%ld\n", sym);
+        if (sym == t_keyword_data)
+        {
+          accept(t_keyword_data);
+          // printf("--> %ld\n", sym);
+          // printf("found data statement at %d (%s)\n", __data.line, tokenizer_char_pointer(NULL));
+          return strdup(tokenizer_get_string());
+          // return tokenizer_get_string();
+          found_data = true;
+          break;
+        }
+        get_sym();
+      }
+      __data.line = lines_next(__data.line);
+      __data.cursor = lines_get_contents(__data.line);
+      tokenizer_init(__data.cursor);
+      // printf("[%s]\n", __data.cursor);
+    }
+
+    tokenizer_init( __cursor );
+
+  }
+  return NULL;
+}
+
+  static int
+do_read(basic_type* rv)
+{
+  accept(t_keyword_read);
+
+  // if not initialized data_pointer, find first data statement
+  // while not end of variable list
+  //  read data, put in variable
+  //  proceed to next data statement
+  while (sym != T_EOF && sym != T_COLON)
+  {
+    if ( sym == T_VARIABLE_NUMBER || sym == T_VARIABLE_STRING )
+    {
+      variable_type type = (sym == T_VARIABLE_STRING) ? variable_type_string : variable_type_numeric ;
+      char* name = tokenizer_get_variable_name();
+      printf("data var name: %s (%d)\n", name, type);
+      accept(sym);
+      char* value = _data_read();
+      if (value == NULL)
+      {
+        error("read without data.");
+        return 0;
+      }
+      // set according to type
+      variable_set_string(name, value);
+    }
+    get_sym();
+    accept(T_COMMA);
+  }
+
+  return 0;
+}
+
+  static int
+do_restore(basic_type* rv)
+{
+  accept(t_keyword_restore);
+  __data.inited = false;
+  __data.line = 0;
+  __data.cursor = 0;
+  return 0;
+}
+
 static void parse_line(void);
 static void statement(void);
 
@@ -1503,7 +1628,10 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   t_keyword_end = register_function_0(basic_function_type_keyword, "END", do_end);
   t_keyword_rem = register_function_0(basic_function_type_keyword, "REM", do_rem);
   t_keyword_dim = register_function_0(basic_function_type_keyword, "DIM", do_dim);
-  
+  t_keyword_data = register_function_0(basic_function_type_keyword, "DATA", do_data);
+  t_keyword_read = register_function_0(basic_function_type_keyword, "READ", do_read);
+  t_keyword_restore = register_function_0(basic_function_type_keyword, "RESTORE", do_restore); 
+ 
   register_function_0(basic_function_type_keyword, "LET", do_let);
   register_function_0(basic_function_type_keyword, "INPUT", do_input);
   register_function_0(basic_function_type_keyword, "GET", do_get);
