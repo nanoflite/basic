@@ -17,7 +17,7 @@ v Make string expressions possible
     v introduce expression type and function (find out type of expression)
 
 
-. Add a few string functions (MID$, LEFT$, RIGHT$, LEN, SPC, TAB)
+v Add a few string functions (MID$, LEFT$, RIGHT$, LEN, SPC, TAB)
     v MID$:
       10 A$="SATURDAY MORNING"
       20 B$=MID$(A$,6,3): PRINT B$ (DAY is cut and printed out)
@@ -41,7 +41,7 @@ v GOSUB / RETURN
 v FOR / NEXT / STEP
 v INPUT 
 v GET (inchar, outchar)
-. DIM
+v DIM
 . DATA / READ / RESTORE
 . CLEAR
 v END
@@ -49,12 +49,12 @@ v REM
 . Optional parameters, e.g. MID$(A$, 10), MID$(A$, 1, 6)
 . A% (Integer variable support)
 . Rename parser.{c,h} to interpreter, rename functions
-. Modular: keywords+print, numeric functions, string functions, example on expand
+v Modular: keywords+print, numeric functions, string functions, example on expand
 . printf -> registered put char (we need that for input, get anyhow)
 . Try some basic programs
 . prep site and docs
 . release
-. variables are stored at the end of the program, before the stack (or do we keep the malloc)
+- variables are stored at the end of the program, before the stack (or do we keep the malloc)
 
 Architectural changes urgent
 ----------------------------
@@ -104,7 +104,7 @@ v IF 1=1 AND 2=2 THEN PRINT "OK"
 v expect is bad with implicit get_sym...better to that more clearly (what do these functions do? what size effects do they have?)
     Just better understand and use consistently
 v move internal functions and commands to registry format
-. add functions and statements (as per above list)
+v add functions and statements (as per above list)
 . clean up dead code and commented out code
 . remove all glib usage (if any) and port to avr-gcc 
 . string are 256 long
