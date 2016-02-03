@@ -188,11 +188,20 @@ static size_t __stack_p;
 
 bool __RUNNING = false;
 
+typedef enum
+{
+  data_state_init,
+  data_state_find,
+  data_state_read
+} data_state;
+
 typedef struct
 {
   bool inited;
   uint16_t line;
   char* cursor;
+  char* char_pointer;
+  data_state state;
 } data_pointer;
 
 static data_pointer __data;
@@ -275,6 +284,7 @@ static void
 get_sym(void)
 {
   sym = tokenizer_get_next_token();
+  // printf("sym: %ld\n", sym);
 }
 
 static void
@@ -1146,48 +1156,64 @@ do_data(basic_type* rv)
   static char*
 _data_read(void)
 {
-  // printf("data read\n");
-  // init
-  if ( ! __data.inited )
-  {
-    // printf("data init\n");
-    __data.line = lines_first();
-    __data.cursor = lines_get_contents(__data.line);
-    __data.inited = true;
+  char* save_pointer = tokenizer_char_pointer(NULL);
 
-    // printf("find first data\n");
-    // TODO: Loop over all lines (where is the next line?)
-    tokenizer_init( __data.cursor );
-    bool found_data = false;
-    while (__data.cursor && ! found_data)
-    {
-      // printf("get_sym\n");
-      get_sym();
-      // printf("sym == %ld\n", sym);
-      while (sym != T_EOF)
+  switch (__data.state)
+  {
+    case data_state_init:
+      __data.line = lines_first();
+      __data.cursor = lines_get_contents(__data.line);
+      __data.char_pointer = tokenizer_char_pointer(NULL);
+      __data.inited = true;
+      __data.state = data_state_find;
+      // no break, because we need to the find anyhow
+
+    case data_state_find:  
+      tokenizer_init( __data.cursor );
+      tokenizer_char_pointer( __data.char_pointer );
+      while (__data.cursor)
       {
-        // printf("%ld\n", sym);
-        if (sym == t_keyword_data)
-        {
-          accept(t_keyword_data);
-          // printf("--> %ld\n", sym);
-          // printf("found data statement at %d (%s)\n", __data.line, tokenizer_char_pointer(NULL));
-          return strdup(tokenizer_get_string());
-          // return tokenizer_get_string();
-          found_data = true;
-          break;
-        }
         get_sym();
+        while (sym != T_EOF)
+        {
+          if (sym == t_keyword_data)
+          {
+            accept(t_keyword_data);
+            char *data = strdup(tokenizer_get_string());
+            __data.state = data_state_read;
+            __data.char_pointer = tokenizer_char_pointer(NULL);
+            tokenizer_init( __cursor );
+            tokenizer_char_pointer(save_pointer);
+            return data; 
+          }
+          get_sym();
+        }
+        __data.line = lines_next(__data.line);
+        __data.cursor = lines_get_contents(__data.line);
+        tokenizer_init(__data.cursor);
+      }
+      break;
+
+    case data_state_read:
+      tokenizer_init( __data.cursor );
+      tokenizer_char_pointer( __data.char_pointer );
+      get_sym();
+      if ( sym != T_EOF )
+      {
+        accept(T_COMMA); // seperated by comma's
+        char *data = strdup(tokenizer_get_string());
+        tokenizer_init( __cursor );
+        tokenizer_char_pointer(save_pointer);
+        __data.state = data_state_find;
+        return data; 
       }
       __data.line = lines_next(__data.line);
       __data.cursor = lines_get_contents(__data.line);
-      tokenizer_init(__data.cursor);
-      // printf("[%s]\n", __data.cursor);
-    }
-
-    tokenizer_init( __cursor );
-
   }
+
+  tokenizer_init( __cursor );
+  tokenizer_char_pointer(save_pointer);
+
   return NULL;
 }
 
@@ -1204,9 +1230,8 @@ do_read(basic_type* rv)
   {
     if ( sym == T_VARIABLE_NUMBER || sym == T_VARIABLE_STRING )
     {
-      variable_type type = (sym == T_VARIABLE_STRING) ? variable_type_string : variable_type_numeric ;
+      // variable_type type = (sym == T_VARIABLE_STRING) ? variable_type_string : variable_type_numeric ;
       char* name = tokenizer_get_variable_name();
-      printf("data var name: %s (%d)\n", name, type);
       accept(sym);
       char* value = _data_read();
       if (value == NULL)
@@ -1607,6 +1632,8 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   __stack = __memory + __memory_size - __stack_size;
   __stack_p = __stack_size;
   __program_size = __memory_size - __stack_size;
+
+  __data.state = data_state_init;
 
   basic_tokens = array_new(sizeof(token_entry));
   basic_functions = array_new(sizeof(basic_function));

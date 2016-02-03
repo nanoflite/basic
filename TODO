@@ -43,6 +43,9 @@ v INPUT
 v GET (inchar, outchar)
 v DIM
 . DATA / READ / RESTORE
+    v simple data read statemachine
+    . support for string and numeric
+    . restore
 . CLEAR
 v END
 v REM
@@ -108,3 +111,4 @@ v add functions and statements (as per above list)
 . clean up dead code and commented out code
 . remove all glib usage (if any) and port to avr-gcc 
 . string are 256 long
+. what with the strdup and memory leaks?
