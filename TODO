@@ -45,19 +45,31 @@ v DIM
 . DATA / READ / RESTORE
     v simple data read statemachine
     . support for string and numeric
-    . restore
+    v restore
 . CLEAR
 v END
 v REM
-. Optional parameters, e.g. MID$(A$, 10), MID$(A$, 1, 6)
-. A% (Integer variable support)
-. Rename parser.{c,h} to interpreter, rename functions
 v Modular: keywords+print, numeric functions, string functions, example on expand
 . printf -> registered put char (we need that for input, get anyhow)
+. Rename parser.{c,h} to interpreter, rename functions
 . Try some basic programs
 . prep site and docs
 . release
+. clean up dead code and commented out code
+. remove all glib usage (if any) and port to avr-gcc 
+. string are 256 long
+. what with the strdup and memory leaks?
+
+Next version
+------------
+. Optional parameters, e.g. MID$(A$, 10), MID$(A$, 1, 6)
+. A% (Integer variable support)
+
+Not
+---
+
 - variables are stored at the end of the program, before the stack (or do we keep the malloc)
+
 
 Architectural changes urgent
 ----------------------------
@@ -108,7 +120,4 @@ v expect is bad with implicit get_sym...better to that more clearly (what do the
     Just better understand and use consistently
 v move internal functions and commands to registry format
 v add functions and statements (as per above list)
-. clean up dead code and commented out code
-. remove all glib usage (if any) and port to avr-gcc 
-. string are 256 long
-. what with the strdup and memory leaks?
+
