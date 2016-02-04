@@ -197,7 +197,7 @@ typedef enum
 
 typedef struct
 {
-  bool inited;
+  // bool inited;
   uint16_t line;
   char* cursor;
   char* char_pointer;
@@ -1136,7 +1136,7 @@ do_dim(basic_type* rv)
   static int
 do_data(basic_type* rv)
 {
-  printf("data\n");
+  // printf("data\n");
   accept(t_keyword_data);
   move_to_next_statement();
   return 0;
@@ -1164,7 +1164,7 @@ _data_read(void)
       __data.line = lines_first();
       __data.cursor = lines_get_contents(__data.line);
       __data.char_pointer = tokenizer_char_pointer(NULL);
-      __data.inited = true;
+      // __data.inited = true;
       __data.state = data_state_find;
       // no break, because we need to the find anyhow
 
@@ -1253,9 +1253,10 @@ do_read(basic_type* rv)
 do_restore(basic_type* rv)
 {
   accept(t_keyword_restore);
-  __data.inited = false;
+  // __data.inited = false;
   __data.line = 0;
   __data.cursor = 0;
+  __data.state = data_state_init;
   return 0;
 }
 
