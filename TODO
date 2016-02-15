@@ -46,25 +46,33 @@ v DIM
     v simple data read statemachine
     v support for string and numeric
     v restore
-    . read data in array variable
+    v read data in array variable
+    . put data functionality in own data.{c,h} files
 . CLEAR
 v END
 v REM
 v Modular: keywords+print, numeric functions, string functions, example on expand
+. array DIM bounds check
+    . do some tests on the index
+    . debug flag -> show index in array (a,b,c,d,e) -> i, vector -> index
 . printf -> registered put char (we need that for input, get anyhow)
 . Rename parser.{c,h} to interpreter, rename functions
+. clean up dead code and commented out code
+. string are 256 long
+. what with the strdup and memory leaks?
+. PRINT number -> if int(number) == number: print int(number)
+
 . Try some basic programs
 . prep site and docs
 . release
-. clean up dead code and commented out code
-. remove all glib usage (if any) and port to avr-gcc 
-. string are 256 long
-. what with the strdup and memory leaks?
 
 Next version
 ------------
+
+. remove all glib usage (if any) and port to avr-gcc  (arch folder)
 . Optional parameters, e.g. MID$(A$, 10), MID$(A$, 1, 6)
 . A% (Integer variable support)
+
 
 Not
 ---

@@ -1247,6 +1247,9 @@ _do_data_read(variable_type type, value* value)
   static int
 do_read(basic_type* rv)
 {
+  bool is_array =  false;
+  size_t vector[5];
+
   accept(t_keyword_read);
 
   // if not initialized data_pointer, find first data statement
@@ -1260,8 +1263,17 @@ do_read(basic_type* rv)
       variable_type type = (sym == T_VARIABLE_STRING) ? variable_type_string : variable_type_numeric ;
       char* name = tokenizer_get_variable_name();
       accept(sym);
-      value v;
+      if (sym == T_LEFT_BANANA)
+      {
+        is_array = true;
+        name = realloc(name, strlen(name)+2);
+        name = strcat(name, "(");
+        accept(T_LEFT_BANANA);
+        get_vector(vector);
+        expect(T_RIGHT_BANANA);
+      }
       // printf("variable name: %s\n", name);
+      value v;
       bool read_ok = _do_data_read(type, &v);
       if ( ! read_ok)
       {
@@ -1270,9 +1282,23 @@ do_read(basic_type* rv)
       }
       if ( type == variable_type_string )
       {
-        variable_set_string(name, v.string);
+        if (is_array)
+        {
+         variable_array_set_string(name, v.string, vector);
+        }
+        else
+        {  
+          variable_set_string(name, v.string);
+        }
       } else {
-        variable_set_numeric(name, v.number);
+        if (is_array)
+        {
+          variable_array_set_numeric(name, v.number, vector);
+        }
+        else
+        {
+          variable_set_numeric(name, v.number);
+        }
       }
     }
     get_sym();
@@ -1733,6 +1759,9 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
 
   lines_init(__memory, __program_size);
   variables_init();
+  __data.line = 0;
+  __data.cursor = 0;
+  __data.state = data_state_init;
 }
 
 void
