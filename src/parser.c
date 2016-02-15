@@ -1142,21 +1142,73 @@ do_data(basic_type* rv)
   return 0;
 }
 
-/*
-  __line = lines_first();
-  __cursor = lines_get_contents(__line);
-  tokenizer_init( __cursor );
-  __RUNNING = true;
-  while (__cursor && __RUNNING)
+  static bool
+_data_find(variable_type type, value* value)
+{
+  tokenizer_init( __data.cursor );
+  tokenizer_char_pointer( __data.char_pointer );
+  while (__data.cursor)
   {
     get_sym();
-    if ( sym == T_EOF ) {
-      __line = lines_next(__line);
-*/
-  static char*
-_data_read(void)
+    while (sym != T_EOF)
+    {
+      if (sym == t_keyword_data)
+      {
+        accept(t_keyword_data);
+        if (type == variable_type_string)
+        {
+          value->string = strdup(tokenizer_get_string());
+        } else {
+          value->number = tokenizer_get_number();
+        }  
+        __data.state = data_state_read;
+        __data.char_pointer = tokenizer_char_pointer(NULL);
+        return true;
+      }
+      get_sym();
+    }
+    __data.line = lines_next(__data.line);
+    __data.cursor = lines_get_contents(__data.line);
+    tokenizer_init(__data.cursor);
+  }
+  return false;
+}  
+
+  static bool
+_data_read(variable_type type, value* value)
+{
+  bool rv = false;
+
+  tokenizer_init( __data.cursor );
+  tokenizer_char_pointer( __data.char_pointer );
+  get_sym();
+  if ( sym != T_EOF )
+  {
+    accept(T_COMMA); // seperated by comma's
+    if (type == variable_type_string)
+    {
+      value->string = strdup(tokenizer_get_string());
+    }
+    else
+    {
+      value->number = tokenizer_get_number();
+    }
+    __data.char_pointer = tokenizer_char_pointer(NULL);
+    rv = true; 
+  }
+  else
+  {  
+    __data.line = lines_next(__data.line);
+    __data.cursor = lines_get_contents(__data.line);
+  }
+  return rv;
+}  
+
+  static bool
+_do_data_read(variable_type type, value* value)
 {
   char* save_pointer = tokenizer_char_pointer(NULL);
+  bool rv = false;
 
   switch (__data.state)
   {
@@ -1164,57 +1216,32 @@ _data_read(void)
       __data.line = lines_first();
       __data.cursor = lines_get_contents(__data.line);
       __data.char_pointer = tokenizer_char_pointer(NULL);
-      // __data.inited = true;
       __data.state = data_state_find;
-      // no break, because we need to the find anyhow
+      rv = _data_find(type, value);
+      break;
 
     case data_state_find:  
-      tokenizer_init( __data.cursor );
-      tokenizer_char_pointer( __data.char_pointer );
-      while (__data.cursor)
-      {
-        get_sym();
-        while (sym != T_EOF)
-        {
-          if (sym == t_keyword_data)
-          {
-            accept(t_keyword_data);
-            char *data = strdup(tokenizer_get_string());
-            __data.state = data_state_read;
-            __data.char_pointer = tokenizer_char_pointer(NULL);
-            tokenizer_init( __cursor );
-            tokenizer_char_pointer(save_pointer);
-            return data; 
-          }
-          get_sym();
-        }
-        __data.line = lines_next(__data.line);
-        __data.cursor = lines_get_contents(__data.line);
-        tokenizer_init(__data.cursor);
-      }
+      rv = _data_find(type, value);
       break;
 
     case data_state_read:
-      tokenizer_init( __data.cursor );
-      tokenizer_char_pointer( __data.char_pointer );
-      get_sym();
-      if ( sym != T_EOF )
       {
-        accept(T_COMMA); // seperated by comma's
-        char *data = strdup(tokenizer_get_string());
-        tokenizer_init( __cursor );
-        tokenizer_char_pointer(save_pointer);
-        __data.state = data_state_find;
-        return data; 
+        bool data_found = _data_read(type, value);
+        if (data_found)
+        {
+          rv = true;
+        }
+        else
+        {
+          rv = _data_find(type, value);
+        }
       }
-      __data.line = lines_next(__data.line);
-      __data.cursor = lines_get_contents(__data.line);
   }
 
   tokenizer_init( __cursor );
   tokenizer_char_pointer(save_pointer);
 
-  return NULL;
+  return rv;
 }
 
   static int
@@ -1230,17 +1257,23 @@ do_read(basic_type* rv)
   {
     if ( sym == T_VARIABLE_NUMBER || sym == T_VARIABLE_STRING )
     {
-      // variable_type type = (sym == T_VARIABLE_STRING) ? variable_type_string : variable_type_numeric ;
+      variable_type type = (sym == T_VARIABLE_STRING) ? variable_type_string : variable_type_numeric ;
       char* name = tokenizer_get_variable_name();
       accept(sym);
-      char* value = _data_read();
-      if (value == NULL)
+      value v;
+      // printf("variable name: %s\n", name);
+      bool read_ok = _do_data_read(type, &v);
+      if ( ! read_ok)
       {
         error("read without data.");
         return 0;
       }
-      // set according to type
-      variable_set_string(name, value);
+      if ( type == variable_type_string )
+      {
+        variable_set_string(name, v.string);
+      } else {
+        variable_set_numeric(name, v.number);
+      }
     }
     get_sym();
     accept(T_COMMA);

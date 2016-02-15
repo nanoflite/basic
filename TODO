@@ -44,8 +44,9 @@ v GET (inchar, outchar)
 v DIM
 . DATA / READ / RESTORE
     v simple data read statemachine
-    . support for string and numeric
+    v support for string and numeric
     v restore
+    . read data in array variable
 . CLEAR
 v END
 v REM
