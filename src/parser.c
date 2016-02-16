@@ -162,6 +162,7 @@ static token t_keyword_then;
 static token t_keyword_gosub;
 static token t_keyword_return;
 static token t_keyword_list;
+static token t_keyword_clear;
 static token t_keyword_run;
 static token t_keyword_end;
 static token t_keyword_for;
@@ -717,6 +718,15 @@ do_list(basic_type* rv)
 {
   accept(t_keyword_list);
   lines_list(list_out);
+  ready();
+  return 0;
+}
+
+  static int
+do_clear(basic_type* rv)
+{
+  accept(t_keyword_clear);
+  lines_clear();
   ready();
   return 0;
 }
@@ -1674,6 +1684,7 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
 
   // BASIC keywords
   t_keyword_list = register_function_0(basic_function_type_keyword, "LIST", do_list);
+  t_keyword_clear = register_function_0(basic_function_type_keyword, "CLEAR", do_clear);
   t_keyword_goto = register_function_0(basic_function_type_keyword, "GOTO", do_goto);
   t_keyword_gosub = register_function_0(basic_function_type_keyword, "GOSUB", do_gosub); 
   t_keyword_return = register_function_0(basic_function_type_keyword, "RETURN", do_return);

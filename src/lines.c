@@ -250,7 +250,9 @@ lines_clear(void)
 {
   char* end = (char*) _next( _find_end( (line*) __memory ) );
   memset( __memory, 0x00, end - __memory );
-
+  line* l = (line*) __memory;
+  l->number = 0;
+  l->length = 0;
   // hexdump( "clear", __memory, 256 );
 }
 
