@@ -339,7 +339,16 @@ expression_print(expression_result* expr)
   else
     if (expr->type == expression_type_numeric)
     {
-      printf("%f", expr->value.numeric);
+      float value = expr->value.numeric;
+      long ivalue = (int) value;
+      if (ivalue == value)
+      {
+        printf("%ld", ivalue);
+      }
+      else
+      {
+        printf("%f", value);
+      }
     }
     else
     {

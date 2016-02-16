@@ -54,12 +54,12 @@ v Modular: keywords+print, numeric functions, string functions, example on expan
 v array DIM bounds check
     v do some tests on the index
     v debug -> show index in array (a,b,c,d,e) -> i, vector -> index
+v PRINT number -> if int(number) == number: print int(number)
 . printf -> registered put char (we need that for input, get anyhow)
 . Rename parser.{c,h} to interpreter, rename functions
 . clean up dead code and commented out code
-. string are 256 long
+. strings are 256 long
 . what with the strdup and memory leaks?
-. PRINT number -> if int(number) == number: print int(number)
 
 . Try some basic programs
 . prep site and docs
