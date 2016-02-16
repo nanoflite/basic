@@ -52,9 +52,9 @@ v DIM
 v END
 v REM
 v Modular: keywords+print, numeric functions, string functions, example on expand
-. array DIM bounds check
-    . do some tests on the index
-    . debug flag -> show index in array (a,b,c,d,e) -> i, vector -> index
+v array DIM bounds check
+    v do some tests on the index
+    v debug -> show index in array (a,b,c,d,e) -> i, vector -> index
 . printf -> registered put char (we need that for input, get anyhow)
 . Rename parser.{c,h} to interpreter, rename functions
 . clean up dead code and commented out code
