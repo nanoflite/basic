@@ -55,7 +55,12 @@ v array DIM bounds check
     v do some tests on the index
     v debug -> show index in array (a,b,c,d,e) -> i, vector -> index
 v PRINT number -> if int(number) == number: print int(number)
-. printf -> registered put char (we need that for input, get anyhow)
+
+v printf -> registered put char (we need that for input, get anyhow)
+. try to compile on raspberry pi.
+. serial in/out on raspberry pi?
+. thermal printer on RPi?
+
 . Rename parser.{c,h} to interpreter, rename functions
 . clean up dead code and commented out code
 . strings are 256 long
@@ -72,7 +77,9 @@ Next version
 . remove all glib usage (if any) and port to avr-gcc  (arch folder)
 . Optional parameters, e.g. MID$(A$, 10), MID$(A$, 1, 6)
 . A% (Integer variable support)
-
+. ON offset GOTO list
+. ON offset GOSUB list
+. console functions (terminal version)
 
 Maybe 
 -----

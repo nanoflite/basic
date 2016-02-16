@@ -7,7 +7,7 @@
 #include <time.h>
 #include <execinfo.h>
 
-#include <readline/readline.h>
+// #include <readline/readline.h>
 
 #include "error.h"
 #include "tokenizer.h"
@@ -15,6 +15,8 @@
 #include "lines.h"
 #include "array.h"
 #include "kbhit.h"
+
+#include "parser.h"
 
 /*
   line = [number] statement [ : statement ] CR
@@ -90,6 +92,8 @@
   relation-operator = ( "<" | "<=" | "=" | ">=" | ">" )
 
 */
+
+#define MAX_LINE 256
 
 typedef float (*function)(float number);
 
@@ -187,6 +191,9 @@ static size_t __memory_size;
 static size_t __stack_size;
 static size_t __program_size;
 static size_t __stack_p;
+
+static basic_putchar __putch = putchar;
+static basic_getchar __getch = getchar;
 
 bool __RUNNING = false;
 
@@ -330,24 +337,36 @@ expression(expression_result *result)
 }
 
   static void
+print_buffer(char* buffer)
+{
+    for(size_t i=0; i<strlen(buffer); ++i)
+    {
+      __putch(buffer[i]);
+    }
+}  
+
+  static void
 expression_print(expression_result* expr)
-{ 
+{
   if (expr->type == expression_type_string)
   {
-    printf("%s", expr->value.string);
+    print_buffer(expr->value.string);
   }
   else
     if (expr->type == expression_type_numeric)
     {
+      char buffer[16];
       float value = expr->value.numeric;
       long ivalue = (int) value;
       if (ivalue == value)
       {
-        printf("%ld", ivalue);
+        snprintf(buffer, sizeof(buffer), "%ld", ivalue);
+        print_buffer(buffer);
       }
       else
       {
-        printf("%f", value);
+        snprintf(buffer, sizeof(buffer), "%f", value);
+        print_buffer(buffer);
       }
     }
     else
@@ -719,7 +738,9 @@ ready(void)
 static void
 list_out(uint16_t number, char* contents)
 {
-  printf("%d %s\n", number, contents);
+  char buffer[256];
+  snprintf(buffer, sizeof(buffer), "%d %s\n", number, contents);
+  print_buffer(buffer);
 }
 
 static int
@@ -831,7 +852,7 @@ do_print(basic_type* rv)
       expression(&expr);
       expression_print(&expr);
     }
-    (sym == T_SEMICOLON) ? accept(T_SEMICOLON) : putchar('\n');
+    (sym == T_SEMICOLON) ? accept(T_SEMICOLON) : __putch('\n');
   }
 
   fflush(stdout);
@@ -844,7 +865,7 @@ do_spc(basic_type* n, basic_type* rv)
 {
   for(size_t i=0; i<n->value.number;i++)
   {
-    putchar(' ');
+    __putch(' ');
   }
   rv->kind = kind_numeric;
   rv->value.number = 0;
@@ -856,7 +877,7 @@ do_tab(basic_type* n, basic_type* rv)
 {
   for(size_t i=0; i<n->value.number;i++)
   {
-    putchar('\t');
+    __putch('\t');
   }
   rv->kind = kind_numeric;
   rv->value.number = 0;
@@ -1598,7 +1619,10 @@ do_input(basic_type* rv)
   {
     expression_print(&expr);
   }
-  char* line = readline( prompt ? "" : "?" );
+  // char* line = readline( prompt ? "" : "?" );
+
+  char line[MAX_LINE];
+  basic_readline( (prompt ? "" : "? "), line, sizeof(line) ); 
 
   if (type == T_VARIABLE_NUMBER) {
     char* t;
@@ -1627,7 +1651,7 @@ do_get(basic_type* rv)
   char c[4] = "";
   if (kbhit())
   {
-    int ch = getchar();
+    int ch = __getch();
     if ( ch == 10 ) {
       ch = 13;
     } 
@@ -1673,7 +1697,7 @@ statement(void)
       }
       break;
   }
-  return last_error != NULL;
+  return last_error == NULL;
 }
 
 
@@ -1761,6 +1785,13 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   __data.state = data_state_init;
 }
 
+  void
+basic_register_io(basic_putchar putch, basic_getchar getch)
+{
+  __putch = putch;
+  __getch = getch;
+}
+
 void
 basic_eval(char *line_string)
 {
@@ -1779,6 +1810,20 @@ basic_eval(char *line_string)
   } else {
     parse_line();
   }
+}
+
+char*
+basic_readline(char* prompt, char* buffer, size_t buffer_size)
+{
+  size_t len = 0;
+  char ch;
+  print_buffer(prompt);
+  while ((ch = getchar()) != '\n' && len < buffer_size - 1)
+  { 
+    buffer[len++] = ch;
+  }
+  buffer[len] = '\0';
+  return buffer;
 }
 
 float evaluate(char *expression_string)
