@@ -74,8 +74,8 @@ Next version
 . A% (Integer variable support)
 
 
-Not
----
+Maybe 
+-----
 
 - variables are stored at the end of the program, before the stack (or do we keep the malloc)
 

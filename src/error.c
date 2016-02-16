@@ -4,7 +4,7 @@
 
 extern uint16_t __line;
 
-const char *last_error;
+const char *last_error = NULL;
 
   void
 error(const char *error_msg)
@@ -29,6 +29,4 @@ error(const char *error_msg)
   }
 
   free (strings);
-
-  exit(1);
 }

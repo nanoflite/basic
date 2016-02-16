@@ -1311,7 +1311,7 @@ do_restore(basic_type* rv)
 }
 
 static void parse_line(void);
-static void statement(void);
+static bool statement(void);
 
 static int
 do_run(basic_type* rv)
@@ -1643,11 +1643,15 @@ static void
 parse_line(void)
 {
   while (sym != T_EOF && sym != T_COLON) {
-    statement();
+    bool ok = statement();
+    if ( ! ok )
+    {
+      break;
+    }
   }
 }
 
-static void
+static bool
 statement(void)
 {
   switch(sym) {
@@ -1669,6 +1673,7 @@ statement(void)
       }
       break;
   }
+  return last_error != NULL;
 }
 
 
@@ -1759,6 +1764,7 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
 void
 basic_eval(char *line_string)
 {
+  last_error = NULL;
   tokenizer_init( line_string );
   get_sym();
   if (sym == T_NUMBER ) {
