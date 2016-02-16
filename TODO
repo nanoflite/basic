@@ -42,13 +42,12 @@ v FOR / NEXT / STEP
 v INPUT 
 v GET (inchar, outchar)
 v DIM
-. DATA / READ / RESTORE
+v DATA / READ / RESTORE
     v simple data read statemachine
     v support for string and numeric
     v restore
     v read data in array variable
-    . put data functionality in own data.{c,h} files
-. CLEAR
+v CLEAR
 v END
 v REM
 v Modular: keywords+print, numeric functions, string functions, example on expand
@@ -69,6 +68,7 @@ v array DIM bounds check
 Next version
 ------------
 
+. put specifiv functionality in own c,h files
 . remove all glib usage (if any) and port to avr-gcc  (arch folder)
 . Optional parameters, e.g. MID$(A$, 10), MID$(A$, 1, 6)
 . A% (Integer variable support)
