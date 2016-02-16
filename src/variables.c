@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <error.h>
 #include <variables.h>
 #include <dictionary.h>
 #include <array.h>
@@ -93,23 +94,80 @@ variable_get_type(char* name)
   return var->type;  
 }
 
-  static size_t
-calc_size(variable* var, size_t _n, int offset)
-{
-  if (offset < 0 && abs(offset) > _n)
-  {
-    // printf("Negative dimension\n");
-    return 0;
-  }
 
-  size_t n = _n + offset;
+// Calculates array size
+//  static size_t
+//calc_array_size(variable* var)
+//{
+//  size_t size = 1;
+//  for(size_t i=0; i<var->nr_dimensions; i++)
+//  {
+//    size *= var->dimensions[i];
+//  }
+//
+//  printf("size = %ld\n", size);
+//
+//  return size;
+//}
+//
+// Calculates array size
+  static size_t
+calc_size(variable* var)
+{
   size_t size = 1;
-  for(size_t i=0; i <= n; i++)
+  for(size_t i=0; i<var->nr_dimensions; ++i)
   {
     size *= var->dimensions[i];
   }
+
+  // printf("array size %s = %ld\n", var->name, size);
+
   return size;
 }
+
+
+  static bool
+check_in_bounds(variable* var, size_t* vector)
+{
+  // printf("check in bounds\n");
+  // printf("dimensions %ld\n", var->nr_dimensions);
+  for(size_t i=0; i<var->nr_dimensions; i++)
+  {
+    size_t vector_i = vector[i];
+    // printf("vector_%ld = %ld\n", i, vector_i);
+    // printf("dimension_%ld = %ld\n", i, var->dimensions[i]); 
+    // DIM A(3) -> A(1), A(2), A(3)
+    if (vector_i < 1 || vector_i > var->dimensions[i])
+    { 
+      return false;
+    }  
+  }
+
+  return true;
+}  
+
+/*
+
+  DIM A(2,3)
+    w h
+    x y
+  A(1,1) 0 
+  A(1,2) 1 
+  A(1,3) 2 
+  A(2,1) 3 
+  A(2,2) 4 
+  A(2,3) 5 
+ 
+  (x*ySize*zSize + y*zSize + z)
+
+  v[0] = x
+  v[1] = y
+  v[2] = z
+
+  v[0] * d[1] * ... d[n] + v[1] * d[2] ... d[n] + ... + v[n]
+
+
+ */
 
   static size_t
 calc_index(variable* var, size_t* vector)
@@ -118,47 +176,46 @@ calc_index(variable* var, size_t* vector)
   // variable_dump(var);
 
   size_t index = 0;
-  size_t size = calc_size(var, var->nr_dimensions, -1);
-
-  // printf("size = %ld\n", size);
-  // printf("vector[0]=%ld\n", vector[0]);
-
-  for(size_t i= 0; i<var->nr_dimensions; ++i)
+  for(size_t i=0; i<var->nr_dimensions; ++i)
   {
-    size /= var->dimensions[i];
-    index += size * vector[i];
+    size_t product = vector[i] - 1;
+    for(size_t j=i+1; j<var->nr_dimensions; ++j)
+    {
+      product *= var->dimensions[j];
+    }
+    index += product;
   }
 
-  index--;
+  // printf("index[ %s", var->name);
+  // for(size_t i=0; i<var->nr_dimensions; i++){
+  //   printf("%ld", vector[i]);
+  //   if (i<var->nr_dimensions-1) printf(",");
+  // }
+  // printf(") ] = %ld\n", index); 
 
-  // printf("calc_index index=%ld\n", index);
   return index;
 }
 
   static void
 calc_vector(variable* var, size_t index, size_t* vector)
 {
-  // printf("calc vector\n"); 
-  for(size_t i = 0; i<5; i++)
+  size_t product = 1;
+  for(size_t i=1; i<var->nr_dimensions; ++i)
   {
-    vector[i] = 0;
+    product *= var->dimensions[i];
   }
-  for(size_t i = 0; i<var->nr_dimensions; i++)
-  {
-    // printf("i=%ld, dimensions=%ld, index=%ld\n", i, var->nr_dimensions, index);
-    size_t size = calc_size(var, var->nr_dimensions, - 1 - i - 1);
 
-    size_t in = index;
-    if (size > 0)
+  for(int i=0; i<var->nr_dimensions; ++i)
+  {
+    vector[i] = index / product;
+    index %= product;
+    if( (i+1) < var->nr_dimensions )
     {
-      in /= size;
+      product /= var->dimensions[i+1];
     }
-    // printf("size=%ld, vector[%ld]=%ld\n", size, (var->nr_dimensions-i-1), in);
-    vector[var->nr_dimensions-i-1] = in;
-    index = index - in * size;
   }
-  
-}
+  vector_print(vector, var->nr_dimensions);
+}  
 
 variable*
 variable_array_init(char* name, variable_type type, size_t dimensions, size_t* vector)
@@ -174,7 +231,8 @@ variable_array_init(char* name, variable_type type, size_t dimensions, size_t* v
   var->dimensions[3] = vector[3];
   var->dimensions[4] = vector[4];
   var->array = array_new(sizeof(variable_value));
-  array_alloc(var->array, calc_size(var, var->nr_dimensions, -1)); 
+  // array_alloc(var->array, calc_size(var, var->nr_dimensions, -1)); 
+  array_alloc(var->array, calc_size(var)); 
   dictionary_put(_dictionary, name, var);
   return var;
 }
@@ -183,6 +241,10 @@ variable*
 variable_array_set_string(char *name, char *value, size_t* vector)
 {
   variable* var = dictionary_get(_dictionary, name);
+  if ( ! check_in_bounds(var, vector) )
+  {
+    error("Index not in bounds");
+  }
   size_t index = calc_index(var, vector); 
   variable_value val;
   val.string = strdup(value);
@@ -194,6 +256,10 @@ variable_array_set_string(char *name, char *value, size_t* vector)
 variable_array_get_string(char *name, size_t* vector)
 {
   variable* var = dictionary_get(_dictionary, name);
+  if ( ! check_in_bounds(var, vector) )
+  {
+    error("Index not in bounds");
+  }
   size_t index = calc_index(var, vector); 
   variable_value* val = array_get(var->array, index);
   return val->string;
@@ -204,12 +270,18 @@ variable_array_set_numeric(char *name, float value, size_t* vector)
 {
   // printf("set numeric %s, %f, %ld\n", name, value, vector[0]);
   variable* var = dictionary_get(_dictionary, name);
+  if ( ! check_in_bounds(var, vector) )
+  {
+    error("Index not in bounds");
+  }
+
   // variable_dump(var);
   size_t index = calc_index(var, vector); 
   // printf("index = %ld\n", index);
   variable_value val;
   val.num = value;
   array_set(var->array, index, &val);
+  // variable_dump(var);
   return var;
 }
 
@@ -217,6 +289,10 @@ float
 variable_array_get_numeric(char *name, size_t* vector)
 {
   variable* var = dictionary_get(_dictionary, name);
+  if ( ! check_in_bounds(var, vector) )
+  {
+    error("Index not in bounds");
+  }
   size_t index = calc_index(var, vector); 
   variable_value* val = array_get(var->array, index);
   return val->num;
