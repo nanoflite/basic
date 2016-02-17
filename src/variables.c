@@ -26,7 +26,9 @@ struct variable
 
 dictionary *_dictionary = NULL;
 
+#if ARCH!=ARCH_XMEGA
 static void vector_print(size_t* vector, size_t dimensions);
+#endif
 
 bool
 variables_init(void)
@@ -196,27 +198,6 @@ calc_index(variable* var, size_t* vector)
   return index;
 }
 
-  static void
-calc_vector(variable* var, size_t index, size_t* vector)
-{
-  size_t product = 1;
-  for(size_t i=1; i<var->nr_dimensions; ++i)
-  {
-    product *= var->dimensions[i];
-  }
-
-  for(int i=0; i<var->nr_dimensions; ++i)
-  {
-    vector[i] = index / product;
-    index %= product;
-    if( (i+1) < var->nr_dimensions )
-    {
-      product /= var->dimensions[i+1];
-    }
-  }
-  vector_print(vector, var->nr_dimensions);
-}  
-
 variable*
 variable_array_init(char* name, variable_type type, size_t dimensions, size_t* vector)
 {
@@ -322,6 +303,28 @@ variables_each(variables_each_cb each, void* context)
   dictionary_each(_dictionary, each_v, &ctx);
 }
 
+#if ARCH!=ARCH_XMEGA
+
+  static void
+calc_vector(variable* var, size_t index, size_t* vector)
+{
+  size_t product = 1;
+  for(size_t i=1; i<var->nr_dimensions; ++i)
+  {
+    product *= var->dimensions[i];
+  }
+
+  for(int i=0; i<var->nr_dimensions; ++i)
+  {
+    vector[i] = index / product;
+    index %= product;
+    if( (i+1) < var->nr_dimensions )
+    {
+      product /= var->dimensions[i+1];
+    }
+  }
+}  
+
   static void
 vector_print(size_t* vector, size_t dimensions)
 {
@@ -385,4 +388,4 @@ variable_dump(variable* var)
 
   }
 }
-
+#endif

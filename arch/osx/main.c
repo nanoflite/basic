@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
   puts("| '_ \\ / _` / __| |/ __|");
   puts("| |_) | (_| \\__ \\ | (__ ");
   puts("|_.__/ \\__,_|___/_|\\___|");
-  puts("(c) 2015 Johan Van den Brande");
+  puts("(c) 2015-2016 Johan Van den Brande");
 
   basic_init(memory, sizeof(memory), 512);
   basic_register_io(out, in);
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
   char input[256];
   while(1)
   {
-    basic_readline("", input, sizeof(input)); 
+    basic_io_readline("", input, sizeof(input)); 
 
     if (strcmp(input, "quit") == 0) {
       break;

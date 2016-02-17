@@ -57,9 +57,11 @@ v array DIM bounds check
 v PRINT number -> if int(number) == number: print int(number)
 
 v printf -> registered put char (we need that for input, get anyhow)
-. try to compile on raspberry pi.
-. serial in/out on raspberry pi?
-. thermal printer on RPi?
+. rudementary support for other arch
+. port to xmega
+    v compiles on xmega
+    . C64 keyboard driver xmega
+    . thermal printer on xmega
 
 . Rename parser.{c,h} to interpreter, rename functions
 . clean up dead code and commented out code

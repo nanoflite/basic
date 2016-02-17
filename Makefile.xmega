@@ -1,11 +1,16 @@
+ARCH = XMEGA
+
+DEVICE = atxmega128a4u
+CLOCK = 32000000
+
 TARGET = basic
 
-BUILD_FOLDER = build/basic
+BUILD_FOLDER = build/xmega
 
-SOURCE_FOLDERS += ./arch/osx ./src
+SOURCE_FOLDERS += ./arch/xmega ./src
 
-CC = gcc-4.8
-CFLAGS = -g -Wall -Werror -std=c99 -lreadline -DARCH_OSX=1 -DARCH_XMEGA=2 -DARCH=1
+CC = avr-gcc
+CFLAGS = -g -Wall -Werror -std=c99 -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -DARCH_OSX=1 -DARCH_XMEGA=2 -DARCH=2
 
 VPATH = $(SOURCE_FOLDERS)
 
@@ -51,16 +56,3 @@ $(TARGET): $(BUILD_FOLDER)/($(_OBJECTS))
 	@ echo "LD $@"
 	@ $(CC) $(OBJECTS) $(CFLAGS) $(LDFLAGS) -L$(BUILD_FOLDER) -o $(BUILD_FOLDER)/$@
 
-run: all
-	@ echo "-- Running $(TARGET)"
-	@ $(BUILD_FOLDER)/$(TARGET)
-
-test: all
-	@ make -C ./t run
-
-testdebug: all
-	@ make -C ./t debug
-
-debug: all
-	@ echo "-- Debugging $(TARGET)"
-	@ echo "run" | gdb $(BUILD_FOLDER)/$(TARGET)

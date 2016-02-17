@@ -4,6 +4,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdbool.h>
+
+#include "arch.h"
 #include "tokenizer.h"
 #include "hexdump.h"
 #include "array.h"

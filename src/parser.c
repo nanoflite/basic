@@ -5,17 +5,17 @@
 #include <string.h>
 #include <stdbool.h>
 #include <time.h>
-#include <execinfo.h>
 
 // #include <readline/readline.h>
 
+#include "arch.h"
 #include "error.h"
 #include "tokenizer.h"
 #include "variables.h"
 #include "lines.h"
 #include "array.h"
 #include "kbhit.h"
-
+#include "io.h"
 #include "parser.h"
 
 /*
@@ -192,8 +192,8 @@ static size_t __stack_size;
 static size_t __program_size;
 static size_t __stack_p;
 
-static basic_putchar __putch = putchar;
-static basic_getchar __getch = getchar;
+basic_putchar __putch = putchar;
+basic_getchar __getch = getchar;
 
 bool __RUNNING = false;
 
@@ -337,20 +337,11 @@ expression(expression_result *result)
 }
 
   static void
-print_buffer(char* buffer)
-{
-    for(size_t i=0; i<strlen(buffer); ++i)
-    {
-      __putch(buffer[i]);
-    }
-}  
-
-  static void
 expression_print(expression_result* expr)
 {
   if (expr->type == expression_type_string)
   {
-    print_buffer(expr->value.string);
+    basic_io_print(expr->value.string);
   }
   else
     if (expr->type == expression_type_numeric)
@@ -361,12 +352,12 @@ expression_print(expression_result* expr)
       if (ivalue == value)
       {
         snprintf(buffer, sizeof(buffer), "%ld", ivalue);
-        print_buffer(buffer);
+        basic_io_print(buffer);
       }
       else
       {
         snprintf(buffer, sizeof(buffer), "%f", value);
-        print_buffer(buffer);
+        basic_io_print(buffer);
       }
     }
     else
@@ -586,7 +577,7 @@ numeric_factor(void)
 {
   // printf("  factor: %ld\n", sym);
 
-  float number;
+  float number = 0;
   basic_function* bf;
   if ( (bf = find_basic_function_by_type(sym, basic_function_type_numeric)) != NULL ) {
     basic_type rv;
@@ -740,7 +731,7 @@ list_out(uint16_t number, char* contents)
 {
   char buffer[256];
   snprintf(buffer, sizeof(buffer), "%d %s\n", number, contents);
-  print_buffer(buffer);
+  basic_io_print(buffer);
 }
 
 static int
@@ -1622,7 +1613,7 @@ do_input(basic_type* rv)
   // char* line = readline( prompt ? "" : "?" );
 
   char line[MAX_LINE];
-  basic_readline( (prompt ? "" : "? "), line, sizeof(line) ); 
+  basic_io_readline( (prompt ? "" : "? "), line, sizeof(line) ); 
 
   if (type == T_VARIABLE_NUMBER) {
     char* t;
@@ -1810,20 +1801,6 @@ basic_eval(char *line_string)
   } else {
     parse_line();
   }
-}
-
-char*
-basic_readline(char* prompt, char* buffer, size_t buffer_size)
-{
-  size_t len = 0;
-  char ch;
-  print_buffer(prompt);
-  while ((ch = getchar()) != '\n' && len < buffer_size - 1)
-  { 
-    buffer[len++] = ch;
-  }
-  buffer[len] = '\0';
-  return buffer;
 }
 
 float evaluate(char *expression_string)
@@ -2113,7 +2090,9 @@ str_asc(basic_type* str, basic_type* rv)
 
 void dump_var(variable* var, void* context)
 {
+#if ARCH!=ARCH_XMEGA  
   variable_dump(var);
+#endif
 }
 
 int
