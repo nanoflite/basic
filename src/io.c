@@ -22,9 +22,15 @@ basic_io_readline(char* prompt, char* buffer, size_t buffer_size)
   char ch;
   basic_io_print(prompt);
   while ((ch = __getch()) != '\n' && len < buffer_size - 1)
-  { 
+  {
+#ifdef BASIC_READLINE_ECHO
+    __putch(ch);
+#endif
     buffer[len++] = ch;
   }
+#ifdef BASIC_READLINE_ECHO
+  __putch('\n');
+#endif  
   buffer[len] = '\0';
   return buffer;
 }

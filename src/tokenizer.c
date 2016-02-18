@@ -155,6 +155,7 @@ token tokenizer_get_next_token(void)
     strlcpy(number, tokenizer_p, sizeof(number) );
     tokenizer_p = tokenizer_next_p;
     float f;
+    // printf("[%s]\n", number);
     sscanf(number, "%f", &f);
     // printf("Got float: '%f'\n", f);
     tokenizer_actual_number = f;

@@ -1774,6 +1774,8 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   __data.line = 0;
   __data.cursor = 0;
   __data.state = data_state_init;
+
+  ready();
 }
 
   void
