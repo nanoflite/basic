@@ -57,9 +57,10 @@ v array DIM bounds check
 v PRINT number -> if int(number) == number: print int(number)
 
 v printf -> registered put char (we need that for input, get anyhow)
-. rudementary support for other arch
+v rudementary support for other arch
 . port to xmega
     v compiles on xmega
+    v runs on xmega via serial io
     . C64 keyboard driver xmega
     . thermal printer on xmega
 
