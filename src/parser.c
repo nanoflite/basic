@@ -487,6 +487,14 @@ f_exp(basic_type* n, basic_type* rv)
 }
 
 static int
+f_pow(basic_type* x, basic_type* y, basic_type* rv)
+{
+  rv->kind = kind_numeric;
+  rv->value.number = powf(x->value.number, y->value.number);
+  return 0;
+}
+
+static int
 f_atn(basic_type* n, basic_type* rv)
 {
   rv->kind = kind_numeric;
@@ -1755,6 +1763,7 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   register_function_1(basic_function_type_numeric, "SGN", f_sgn, kind_numeric);
   register_function_1(basic_function_type_numeric, "LOG", f_log, kind_numeric);
   register_function_1(basic_function_type_numeric, "EXP", f_exp, kind_numeric);
+  register_function_2(basic_function_type_numeric, "POW", f_pow, kind_numeric, kind_numeric);
   register_function_1(basic_function_type_numeric, "ATN", f_atn, kind_numeric);
   register_function_1(basic_function_type_numeric, "NOT", f_not, kind_numeric);
 
