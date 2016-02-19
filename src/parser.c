@@ -169,6 +169,7 @@ static token t_keyword_list;
 static token t_keyword_clear;
 static token t_keyword_run;
 static token t_keyword_end;
+static token t_keyword_stop;
 static token t_keyword_for;
 static token t_keyword_to;
 static token t_keyword_step;
@@ -1747,6 +1748,7 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   t_keyword_step = register_token("STEP", "STEP");
   t_keyword_next = register_function_0(basic_function_type_keyword, "NEXT", do_next);
   t_keyword_end = register_function_0(basic_function_type_keyword, "END", do_end);
+  t_keyword_stop = register_function_0(basic_function_type_keyword, "STOP", do_end);
   t_keyword_rem = register_function_0(basic_function_type_keyword, "REM", do_rem);
   t_keyword_dim = register_function_0(basic_function_type_keyword, "DIM", do_dim);
   t_keyword_data = register_function_0(basic_function_type_keyword, "DATA", do_data);
