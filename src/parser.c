@@ -851,7 +851,21 @@ do_print(basic_type* rv)
       expression(&expr);
       expression_print(&expr);
     }
-    (sym == T_SEMICOLON) ? accept(T_SEMICOLON) : __putch('\n');
+
+    if (sym == T_SEMICOLON)
+    {
+      accept(T_SEMICOLON);
+    }
+    else
+    if (sym == T_COMMA)
+    {
+      accept(T_COMMA);
+      __putch('\t');
+    }
+    else
+    {
+      __putch('\n');
+    }
   }
 
   fflush(stdout);
