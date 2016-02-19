@@ -78,6 +78,7 @@
   
   string_func =
     CHR$
+    ...
 
   string_expression = literal_string | string_variable
 
@@ -179,6 +180,7 @@ static token t_keyword_dim;
 static token t_keyword_data;
 static token t_keyword_read;
 static token t_keyword_restore;
+static token t_keyword_cls;
 
 // static token t_keyword_clear;
 static token t_op_or;
@@ -897,6 +899,21 @@ do_tab(basic_type* n, basic_type* rv)
   rv->value.number = 0;
   return 0;
 }
+
+  static int
+do_cls(basic_type* rv)
+{
+#if ARCH==ARCH_XMEGA
+  basic_io_print("--\n");
+#else
+  basic_io_print("\033[2J");
+  basic_io_print("\033[0;0H");
+#endif  
+  rv->kind = kind_numeric;
+  rv->value.number = 0;
+  return 0;
+}
+
 
 static int
 do_goto(basic_type* rv)
@@ -1767,7 +1784,8 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   t_keyword_print = register_function_0(basic_function_type_keyword, "PRINT", do_print);
   t_keyword_spc = register_function_1(basic_function_type_print, "SPC", do_spc, kind_numeric);
   t_keyword_tab = register_function_1(basic_function_type_print, "TAB", do_tab, kind_numeric);
- 
+  t_keyword_cls = register_function_0(basic_function_type_keyword, "CLS", do_cls);
+
   // BASIC functions 
   register_function_1(basic_function_type_numeric, "ABS", f_abs, kind_numeric);
   register_function_1(basic_function_type_numeric, "SIN", f_sin, kind_numeric);
