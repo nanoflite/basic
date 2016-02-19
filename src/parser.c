@@ -761,7 +761,7 @@ string_term(void)
   switch (sym)
   {
     case T_STRING:
-      string = strdup(tokenizer_get_string());
+      string = tokenizer_get_string();
       accept(T_STRING);
       break;
     case T_VARIABLE_STRING:
@@ -1160,7 +1160,7 @@ _data_find(variable_type type, value* value)
         accept(t_keyword_data);
         if (type == variable_type_string)
         {
-          value->string = strdup(tokenizer_get_string());
+          value->string = tokenizer_get_string();
         } else {
           value->number = tokenizer_get_number();
         }  
@@ -1190,7 +1190,7 @@ _data_read(variable_type type, value* value)
     accept(T_COMMA); // seperated by comma's
     if (type == variable_type_string)
     {
-      value->string = strdup(tokenizer_get_string());
+      value->string = tokenizer_get_string();
     }
     else
     {
@@ -1819,14 +1819,6 @@ void evaluate_print(char *line)
 {
   float result = evaluate(line); 
   printf("%s = %f\n", line, result);
-}
-
-void evaluate_print_func_param( char *func, float param)
-{
-    char *e;
-    asprintf(&e, "%s(%f)", func, param);
-    evaluate_print(e);
-    free(e);
 }
 
 const char *evaluate_last_error(void)
