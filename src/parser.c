@@ -6,6 +6,20 @@
 #include <stdbool.h>
 #include <time.h>
 
+#if ARCH==ARCH_XMEGA
+#   include <util/delay.h>
+
+void delay_ms(uint16_t count) {
+  while(count--) {
+    _delay_ms(1);
+
+  }
+}
+
+#else
+#   include <unistd.h>
+#endif
+
 // #include <readline/readline.h>
 
 #include "arch.h"
@@ -531,7 +545,7 @@ static int
 str_mid(basic_type* str, basic_type* start, basic_type* length, basic_type* rv)
 {
   rv->kind = kind_string;
-  int _start = (int) start->value.number;
+  int _start = (int) start->value.number - 1;
   int _length = (int) length->value.number;
   char* source = str->value.string;
   char* string = strdup(&source[_start]);
@@ -840,34 +854,41 @@ do_print(basic_type* rv)
 
   accept(t_keyword_print);
 
-  while (sym != T_EOF && sym != T_COLON)
+  if ( sym == T_EOF || sym == T_COLON ) // Just a print stm
   {
-    basic_function* bf = find_basic_function_by_type(sym, basic_function_type_print);
-    if ( bf != NULL )
+    __putch('\n');
+  }
+  else
+  {
+    while (sym != T_EOF && sym != T_COLON)
     {
-      basic_type rv;
-      basic_dispatch_function( bf, &rv);
-    }
-    else
-    {
-      expression_result expr;
-      expression(&expr);
-      expression_print(&expr);
-    }
+      basic_function* bf = find_basic_function_by_type(sym, basic_function_type_print);
+      if ( bf != NULL )
+      {
+        basic_type rv;
+        basic_dispatch_function( bf, &rv);
+      }
+      else
+      {
+        expression_result expr;
+        expression(&expr);
+        expression_print(&expr);
+      }
 
-    if (sym == T_SEMICOLON)
-    {
-      accept(T_SEMICOLON);
-    }
-    else
-    if (sym == T_COMMA)
-    {
-      accept(T_COMMA);
-      __putch('\t');
-    }
-    else
-    {
-      __putch('\n');
+      if (sym == T_SEMICOLON)
+      {
+        accept(T_SEMICOLON);
+      }
+      else
+        if (sym == T_COMMA)
+        {
+          accept(T_COMMA);
+          __putch('\t');
+        }
+        else
+        {
+          __putch('\n');
+        }
     }
   }
 
@@ -1693,6 +1714,27 @@ do_get(basic_type* rv)
   return 0;
 }
 
+int do_sleep(basic_type* delay, basic_type* rv)
+{
+  int milliseconds = delay->value.number;
+ 
+#if ARCH==ARCH_XMEGA
+
+  delay_ms(milliseconds);
+
+#else 
+
+  struct timespec ts;
+  ts.tv_sec = milliseconds / 1000;
+  ts.tv_nsec = (milliseconds % 1000) * 1000000;
+  nanosleep(&ts, NULL);
+
+#endif  
+
+  rv->kind = kind_numeric;
+  rv->value.number = 0;
+  return 0;
+}
 
 static void
 parse_line(void)
@@ -1808,6 +1850,9 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   register_function_2(basic_function_type_string, "LEFT$", str_left, kind_string, kind_numeric);
   register_function_2(basic_function_type_string, "RIGHT$", str_right, kind_string, kind_numeric);
   register_function_1(basic_function_type_numeric, "ASC", str_asc, kind_string);
+
+  // Special
+  register_function_1(basic_function_type_keyword, "SLEEP", do_sleep, kind_numeric);
 
   // DEBUG
   register_function_0(basic_function_type_keyword, "DUMP", dump);
