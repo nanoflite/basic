@@ -13,6 +13,9 @@
 
 #include "parser.h"
 
+char c64kb_read(void);
+void c64kb_init(void);
+
 void set_usartctrl( USART_t *usart, uint8_t bscale, uint16_t bsel)
 {
   usart->BAUDCTRLA = (bsel & USART_BSEL_gm);
@@ -30,23 +33,44 @@ void init_uart_bscale_bsel(USART_t *usart, int8_t bscale, int16_t bsel)
 }
 
 
-int uart_putc(int ch)
+int _uart_putc(int ch)
 {
-
-  PORTA.OUT = 1;
   while ( ! (USARTC1.STATUS & USART_DREIF_bm) ) {};
   USARTC1.DATA = (char) ch;
-  PORTA.OUT = 0;
+  return 1;
+}
+
+
+int uart_putc(int ch)
+{
+  _uart_putc(ch);
+
+  /*
+  _uart_putc(0x1b);
+  _uart_putc(0x33);
+  _uart_putc(0x00);
+
+  _uart_putc(0x0c);
+
+  _uart_putc(0x1b);
+  _uart_putc(0x32);
+  */
+
   return 1;
 }
 
 int uart_getc(void)
 {
-  PORTA.OUT = 1;
+
+#define C64KB
+
+#ifdef C64KB
+  return c64kb_read();;
+#else
   while ( ! (USARTC1.STATUS & USART_RXCIF_bm) ) {};
   char ch = (char) USARTC1.DATA;
-  PORTA.OUT = 0;
   return ch;
+#endif  
 }
 
 int uart_fputc(char c, FILE* stream)
@@ -64,8 +88,9 @@ FILE uart_stdio = FDEV_SETUP_STREAM(uart_fputc, uart_fgetc, _FDEV_SETUP_RW);
 
 void init_xmega(void)
 {
-  init_uart_bscale_bsel(&USARTC1, -7, 1539); // 9K6
-  PORTA.DIRSET = 0b11111111 ; // Set all pins on port A to be output.
+  // init_uart_bscale_bsel(&USARTC1, -7, 1539); // 9K6
+  init_uart_bscale_bsel(&USARTC1, -7, 705); // 19K2
+  // PORTA.DIRSET = 0b11111111 ; // Set all pins on port A to be output.
   stdout = stdin = &uart_stdio;
 }
 
@@ -75,13 +100,9 @@ int main(int argc, char *argv[])
   char input[256];
 
   init_xmega();
+  c64kb_init();
 
-  puts(" _               _      ");
-  puts("| |__   __ _ ___(_) ___ ");
-  puts("| '_ \\ / _` / __| |/ __|");
-  puts("| |_) | (_| \\__ \\ | (__ ");
-  puts("|_.__/ \\__,_|___/_|\\___|");
-  puts("(c) 2015-2016 Johan Van den Brande");
+  puts("BASIC");
 
   basic_register_io(uart_putc, uart_getc);
   basic_init(memory, sizeof(memory), 512);

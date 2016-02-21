@@ -61,7 +61,7 @@ $(TARGET): $(BUILD_FOLDER)/($(_OBJECTS))
 	@ avr-objcopy -j .text -j .data -O ihex $(BUILD_FOLDER)/$@ $(BUILD_FOLDER)/$(TARGET).hex
 	@ avr-objcopy -j .eeprom --change-section-lma .eeprom=0 -O ihex $(BUILD_FOLDER)/$@ $(BUILD_FOLDER)/$(TARGET)_eeprom.hex
 
-flash: $(TARGET)
+flash: all
 	@ dfu-programmer $(DEVICE) erase
 	@ dfu-programmer $(DEVICE) flash  $(BUILD_FOLDER)/$(TARGET).hex
 	@ dfu-programmer $(DEVICE) launch
