@@ -44,18 +44,6 @@ int _uart_putc(int ch)
 int uart_putc(int ch)
 {
   _uart_putc(ch);
-
-  /*
-  _uart_putc(0x1b);
-  _uart_putc(0x33);
-  _uart_putc(0x00);
-
-  _uart_putc(0x0c);
-
-  _uart_putc(0x1b);
-  _uart_putc(0x32);
-  */
-
   return 1;
 }
 
@@ -90,7 +78,6 @@ void init_xmega(void)
 {
   // init_uart_bscale_bsel(&USARTC1, -7, 1539); // 9K6
   init_uart_bscale_bsel(&USARTC1, -7, 705); // 19K2
-  // PORTA.DIRSET = 0b11111111 ; // Set all pins on port A to be output.
   stdout = stdin = &uart_stdio;
 }
 
