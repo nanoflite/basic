@@ -222,14 +222,23 @@ variable*
 variable_array_set_string(char *name, char *value, size_t* vector)
 {
   variable* var = dictionary_get(_dictionary, name);
+  if (var == NULL)
+  {
+    error("Variable not found");
+    return NULL;
+  }
+
   if ( ! check_in_bounds(var, vector) )
   {
     error("Index not in bounds");
+    return NULL;
   }
+
   size_t index = calc_index(var, vector); 
   variable_value val;
   val.string = strdup(value);
   array_set(var->array, index, &val);
+
   return var;
 }
 
@@ -237,12 +246,21 @@ variable_array_set_string(char *name, char *value, size_t* vector)
 variable_array_get_string(char *name, size_t* vector)
 {
   variable* var = dictionary_get(_dictionary, name);
+  if (var == NULL)
+  {
+    error("Variable not found");
+    return NULL;
+  }
+
   if ( ! check_in_bounds(var, vector) )
   {
     error("Index not in bounds");
+    return NULL;
   }
+
   size_t index = calc_index(var, vector); 
   variable_value* val = array_get(var->array, index);
+
   return val->string;
 }
 
@@ -251,9 +269,16 @@ variable_array_set_numeric(char *name, float value, size_t* vector)
 {
   // printf("set numeric %s, %f, %ld\n", name, value, vector[0]);
   variable* var = dictionary_get(_dictionary, name);
+  if (var == NULL)
+  {
+    error("Variable not found");
+    return NULL;
+  }
+
   if ( ! check_in_bounds(var, vector) )
   {
     error("Index not in bounds");
+    return NULL;
   }
 
   // variable_dump(var);
@@ -263,6 +288,7 @@ variable_array_set_numeric(char *name, float value, size_t* vector)
   val.num = value;
   array_set(var->array, index, &val);
   // variable_dump(var);
+  
   return var;
 }
 
@@ -270,12 +296,21 @@ float
 variable_array_get_numeric(char *name, size_t* vector)
 {
   variable* var = dictionary_get(_dictionary, name);
+  if (var == NULL)
+  {
+    error("Variable not found");
+    return 0;
+  }
+
   if ( ! check_in_bounds(var, vector) )
   {
     error("Index not in bounds");
+    return 0;
   }
+
   size_t index = calc_index(var, vector); 
   variable_value* val = array_get(var->array, index);
+
   return val->num;
 }
 
