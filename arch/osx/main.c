@@ -1,37 +1,29 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-// #include <readline/readline.h>
+#include <readline/readline.h>
 #include <string.h>
 
 #include "parser.h"
 
-// static char *line_read = (char *) NULL;
+static char *line_read = (char *) NULL;
 
-// static char *
-// readline_gets ()
-// {
-//   if (line_read) {
-//     free (line_read);
-//     line_read = (char *) NULL;
-//   }
-// 
-//   line_read = readline ("");
-// 
-//   if (line_read && *line_read) {
-//     add_history (line_read);
-//   }
-// 
-//   return (line_read);
-// }
-
-/*
-float expansion_do_led(float param)
+static char *
+readline_gets ()
 {
-  printf("LED %s", (param > 0) ? "ON" : "OFF" );
-  return 1;
+  if (line_read) {
+    free (line_read);
+    line_read = (char *) NULL;
+  }
+
+  line_read = readline ("");
+
+  if (line_read && *line_read) {
+    add_history (line_read);
+  }
+
+  return (line_read);
 }
-*/
 
 int out(int ch)
 {
@@ -57,15 +49,10 @@ int main(int argc, char *argv[])
 
   basic_init(memory, sizeof(memory), 512);
   basic_register_io(out, in);
-  // basic_register_function("LED", expansion_do_led, basic_returns_numeric, 1, basic_param_numeric);
   
-//  char *input;
-//  while ((input = readline_gets()) != NULL ) {
-  char input[256];
-  while(1)
+  char *input;
+  while ((input = readline_gets()) != NULL )
   {
-    basic_io_readline("", input, sizeof(input)); 
-
     if (strcmp(input, "quit") == 0) {
       break;
     }
