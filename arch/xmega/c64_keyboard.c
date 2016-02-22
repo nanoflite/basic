@@ -4,8 +4,6 @@
 #include <util/delay.h>
 #include <stdbool.h>
 
-#include "io.h"
-
 #define COMMODORE '.'
 #define CONTROL   '.' 
 #define KEY_0     '0'
@@ -75,8 +73,6 @@
 #define KEY_LEFT      '<'
 #define KEY_STOP      '.'
 
-extern basic_putchar __putch;
-
 char keys[8][8] = {
   {KEY_DELETE, KEY_ENTER, KEY_RIGHTARROW, KEY_F7, KEY_F1, KEY_F3, KEY_F5, KEY_DOWNARROW},
   {KEY_3, KEY_W, KEY_A, KEY_4, KEY_Z, KEY_S, KEY_E, LEFT_SHIFT},
@@ -109,44 +105,18 @@ c64kb_init(void)
   PORTD.PIN3CTRL = PORT_OPC_PULLUP_gc;
   PORTD.PIN4CTRL = PORT_OPC_PULLUP_gc;
   PORTD.PIN5CTRL = PORT_OPC_PULLUP_gc;
-  // PORTD.PIN6CTRL = PORT_OPC_PULLUP_gc;
-  // PORTD.PIN7CTRL = PORT_OPC_PULLUP_gc;
-  PORTA.DIR = 0xFF; // OUTPUT
-
+  // PD6, PD7 are connected to USB D+-, so we use PB0, PB1
   PORTB.DIRCLR = PIN0_bm | PIN1_bm;
   PORTB.PIN0CTRL = PORT_OPC_PULLUP_gc;
   PORTB.PIN1CTRL = PORT_OPC_PULLUP_gc;
 
-  /*
-  PD0 A
-  PD1 B
-  PD2 C
-  PD3 D
-  PD4 E
-  PD5 F
-  PB0 G
-  PB1 H
-  */
+  PORTA.DIR = 0xFF; // OUTPUT
 }
-
-// static char last = '\0';
 
   static uint8_t
 get_columns(void)
 {
   uint8_t columns = ~ ( (0b00111111 & PORTD.IN) | ( (0b00000011 & PORTB.IN) << 6 ) );
-//      // bit 6,7 of is USB
-//      if (PORTB.IN & PIN0_bm)
-//      {
-//        columns |= _BV(6);
-//      }
-//      if (PORTB.IN & PIN1_bm)
-//      {
-//        columns |= _BV(7);
-//      }
-//
-//      columns = ~ columns;
-//
   return columns;
 }
 
@@ -273,64 +243,3 @@ c64kb_read(void)
   }
 }
 
-//   char
-// c64kb_read(void)
-// {
-//   // size_t cnt = 0;
-//   while(1)
-//   {
-//     _delay_ms(250);
-// 
-//     
-//     bool shift = false;
-//     //            OIOOOOOO
-//     PORTA.OUT = 0b10111111;
-//     printf("[%02x]\n", PORTD.IN);
-//     if ( ! (PORTD.IN & PIN1_bm) )
-//     {
-//       printf("shift\n");
-//       shift = true;
-//     }
-// 
-//     for( uint8_t row=0; row<8; row++ )
-//     {
-//       PORTA.OUT = ~ _BV(row);
-//       uint8_t columns = get_columns();
-//       // printf("%d: %02x\n", row, columns);
-//       if (columns != 0x00)
-//       {
-//         // _delay_ms(25);
-//         // if ( columns == get_columns() ) // stable
-//         // {
-//           uint8_t column = 0;
-//           while(columns)
-//           {
-//             if (columns & 1) break;
-//             columns >>= 1;
-//             column++;
-//           }
-// 
-//           if (shift)
-//           {
-//             char ch = keys[column][row];
-//             return ch;
-//           }
-//           else
-//           {
-//             char ch = shifted[column][row];
-//             return ch;
-//           }
-//         // }
-//       }
-//     }
-//     /*
-//     if (cnt > 4)
-//     {
-//       cnt=0;
-//       last = '\0';
-//     }
-//     cnt++;
-//     */
-//   }  
-// 
-// }
