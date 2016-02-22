@@ -1674,7 +1674,7 @@ do_input(basic_type* rv)
   // char* line = readline( prompt ? "" : "?" );
 
   char line[MAX_LINE];
-  basic_io_readline( (prompt ? "" : "? "), line, sizeof(line) ); 
+  basic_io_readline( (prompt ? " " : "? "), line, sizeof(line) ); 
 
   if (type == T_VARIABLE_NUMBER) {
     char* t;
