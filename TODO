@@ -61,8 +61,8 @@ v rudementary support for other arch
 . port to xmega
     v compiles on xmega
     v runs on xmega via serial io
-    . C64 keyboard driver xmega
-    . thermal printer on xmega
+    v C64 keyboard driver xmega
+    v thermal printer on xmega
 
 . Rename parser.{c,h} to interpreter, rename functions
 . clean up dead code and commented out code
