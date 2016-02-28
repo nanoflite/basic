@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "parser.h"
+#include "sound.h"
 
 char c64kb_read(void);
 void c64kb_init(void);
@@ -44,6 +45,10 @@ int _uart_putc(int ch)
 int uart_putc(int ch)
 {
   _uart_putc(ch);
+  if (ch == '\n')
+  {
+    _uart_putc('\r');
+  }
   return 1;
 }
 
@@ -79,7 +84,31 @@ void init_xmega(void)
   // init_uart_bscale_bsel(&USARTC1, -7, 1539); // 9K6
   init_uart_bscale_bsel(&USARTC1, -7, 705); // 19K2
   stdout = stdin = &uart_stdio;
+
+  _delay_ms(100);
+
+  _uart_putc(0x1b);
+  _uart_putc('E');
+
+  sound_init();
+
+  for(size_t i=0; i<4; i++)
+  {
+    sound_play(440, 0.5);
+    _delay_ms(250);
+  }
+
 }
+
+  static int
+do_sound(basic_type* freq, basic_type* duration, basic_type* rv)
+{
+  sound_play(freq->value.number, duration->value.number);
+  rv->kind = kind_numeric;
+  rv->value.number = 0;
+  return 0;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -93,7 +122,9 @@ int main(int argc, char *argv[])
 
   basic_register_io(uart_putc, uart_getc);
   basic_init(memory, sizeof(memory), 512);
-   
+  
+  register_function_2(basic_function_type_keyword, "SOUND", do_sound, kind_numeric, kind_numeric);
+
   while(1)
   {
     basic_io_readline("", input, sizeof(input)); 
