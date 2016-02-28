@@ -70,7 +70,7 @@ However, it is easy to embed the interpreter into you own application.
   char memory[4096];
   basic_init(memory, sizeof(memory), 512); // memory*, memory size, stack size
   basic_register_io(putchar, getchar);
-  basic_eval("10 \"PRINT HELLO\"");
+  basic_eval("10 PRINT \"HELLO\"");
   basic_eval("RUN"); 
 ```
 
