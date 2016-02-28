@@ -1,6 +1,8 @@
 #ifndef __TOKENIZER_H__
 #define __TOKENIZER_H__
 
+#include <stdlib.h>
+
 typedef size_t token;
 typedef char* token_name;
 typedef char* token_keyword;
