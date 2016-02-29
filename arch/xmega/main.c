@@ -95,7 +95,7 @@ void init_xmega(void)
   for(size_t i=0; i<4; i++)
   {
     sound_play(440, 0.5);
-    _delay_ms(250);
+    _delay_ms(125);
   }
 
 }
@@ -118,7 +118,9 @@ int main(int argc, char *argv[])
   init_xmega();
   c64kb_init();
 
-  puts("BASIC");
+  puts("  (\\/)");
+  puts(" ( ..)");
+  puts("C(\")(\") ~BASIC-1~ Johan Van den Brande");
 
   basic_register_io(uart_putc, uart_getc);
   basic_init(memory, sizeof(memory), 512);
