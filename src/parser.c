@@ -49,6 +49,10 @@ void delay_ms(uint16_t count) {
     | RUN
     | END
     | DIM variable "(" expression ")"
+    | SAVE literal_string
+    | LOAD literal_string
+    | DELETE literal_string
+    | DIR
 
   expression-list = ( string | expression ) [, expression-list]
 
@@ -157,6 +161,10 @@ static token t_keyword_data;
 static token t_keyword_read;
 static token t_keyword_restore;
 static token t_keyword_cls;
+static token t_keyword_load;
+static token t_keyword_save;
+static token t_keyword_delete;
+static token t_keyword_dir;
 
 // static token t_keyword_clear;
 static token t_op_or;
@@ -868,7 +876,7 @@ do_tab(basic_type* n, basic_type* rv)
 {
   for(size_t i=0; i<n->value.number;i++)
   {
-    __putch('\t');
+    __putch(' ');
   }
   rv->kind = kind_numeric;
   rv->value.number = 0;
@@ -1337,6 +1345,142 @@ do_restore(basic_type* rv)
   return 0;
 }
 
+  static int
+is_empty(const char *s)
+{
+  while (*s != '\0') {
+    if (!isspace(*s))
+      return 0;
+    s++;
+  }
+  return 1;
+}
+
+// Insert '\0' behind first non space character, starting from right.
+  static void
+_trim(char* s)
+{
+  char* p = s + strlen(s) - 1; // without the '\0'
+  while(isspace(*p) && p > s){
+    --p;
+  } 
+  *(p+1) = '\0'; 
+}  
+
+  static void
+_store(char* line)
+{
+  int number;
+  sscanf(line, "%d", &number);
+
+  char* p = line;
+  while(isdigit(*p)){
+    p++;  
+  }
+  while(isspace(*p)){
+    p++;
+  }
+  _trim(p);
+  printf("%d %s\n", number, p);
+  lines_store((uint16_t)number, p);
+}  
+
+  static void
+_load_cb(char* line, void* context)
+{
+  if(!is_empty(line)){
+    _store(line);
+  }
+}  
+
+  static int
+do_load(basic_type* rv)
+{
+  accept(t_keyword_load);
+  if (sym != T_STRING) {
+    error("Literal string expected");
+    return 0;
+  }
+  char *filename = tokenizer_get_string();
+  accept(T_STRING);
+  lines_clear();
+  arch_load(filename, _load_cb, NULL);
+  ready();
+
+  return 0;
+}
+
+typedef struct {
+  uint16_t number;
+} _save_cb_ctx;
+
+  static uint16_t 
+_save_cb(char** line, void* context)
+{
+  _save_cb_ctx* ctx = (_save_cb_ctx*) context;
+  uint16_t number = ctx->number;
+  ctx->number = lines_next(number);
+   
+  *line = lines_get_contents(number);
+
+  return number;
+}  
+
+  static int
+do_save(basic_type* rv)
+{
+  accept(t_keyword_save);
+  if (sym != T_STRING) {
+    error("Literal string expected");
+    return 0;
+  }
+  char *filename = tokenizer_get_string();
+  accept(T_STRING);
+  _save_cb_ctx ctx;
+  ctx.number = lines_first();
+  arch_save(filename, _save_cb, &ctx);
+  ready();
+
+  return 0;
+}
+
+  static int
+do_delete(basic_type* rv)
+{
+  accept(t_keyword_delete);
+  if (sym != T_STRING) {
+    error("Literal string expected");
+    return 0;
+  }
+  char *filename = tokenizer_get_string();
+  accept(T_STRING);
+
+  arch_delete(filename);
+  ready();
+
+  return 0;
+}
+
+  static void
+_dir_cb(char* name, size_t size, bool label, void* context)
+{
+  if (label) {
+    printf("-- %-13s --\n", name);
+  } else {
+    printf("> %-8s : %6ld\n", name, size);
+  }
+}  
+
+  static int
+do_dir(basic_type* rv)
+{
+  accept(t_keyword_dir);
+  arch_dir(_dir_cb, NULL);
+  ready();
+
+  return 0;
+}
+
 static void parse_line(void);
 static bool statement(void);
 
@@ -1767,6 +1911,10 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   t_keyword_data = register_function_0(basic_function_type_keyword, "DATA", do_data);
   t_keyword_read = register_function_0(basic_function_type_keyword, "READ", do_read);
   t_keyword_restore = register_function_0(basic_function_type_keyword, "RESTORE", do_restore); 
+  t_keyword_load = register_function_0(basic_function_type_keyword, "LOAD", do_load);
+  t_keyword_save = register_function_0(basic_function_type_keyword, "SAVE", do_save);
+  t_keyword_delete = register_function_0(basic_function_type_keyword, "DELETE", do_delete);
+  t_keyword_dir = register_function_0(basic_function_type_keyword, "DIR", do_dir);
  
   register_function_0(basic_function_type_keyword, "LET", do_let);
   register_function_0(basic_function_type_keyword, "INPUT", do_input);
@@ -1827,10 +1975,13 @@ basic_register_io(basic_putchar putch, basic_getchar getch)
   __getch = getch;
 }
 
+
 void
 basic_eval(char *line_string)
 {
   last_error = NULL;
+  _trim(line_string);
+
   tokenizer_init( line_string );
   get_sym();
   if (sym == T_NUMBER ) {

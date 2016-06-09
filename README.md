@@ -74,6 +74,9 @@ However, it is easy to embed the interpreter into you own application.
   basic_eval("RUN"); 
 ```
 
+On OSX you can use the 'BASIC\_PATH' environment variable to set the folder used for loading and saving BASIC programs. The 'BASIC\_PATH' defaults to '.'.
+BASIC programs are expected to end with '.bas'. You can use LOAD, SAVE, DELETE and DIR.
+
 # Copyright
 
 (c) 2015 - 2016 Johan Van den Brande
