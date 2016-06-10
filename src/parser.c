@@ -1467,7 +1467,7 @@ _dir_cb(char* name, size_t size, bool label, void* context)
   if (label) {
     printf("-- %-13s --\n", name);
   } else {
-    printf("> %-8s : %6ld\n", name, size);
+    printf("> %-8s : %6zu\n", name, size);
   }
 }  
 
@@ -1965,6 +1965,8 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   __data.cursor = 0;
   __data.state = data_state_init;
 
+  arch_init();
+
   ready();
 }
 
@@ -1980,8 +1982,6 @@ void
 basic_eval(char *line_string)
 {
   last_error = NULL;
-  _trim(line_string);
-
   tokenizer_init( line_string );
   get_sym();
   if (sym == T_NUMBER ) {

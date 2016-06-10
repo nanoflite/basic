@@ -5,6 +5,13 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+  int
+arch_init(void)
+{
+  // stub
+  return 0;
+}
+
   static char*
 _get_path(void)
 {

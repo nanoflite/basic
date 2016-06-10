@@ -65,3 +65,6 @@ flash: all
 	@ dfu-programmer $(DEVICE) erase
 	@ dfu-programmer $(DEVICE) flash  $(BUILD_FOLDER)/$(TARGET).hex
 	@ dfu-programmer $(DEVICE) launch
+
+launch:
+	@ dfu-programmer $(DEVICE) launch
