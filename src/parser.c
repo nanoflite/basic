@@ -1467,7 +1467,11 @@ _dir_cb(char* name, size_t size, bool label, void* context)
   if (label) {
     printf("-- %-13s --\n", name);
   } else {
-    printf("> %-8s : %6zu\n", name, size);
+#   if ARCH==ARCH_XMEGA
+    printf("> %-8s : %6d\n", name, size);
+#   else
+    printf("> %-8s : %6ld\n", name, size);
+#   endif    
   }
 }  
 
