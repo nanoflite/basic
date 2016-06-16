@@ -17,11 +17,7 @@
 
 #include "diskio.h"
 
-char c64kb_read(void);
-void c64kb_init(void);
-
 static int led_blink_counter = 0;
-
 
 // 100 Hz
 ISR(TCC0_OVF_vect)
@@ -98,16 +94,9 @@ void uart_puts(unsigned char* s)
 
 int uart_getc(void)
 {
-
-// #define C64KB
-
-#ifdef C64KB
-  return c64kb_read();;
-#else
   while ( ! (USARTE0.STATUS & USART_RXCIF_bm) ) {};
   char ch = (char) USARTE0.DATA;
   return ch;
-#endif  
 }
 
 int uart_fputc(char c, FILE* stream)
@@ -127,9 +116,10 @@ void init_xmega(void)
 {
   init_xtal();
 
-  // init_uart_bscale_bsel(&USARTC1, -7, 1539); // 9K6
-  // init_uart_bscale_bsel(&USARTC1, -7, 705); // 19K2
-  init_uart_bscale_bsel(&USARTE0, -7, 2049); // 115200
+  // init_uart_bscale_bsel(&USARTC1, -7, 1539); // 9K6 @ 2MHz
+  // init_uart_bscale_bsel(&USARTC1, -7, 705); // 19K2 @ 2MHz
+  init_uart_bscale_bsel(&USARTE0, -5, 3301); // 19K2 @ 32MHz
+  // init_uart_bscale_bsel(&USARTE0, -7, 2049); // 115200 @ 32 MHz
   stdout = stdin = &uart_stdio;
 
   _delay_ms(100);
@@ -171,11 +161,13 @@ int main(int argc, char *argv[])
   PMIC.CTRL |= PMIC_LOLVLEN_bm;
   sei();
 
-  c64kb_init();
-
   puts("  (\\/)");
   puts(" ( ..)");
-  puts("C(\")(\") ~BASIC-1~ Johan Van den Brande");
+  puts("C(\")(\")");
+  puts("");
+  puts("~BASIC-1~");
+  puts("(c) 2015-2016 JVdB");
+  puts("");
 
   basic_register_io(uart_putc, uart_getc);
   basic_init(memory, sizeof(memory), 512);
