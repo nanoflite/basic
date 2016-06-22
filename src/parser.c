@@ -142,6 +142,7 @@ static token t_keyword_print;
 static token t_keyword_spc;
 static token t_keyword_tab;
 static token t_keyword_goto;
+static token t_keyword_on;
 static token t_keyword_if;
 static token t_keyword_then;
 static token t_keyword_gosub;
@@ -246,7 +247,7 @@ typedef struct
 static int basic_dispatch_function(basic_function* function, basic_type* rv);
 static basic_function* find_basic_function_by_type(token sym, basic_function_type type);
 
-static size_t get_vector(size_t* vector);
+static size_t get_vector(size_t* vector, size_t size);
 static char* string_term(void);
 int str_len(basic_type* str, basic_type* rv);
 int str_asc(basic_type* str, basic_type* rv);
@@ -588,7 +589,7 @@ numeric_factor(void)
         // printf("name: %s\n", var_name);
         accept(T_LEFT_BANANA);
         size_t vector[5];
-        get_vector(vector);
+        get_vector(vector,5);
         number = variable_array_get_numeric(var_name, vector);
         expect(T_RIGHT_BANANA);
       }
@@ -762,7 +763,7 @@ string_term(void)
         // printf("name: %s\n", var_name);
         accept(T_LEFT_BANANA);
         size_t vector[5];
-        get_vector(vector);
+        get_vector(vector,5);
         string = variable_array_get_string(var_name, vector);
         expect(T_RIGHT_BANANA);
       }
@@ -921,6 +922,88 @@ do_goto(basic_type* rv)
 
   return 0;
 }
+
+  static size_t
+get_list(size_t* list, size_t max_size)
+{
+  // printf("get list\n");
+  size_t size = 0;
+  do
+  {  
+    if (sym == T_COMMA)
+    {
+      accept(T_COMMA);
+    }
+    //printf(" sym: %ld\n", sym);
+    float n = numeric_expression();
+    //printf(" l[%ld] = %d\n", size, (int)n);
+    list[size] = n;
+    size++;
+    if (size>max_size)
+    {
+      error("List max size reached.");
+      return size;
+    }
+  } while (sym == T_COMMA);
+
+  return size;
+}
+
+  static int
+do_on_goto(basic_type* rv)
+{
+  accept(t_keyword_on);
+  
+  int index = numeric_expression();
+
+  token what = T_EOF;
+  if (sym == t_keyword_goto){
+    what = t_keyword_goto;
+  } else
+  if (sym == t_keyword_gosub){
+    what = t_keyword_gosub;
+  } else {
+    error("Only ON for GOTO and GOSUB");
+    return 0;
+  }
+  accept(what);
+
+  size_t list[10];
+  size_t size = get_list(list, 10);
+
+  if(index>size){
+    error("ON out of bounds");
+    return 0;
+  }
+
+  size_t line_number = list[index-1];  
+  if (what == t_keyword_goto){
+    //TODO: refactor to helper and use in goto as well
+    char* line = lines_get_contents(line_number);
+    if (line == NULL) {
+      error("Line not found.");
+    }
+    set_line( line_number );
+  } else {
+    //TODO: refactor to helper and use in gosub as well
+    stack_frame_gosub *g;
+    if ( __stack_p < sizeof(stack_frame_gosub) )
+    {
+      error("Stack too small.");
+      return 0;
+    }
+
+    __stack_p -= sizeof(stack_frame_gosub);
+    g = (stack_frame_gosub*) &(__stack[__stack_p]);
+
+    g->type = stack_frame_type_gosub;
+    g->line = __line;
+    g->cursor = tokenizer_char_pointer(NULL); 
+    set_line( line_number );
+  }
+  return 0;
+}
+
 
 static int
 do_gosub(basic_type* rv)
@@ -1085,9 +1168,12 @@ do_rem(basic_type* rv)
 }
 
   static size_t
-get_vector(size_t* vector)
+get_vector(size_t* vector, size_t size)
 {
-  for(size_t i=0; i<5; i++)
+
+  // printf("get_vector(%p, %ld)\n", vector, size);
+
+  for(size_t i=0; i<size; i++)
   {
     vector[i] = 0;
   }
@@ -1095,16 +1181,16 @@ get_vector(size_t* vector)
   size_t dimensions = 0;
   while (sym != T_RIGHT_BANANA)
   {
-    // printf(" s: %ld\n", sym);
+    // printf(" sym: %ld\n", sym);
     // expect(T_NUMBER);
     // float n = tokenizer_get_number();
     float n = numeric_expression();
     // printf(" dim %ld = %d\n", dimensions, (int) n);
     vector[dimensions] = n;
     dimensions++;
-    if (dimensions>5)
+    if (dimensions>size)
     {
-      error("DIM up to 5 dimensions.");
+      error("DIM up to n dimensions.");
       return dimensions;
     }
     // accept(T_NUMBER);
@@ -1142,7 +1228,7 @@ do_dim(basic_type* rv)
       // printf(" n: %s\n", name);
       accept(sym);
       expect(T_LEFT_BANANA); 
-      size_t dimensions = get_vector(vector);
+      size_t dimensions = get_vector(vector, 5);
       expect(T_RIGHT_BANANA);
 
       // printf("DIM for %s: %ld dimension(s)\n", name, dimensions);
@@ -1295,7 +1381,7 @@ do_read(basic_type* rv)
         name = realloc(name, strlen(name)+2);
         name = strcat(name, "(");
         accept(T_LEFT_BANANA);
-        get_vector(vector);
+        get_vector(vector,5);
         expect(T_RIGHT_BANANA);
       }
       // printf("variable name: %s\n", name);
@@ -1706,7 +1792,7 @@ do_let(basic_type* rv)
     name = realloc(name, strlen(name)+2);
     name = strcat(name, "(");
     accept(T_LEFT_BANANA);
-    get_vector(vector);
+    get_vector(vector, 5);
     expect(T_RIGHT_BANANA);
   }
   // printf("name: %s\n", name);
@@ -1899,6 +1985,7 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   t_keyword_list = register_function_0(basic_function_type_keyword, "LIST", do_list);
   t_keyword_clear = register_function_0(basic_function_type_keyword, "CLEAR", do_clear);
   t_keyword_goto = register_function_0(basic_function_type_keyword, "GOTO", do_goto);
+  t_keyword_on = register_function_0(basic_function_type_keyword, "ON", do_on_goto);
   t_keyword_gosub = register_function_0(basic_function_type_keyword, "GOSUB", do_gosub); 
   t_keyword_return = register_function_0(basic_function_type_keyword, "RETURN", do_return);
   t_keyword_run = register_function_0(basic_function_type_keyword, "RUN", do_run);

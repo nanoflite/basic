@@ -139,7 +139,7 @@ check_in_bounds(variable* var, size_t* vector)
     // printf("vector_%ld = %ld\n", i, vector_i);
     // printf("dimension_%ld = %ld\n", i, var->dimensions[i]); 
     // DIM A(3) -> A(1), A(2), A(3)
-    if (vector_i < 1 || vector_i > var->dimensions[i])
+    if (vector_i > var->dimensions[i])
     { 
       return false;
     }  
@@ -180,7 +180,8 @@ calc_index(variable* var, size_t* vector)
   size_t index = 0;
   for(size_t i=0; i<var->nr_dimensions; ++i)
   {
-    size_t product = vector[i] - 1;
+    // size_t product = vector[i] - 1;
+    size_t product = vector[i];
     for(size_t j=i+1; j<var->nr_dimensions; ++j)
     {
       product *= var->dimensions[j];
@@ -190,8 +191,8 @@ calc_index(variable* var, size_t* vector)
 
   // printf("index[ %s", var->name);
   // for(size_t i=0; i<var->nr_dimensions; i++){
-  //   printf("%ld", vector[i]);
-  //   if (i<var->nr_dimensions-1) printf(",");
+  //    printf("%ld", vector[i]);
+  //    if (i<var->nr_dimensions-1) printf(",");
   // }
   // printf(") ] = %ld\n", index); 
 
@@ -206,11 +207,11 @@ variable_array_init(char* name, variable_type type, size_t dimensions, size_t* v
   var->is_array = true;
   var->type = type;
   var->nr_dimensions = dimensions;
-  var->dimensions[0] = vector[0];
-  var->dimensions[1] = vector[1];
-  var->dimensions[2] = vector[2];
-  var->dimensions[3] = vector[3];
-  var->dimensions[4] = vector[4];
+  var->dimensions[0] = vector[0] + 1;
+  var->dimensions[1] = vector[1] + 1;
+  var->dimensions[2] = vector[2] + 1;
+  var->dimensions[3] = vector[3] + 1;
+  var->dimensions[4] = vector[4] + 1;
   var->array = array_new(sizeof(variable_value));
   // array_alloc(var->array, calc_size(var, var->nr_dimensions, -1)); 
   array_alloc(var->array, calc_size(var)); 
