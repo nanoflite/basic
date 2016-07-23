@@ -1,7 +1,7 @@
 ARCH = XMEGA
 
 DEVICE = atxmega128a4u
-CLOCK = 2000000
+CLOCK = 32000000
 
 TARGET = basic
 

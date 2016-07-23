@@ -1,7 +1,3 @@
-#ifndef F_CPU
-#   define F_CPU 2000000UL
-#endif
-
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <ctype.h>
@@ -14,20 +10,16 @@
 
 #include "parser.h"
 #include "sound.h"
+#include "joystick.h"
+#include "console.h"
 
 #include "diskio.h"
-
-static int led_blink_counter = 0;
 
 // 100 Hz
 ISR(TCC0_OVF_vect)
 {
-  if (led_blink_counter == 0){
-    PORTE.OUTTGL = PIN0_bm;
-    led_blink_counter = 50;
-  }
-  led_blink_counter--;
   disk_timerproc();
+  sound_timerproc();
 }
 
 void init_xtal(void)
@@ -114,46 +106,88 @@ FILE uart_stdio = FDEV_SETUP_STREAM(uart_fputc, uart_fgetc, _FDEV_SETUP_RW);
 
 void init_xmega(void)
 {
-  init_xtal();
-
   // init_uart_bscale_bsel(&USARTC1, -7, 1539); // 9K6 @ 2MHz
   // init_uart_bscale_bsel(&USARTC1, -7, 705); // 19K2 @ 2MHz
   init_uart_bscale_bsel(&USARTE0, -5, 3301); // 19K2 @ 32MHz
   // init_uart_bscale_bsel(&USARTE0, -7, 2049); // 115200 @ 32 MHz
   stdout = stdin = &uart_stdio;
 
-  _delay_ms(100);
+  _delay_ms(500);
 
   _uart_putc(0x1b);
   _uart_putc('E');
-
-  sound_init();
-
-  for(size_t i=0; i<4; i++)
-  {
-    sound_play(440, 0.5);
-    _delay_ms(125);
-  }
-
 }
+
+  static int
+do_joystick(basic_type* rv)
+{
+  rv->kind = kind_numeric;
+  rv->value.number = joystick_read_stick(); 
+  return 0;
+}  
+
+  static int
+do_button(basic_type* rv)
+{
+  rv->kind = kind_numeric;
+  rv->value.number = joystick_read_button(); 
+  return 0;
+}  
+
+  static int
+do_led(basic_type* status, basic_type* rv)
+{
+  if(status->value.number>0){
+    PORTE.OUTSET = PIN0_bm;
+  } else {
+    PORTE.OUTCLR = PIN0_bm;
+  }  
+  rv->kind = kind_numeric;
+  rv->value.number = 0; 
+  return 0;
+}  
 
   static int
 do_sound(basic_type* freq, basic_type* duration, basic_type* rv)
 {
-  sound_play(freq->value.number, duration->value.number);
+  sound_play((uint16_t)freq->value.number, (uint16_t)(1000*duration->value.number));
   rv->kind = kind_numeric;
   rv->value.number = 0;
   return 0;
 }
+
+  static int
+do_plot(basic_type* x, basic_type* y, basic_type* code, basic_type* rv)
+{
+  console_plot((int)x->value.number, (int)y->value.number, (unsigned char)code->value.number);
+  rv->kind = kind_numeric;
+  rv->value.number = 0;
+  return 0;
+}
+
+  static int
+do_defchar(basic_type* code, basic_type* definition, basic_type* rv)
+{
+  console_def_char((unsigned char)code->value.number,definition->value.string);
+  rv->kind = kind_numeric;
+  rv->value.number = 0;
+  return 0;
+}  
 
 int main(int argc, char *argv[])
 {
   char memory[2048];
   char input[128];
 
+  init_xtal();
   init_xmega();
+  sound_init();
+  joystick_init();
 
-  PORTE.DIRSET = PIN0_bm;
+  PORTE.DIRSET = PIN0_bm; // LED
+  PORTE.OUTSET = PIN0_bm; //  on
+
+  // timer
   TCC0.CTRLB = TC_WGMODE_NORMAL_gc;
   TCC0.CTRLA = TC_CLKSEL_DIV256_gc; 
   TCC0.INTCTRLA = TC_OVFINTLVL_LO_gc;
@@ -169,10 +203,21 @@ int main(int argc, char *argv[])
   puts("(c) 2015-2016 JVdB");
   puts("");
 
+  for(uint16_t i=0; i<3; i++){
+     sound_play(1000, 50);
+     sound_play(0, 50);
+  }
+  sound_play(1000, 100);
+
   basic_register_io(uart_putc, uart_getc);
   basic_init(memory, sizeof(memory), 512);
   
   register_function_2(basic_function_type_keyword, "SOUND", do_sound, kind_numeric, kind_numeric);
+  register_function_1(basic_function_type_keyword, "LED", do_led, kind_numeric);
+  register_function_0(basic_function_type_keyword, "JOYSTICK", do_joystick);
+  register_function_0(basic_function_type_keyword, "BUTTON", do_button);
+  register_function_3(basic_function_type_keyword, "PLOT", do_plot, kind_numeric, kind_numeric, kind_numeric);
+  register_function_2(basic_function_type_keyword, "DEFCHAR", do_defchar, kind_numeric, kind_string);
 
   while(1)
   {

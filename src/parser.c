@@ -888,7 +888,8 @@ do_tab(basic_type* n, basic_type* rv)
 do_cls(basic_type* rv)
 {
 #if ARCH==ARCH_XMEGA
-  basic_io_print("--\n");
+  basic_io_print("\x1b");
+  basic_io_print("E");
 #else
   basic_io_print("\033[2J");
   basic_io_print("\033[0;0H");

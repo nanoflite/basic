@@ -1,51 +1,40 @@
-#ifndef F_CPU
-#   define F_CPU 2000000UL
-#endif
-
 #include <avr/io.h>
+#include <avr/interrupt.h>
+#include <stdbool.h>
 #include <util/delay.h>
 #include <stdlib.h>
-#include <stdio.h>
 
-  static void
-delay_us(size_t duration)
+static volatile size_t _sound_ticks;
+
+void sound_timerproc(void)
 {
-  while(duration--)
-  {
-    _delay_us(1);
+  if(_sound_ticks>0){
+    _sound_ticks--;
+    return;
   }
-}  
+}
 
-  void
-sound_init(void)
+void sound_init(void)
 {
-  PORTE.DIRSET = PIN0_bm;
-}  
+  PORTE.OUTCLR = PIN1_bm;
+  PORTE.DIRSET = PIN1_bm;
+  TCE0.CTRLA = TC_CLKSEL_OFF_gc;
+  TCE0.CTRLB = TC0_CCBEN_bm| TC_WGMODE_FRQ_gc;
+}
 
-
-// Hz, sec
-  void
-sound_play(float freq, float duration)
+void sound_play(uint16_t f, uint16_t ms)
 {
-//     __    __    __
-//  __|  |__|  |__|  |_...
-//  <-T->
-//
-//   . wait T/2
-//   . counter = duration / T
-//
-  float T = 1 / freq;
-  float _t2 = T / 2;
-  float _counter = duration / _t2;
-  size_t counter = (size_t) _counter;
-  size_t wait_us = (size_t) 1000000 * _t2;
-  
-  while (counter)
-  {
-    PORTE.OUTCLR = PIN0_bm;
-    delay_us(wait_us);
-    PORTE.OUTSET = PIN0_bm;
-    delay_us(wait_us);
-    counter--;
+  _sound_ticks = ms / 10;
+  if (f>0){
+    TCE0.CCABUF = (((uint32_t) F_CPU/f) >> 2) - 1;
+    TCE0.CNT = 0; // reset timer/counter
+    TCE0.CTRLA = TC_CLKSEL_DIV2_gc; // prescaling
+  }
+  while(_sound_ticks > 0){
+    __asm__ volatile ("nop");
+  }
+  if(f>0){
+    TCE0.CTRLA = TC_CLKSEL_OFF_gc; // timer/counter off
+    TCE0.CTRLC = 0; // outputs low
   }
 }
