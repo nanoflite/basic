@@ -32,6 +32,9 @@ arch_load(char* name, arch_load_out_cb cb, void* context)
   char* filename;
   asprintf(&filename, "%s/%s.bas", _get_path(), name);
   FILE* fp = fopen(filename, "r");
+  if(!fp){
+    return 1;
+  }
   char line[256];
   while(fgets(line, 256, fp) != NULL) {
     cb(line, context);
@@ -49,6 +52,9 @@ arch_save(char* name, arch_save_cb cb, void* context)
   asprintf(&filename, "%s/%s.bas", _get_path(), name);
  
   FILE* fp = fopen(filename, "w"); 
+  if(!fp){
+    return 1;
+  }
   for(;;){
     uint16_t number = cb(&line, context);
     if (line == NULL){
