@@ -29,4 +29,6 @@ error(const char *error_msg)
   }
 
   free (strings);
+
+  exit(1);
 }
