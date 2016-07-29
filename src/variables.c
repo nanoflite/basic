@@ -52,6 +52,9 @@ variable_get_string(char* name)
 {
   // printf("Var name: '%s'\n", name);
   variable *var = dictionary_get(_dictionary, name);
+  if(!var){
+    var = variable_set_string(name, "");
+  }
   return var->value.string;
 }
 
@@ -60,6 +63,9 @@ variable_get_numeric(char* name)
 {
   // printf("Var name: '%s'\n", name);
   variable *var = dictionary_get(_dictionary, name);
+  if(!var){
+    var = variable_set_numeric(name, 0);
+  }
   return var->value.num;
 }
 
