@@ -143,7 +143,7 @@ token tokenizer_get_next_token(void)
   } 
 
   // Check for number
-  if (isdigit(*tokenizer_p)) {
+  if (isdigit(*tokenizer_p) || *tokenizer_p == '.') {
     // puts("read a number");
     tokenizer_next_p = tokenizer_p;
     size_t l=0;
