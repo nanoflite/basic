@@ -5,7 +5,12 @@
   void
 console_def_char(unsigned char code, char* definition)
 {
-  printf("\x1bT%02x%s", code, definition);
+  char buf[8];
+  putchar(0x1b);
+  putchar('T');
+  snprintf(buf, sizeof(buf), "%02x", code);
+  basic_io_print(buf);
+  basic_io_print(definition);
 }
 
   void
@@ -15,5 +20,16 @@ console_plot(int x, int y, unsigned char code)
   putchar('Y');
   putchar(' ' + x);
   putchar(' ' + y);
+  putchar(code);
 }
 
+  void
+console_cursor(int cursor)
+{
+  putchar(0x1b);
+  if(cursor){
+    putchar('e');
+  } else {
+    putchar('f');
+  }
+}  

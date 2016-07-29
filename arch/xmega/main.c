@@ -174,6 +174,15 @@ do_defchar(basic_type* code, basic_type* definition, basic_type* rv)
   return 0;
 }  
 
+  static int
+do_cursor(basic_type* cursor, basic_type* rv)
+{
+  console_cursor((int)cursor->value.number);
+  rv->kind = kind_numeric;
+  rv->value.number = 0;
+  return 0;
+}
+
 int main(int argc, char *argv[])
 {
   char memory[2048];
@@ -195,6 +204,7 @@ int main(int argc, char *argv[])
   PMIC.CTRL |= PMIC_LOLVLEN_bm;
   sei();
 
+  console_cursor(1);
   puts("  (\\/)");
   puts(" ( ..)");
   puts("C(\")(\")");
@@ -214,10 +224,11 @@ int main(int argc, char *argv[])
   
   register_function_2(basic_function_type_keyword, "SOUND", do_sound, kind_numeric, kind_numeric);
   register_function_1(basic_function_type_keyword, "LED", do_led, kind_numeric);
-  register_function_0(basic_function_type_keyword, "JOYSTICK", do_joystick);
-  register_function_0(basic_function_type_keyword, "BUTTON", do_button);
+  register_function_0(basic_function_type_numeric, "JOYSTICK", do_joystick);
+  register_function_0(basic_function_type_numeric, "BUTTON", do_button);
   register_function_3(basic_function_type_keyword, "PLOT", do_plot, kind_numeric, kind_numeric, kind_numeric);
   register_function_2(basic_function_type_keyword, "DEFCHAR", do_defchar, kind_numeric, kind_string);
+  register_function_1(basic_function_type_keyword, "CURSOR", do_cursor, kind_numeric);
 
   while(1)
   {
