@@ -14,6 +14,7 @@ struct array {
   array*
 array_new(size_t element_size)
 {
+  // printf("array size: %ld\n", sizeof(array));
   array* a = malloc(sizeof(array));  
   a->element_size = element_size;
   a->size = 0;

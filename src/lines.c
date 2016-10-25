@@ -15,6 +15,7 @@
 #include "lines.h"
 
 static char* __memory;
+static char* __memory_end;
 static size_t __memory_size;
 
   static line*
@@ -46,12 +47,33 @@ _find_end(line* l)
 lines_init(char *memory, size_t memory_size)
 {
   __memory = memory;
+  __memory_end = memory;
   __memory_size = memory_size;
  
   // Signal end 
   line* l = (line*) __memory;
   l->number = 0;
   l->length = 0;
+}
+
+  size_t
+lines_memory_used(void)
+{
+  char *p = __memory;
+  line* start = (line*) p;
+  line* end = _find_end(start);
+  end = _next(end);
+      
+  char* m_start = (char*) start;
+  char* m_end = (char*) end;
+   
+   return m_end - m_start;
+}
+
+  size_t
+lines_memory_available(void)
+{
+  return __memory_size - lines_memory_used();
 }
 
   bool
@@ -83,7 +105,7 @@ lines_store(uint16_t number, char* contents)
       char* m_src = (char*) insert;
       char* m_end = (char*) end;
       size_t m_size = m_end - m_src;
-     
+
       // Calculate offset to move 
       size_t insert_size = sizeof(line) - 1 + strlen(contents) + 1;
       char* m_dst = m_src + insert_size;

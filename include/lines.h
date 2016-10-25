@@ -14,6 +14,10 @@ struct line
 };
 
 void lines_init(char *memory, size_t memory_size);
+
+size_t lines_memory_used(void);
+size_t lines_memory_available(void);
+
 // 
 // void lines_reset(void);
 // 

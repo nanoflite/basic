@@ -12,7 +12,7 @@ void evaluate_print_func_param( char *func, float param);
 
 const char *evaluate_last_error(void);
 
-void basic_init(char* memory, size_t memory_size, size_t stack_size);
+void basic_init(size_t memory_size, size_t stack_size);
 
 void basic_register_io(basic_putchar putch, basic_getchar getch);
 

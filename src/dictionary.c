@@ -14,7 +14,13 @@ struct entry
     void* value;
 };
 
-#define HASHSIZE 101
+
+#if ARCH!=ARCH_XMEGA
+#   define HASHSIZE 13
+#else
+#   define HASHSIZE 101
+#endif
+
 struct dictionary {
   entry *hashtab[HASHSIZE];
 };
@@ -133,6 +139,7 @@ dictionary_each(dictionary* d, dictionary_each_cb cb, void* context)
 dictionary*
 dictionary_new()
 {
+  // printf("dictionary size: %ld\n", sizeof(dictionary));
   dictionary* d = malloc(sizeof(dictionary));
   if (d == NULL) {
     return NULL;

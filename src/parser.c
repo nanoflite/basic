@@ -53,6 +53,7 @@ void delay_ms(uint16_t count) {
     | LOAD literal_string
     | DELETE literal_string
     | DIR
+    | DEF FN(X) = expression
 
   expression-list = ( string | expression ) [, expression-list]
 
@@ -166,6 +167,8 @@ static token t_keyword_load;
 static token t_keyword_save;
 static token t_keyword_delete;
 static token t_keyword_dir;
+static token t_keyword_def;
+static token t_keyword_fn;
 
 // static token t_keyword_clear;
 static token t_op_or;
@@ -1132,6 +1135,7 @@ do_next(basic_type* rv)
     accept(T_VARIABLE_NUMBER);
     if ( strcmp(var_name, f->variable_name) != 0 )
     {
+      printf("name: %s, expected: %s\n", var_name, f->variable_name);
       error("Expected for with other var");
       return 0;
     }
@@ -1572,6 +1576,24 @@ do_dir(basic_type* rv)
   return 0;
 }
 
+  static int
+do_def_fn(basic_type* rv)
+{
+  accept(t_keyword_def);
+
+  if(sym != t_keyword_fn){
+    error("Expected FN");
+    return 0;
+  }
+
+  // Find 'X' between '(', ')'.
+  
+  // Associate 'X' with the location of the expression (string pointer).
+  // When 'evalled', use the string pointer to run the expression valuator.
+
+  return 0;
+}  
+
 static void parse_line(void);
 static bool statement(void);
 
@@ -1584,6 +1606,10 @@ do_run(basic_type* rv)
   __RUNNING = true;
   while (__cursor && __RUNNING)
   {
+
+    // printf("stack available: %" PRIu16 "\n", __stack_p);
+    // printf("memory used: %" PRIu16 "\n", lines_memory_used() );
+
     get_sym();
     if ( sym == T_EOF ) {
       __line = lines_next(__line);
@@ -1963,18 +1989,32 @@ statement(void)
 }
 
 
-void basic_init(char* memory, size_t memory_size, size_t stack_size)
+void basic_init(size_t memory_size, size_t stack_size)
 {
-  __memory = memory;
+
+  //printf("stack sizes\n");
+ // printf("- available: %" PRIu16 "\n", stack_size);
+  //printf("- for:   %" PRIu16 "\n", sizeof(stack_frame_for));
+  //printf("- gosub: %" PRIu16 "\n", sizeof(stack_frame_gosub));
+  //printf("__\n");
+
+  __memory = malloc(memory_size);
+  if(!__memory){
+    error("Could not allocate program space.");
+    return;
+  }
   __memory_size = memory_size;
+  __program_size = __memory_size;
+
+  __stack = malloc(stack_size);
+  if(!__stack){
+    error("Could not allocate stack space.");
+    return;
+  }
   __stack_size = stack_size;
+  __stack_p = __stack_size;
 
   __line = 0;
-  
-  __stack = __memory + __memory_size - __stack_size;
-  __stack_p = __stack_size;
-  __program_size = __memory_size - __stack_size;
-
   __data.state = data_state_init;
 
   basic_tokens = array_new(sizeof(token_entry));
@@ -2007,6 +2047,8 @@ void basic_init(char* memory, size_t memory_size, size_t stack_size)
   t_keyword_save = register_function_0(basic_function_type_keyword, "SAVE", do_save);
   t_keyword_delete = register_function_0(basic_function_type_keyword, "DELETE", do_delete);
   t_keyword_dir = register_function_0(basic_function_type_keyword, "DIR", do_dir);
+  t_keyword_def = register_function_0(basic_function_type_keyword, "DEF", do_def_fn);
+  t_keyword_fn = register_token("FN", "FN");
  
   register_function_0(basic_function_type_keyword, "LET", do_let);
   register_function_0(basic_function_type_keyword, "INPUT", do_input);
@@ -2088,6 +2130,8 @@ basic_eval(char *line_string)
   } else {
     parse_line();
   }
+  // printf("stack available: %" PRIu16 "\n", __stack_p);
+  // printf("memory available: %" PRIu16 "\n", lines_memory_available() );
 }
 
 float evaluate(char *expression_string)

@@ -185,8 +185,7 @@ do_cursor(basic_type* cursor, basic_type* rv)
 
 int main(int argc, char *argv[])
 {
-  char memory[2048];
-  char input[128];
+  char input[64];
 
   init_xtal();
   init_xmega();
@@ -220,7 +219,7 @@ int main(int argc, char *argv[])
   sound_play(1000, 100);
 
   basic_register_io(uart_putc, uart_getc);
-  basic_init(memory, sizeof(memory), 512);
+  basic_init(3072, 512);
   
   register_function_2(basic_function_type_keyword, "SOUND", do_sound, kind_numeric, kind_numeric);
   register_function_1(basic_function_type_keyword, "LED", do_led, kind_numeric);

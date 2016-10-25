@@ -38,8 +38,6 @@ int in(void)
 
 int main(int argc, char *argv[])
 {
-  char memory[4096];
-
   puts(" _               _      ");
   puts("| |__   __ _ ___(_) ___ ");
   puts("| '_ \\ / _` / __| |/ __|");
@@ -47,7 +45,7 @@ int main(int argc, char *argv[])
   puts("|_.__/ \\__,_|___/_|\\___|");
   puts("(c) 2015-2016 Johan Van den Brande");
 
-  basic_init(memory, sizeof(memory), 512);
+  basic_init(1024*8, 2048);
   basic_register_io(out, in);
   
   char *input;

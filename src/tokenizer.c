@@ -43,8 +43,8 @@ char *tokenizer_next_p = NULL;
 token tokenizer_actual_token;
 float tokenizer_actual_number;
 char tokenizer_actual_char;
-char *tokenizer_actual_string = NULL;
-char *tokenizer_actual_variable = NULL;
+char tokenizer_actual_string[81];
+char tokenizer_actual_variable[33];
 
 void tokenizer_setup(void)
 {
@@ -177,10 +177,12 @@ token tokenizer_get_next_token(void)
       tokenizer_next_p++; // skip trailing "
     }
 
-    if (tokenizer_actual_string != NULL) {
-      free(tokenizer_actual_string);
+    if(l>80){
+      return T_ERROR;
     }
-    tokenizer_actual_string = strndup(tokenizer_p, l);
+
+    memcpy(tokenizer_actual_string, tokenizer_p, l);
+    tokenizer_actual_string[l+1] = '\0';
    
     tokenizer_p = tokenizer_next_p;
 
@@ -201,8 +203,13 @@ token tokenizer_get_next_token(void)
     tokenizer_next_p++;
   }
 
+  if(len>32){
+    return T_ERROR;
+  }
+
   if (len > 0) {
-    tokenizer_actual_variable = strndup(tokenizer_p, len);
+    memcpy(tokenizer_actual_variable, tokenizer_p, len);
+    tokenizer_actual_variable[len+1] = '\0';
     tokenizer_p = tokenizer_next_p;
     if (tokenizer_actual_variable[len-1] == '$') {
       return T_VARIABLE_STRING;

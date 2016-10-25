@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include <io.h>
 
@@ -23,14 +24,17 @@ basic_io_readline(char* prompt, char* buffer, size_t buffer_size)
   basic_io_print(prompt);
   while ((ch = __getch()) != '\n' && len < buffer_size - 1)
   {
-#ifdef BASIC_READLINE_ECHO
+#   if ARCH==ARCH_XMEGA
+    ch = toupper(ch);
+#   endif    
+#   ifdef BASIC_READLINE_ECHO
     __putch(ch);
-#endif
+#   endif
     buffer[len++] = ch;
   }
-#ifdef BASIC_READLINE_ECHO
+# ifdef BASIC_READLINE_ECHO
   __putch('\n');
-#endif  
+# endif  
   buffer[len] = '\0';
   return buffer;
 }
