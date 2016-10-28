@@ -152,7 +152,10 @@ token tokenizer_get_next_token(void)
       tokenizer_next_p++;
     }
     char number[l+1];
-    strlcpy(number, tokenizer_p, sizeof(number) );
+    memset(number, 0, l+1);
+    // strlcpy(number, tokenizer_p, sizeof(number) );
+    strncpy(number, tokenizer_p, l );
+    number[l] = '\0';
     tokenizer_p = tokenizer_next_p;
     float f;
     // printf("[%s]\n", number);

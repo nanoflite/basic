@@ -2,27 +2,21 @@
 #include <stdio.h>
 #include <math.h>
 #include <readline/readline.h>
+#include <readline/history.h>
 #include <string.h>
 
 #include "parser.h"
 
-static char *line_read = (char *) NULL;
-
 static char *
 readline_gets ()
 {
-  if (line_read) {
-    free (line_read);
-    line_read = (char *) NULL;
-  }
+  char * line_read = readline ("");
 
-  line_read = readline ("");
+  // if (line_read && *line_read) {
+  //   add_history (line_read);
+  // }
 
-  if (line_read && *line_read) {
-    add_history (line_read);
-  }
-
-  return (line_read);
+  return line_read;
 }
 
 int out(int ch)
@@ -47,24 +41,43 @@ int main(int argc, char *argv[])
 
   basic_init(1024*8, 2048);
   basic_register_io(out, in);
-  
-  char *input;
-  while ((input = readline_gets()) != NULL )
-  {
-    if (strcmp(input, "quit") == 0) {
-      break;
-    }
-    
-    basic_eval(input);
-    
-    if (evaluate_last_error()) {
-      printf("ERROR: %s\n", evaluate_last_error());
-    }
 
-  }
-  
-  puts("");
-  puts("bye...");
+  // basic_eval("10 FOR X=1 TO 30");
+  // basic_eval("20 FOR Y=1 TO 30");
+  // basic_eval("30 PRINT X, X");
+  // basic_eval("40 NEXT Y");
+  // basic_eval("50 NEXT X");
+  // basic_eval("LIST");
+  // basic_eval("RUN");
+  // basic_eval("LIST");
+ 
+  using_history();
+ 
+   char *input;
+   while ((input = readline_gets()) != NULL )
+   {
+     if (strcmp(input, "quit") == 0) {
+       free(input);
+       break;
+     }
+     
+     basic_eval(input);
+     
+     if (evaluate_last_error()) {
+       printf("ERROR: %s\n", evaluate_last_error());
+     }
+
+     free(input);
+   }
+
+   clear_history();
+
+
+  basic_destroy();
+
+  // 
+  // puts("");
+  // puts("bye...");
 
   return EXIT_SUCCESS;
 }

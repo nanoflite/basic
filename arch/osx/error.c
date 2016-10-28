@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <execinfo.h>
+#include <stdint.h>
+// or inttypes.h
 
 extern uint16_t __line;
 

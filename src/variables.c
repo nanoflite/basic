@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -37,9 +38,23 @@ variables_init(void)
   return _dictionary != NULL;
 }
 
+
+static void
+cb(char* name, void* value, void* context)
+{
+  variable *var = (variable *) value;
+  if(var->type == variable_type_string){
+    if(var->value.string!=NULL) free(var->value.string);
+  }
+  if(var->name!=NULL) free(var->name);
+  free(var);
+}
+
 void
 variables_destroy(void)
-{}
+{
+  dictionary_destroy(_dictionary, cb);
+}
 
 variable*
 variable_get(char* name)
@@ -73,10 +88,15 @@ variable*
 variable_set_string(char* name, char* value)
 {
   // printf("set var '%s' to '%s'\n", name, value); 
-  variable* var = (variable*) malloc(sizeof(variable));
-  var->name = strdup(name);
-  var->type = variable_type_string;
-  var->is_array = false;
+  variable *var = dictionary_get(_dictionary, name);
+  if(var==NULL){
+    var = (variable*) malloc(sizeof(variable));
+    var->name = strdup(name);
+    var->type = variable_type_string;
+    var->is_array = false;
+  } else {
+    free(var->value.string);
+  }
   var->value.string = strdup(value);
   dictionary_put(_dictionary, name, var);
   return var;
@@ -86,10 +106,13 @@ variable*
 variable_set_numeric(char* name, float value)
 {
   // printf("set var '%s' to %f\n", name, value); 
-  variable* var = (variable*) malloc(sizeof(variable));
-  var->name = strdup(name);
-  var->type = variable_type_numeric;
-  var->is_array = false;
+  variable *var = dictionary_get(_dictionary, name);
+  if(var==NULL){
+    var = (variable*) malloc(sizeof(variable));
+    var->name = strdup(name);
+    var->type = variable_type_numeric;
+    var->is_array = false;
+  }
   var->value.num = value;
   dictionary_put(_dictionary, name, var);
   return var;

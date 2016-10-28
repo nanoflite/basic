@@ -14,9 +14,12 @@ const char *evaluate_last_error(void);
 
 void basic_init(size_t memory_size, size_t stack_size);
 
+void basic_destroy(void);
+
 void basic_register_io(basic_putchar putch, basic_getchar getch);
 
 char* basic_readline(char* prompt, char* buffer, size_t buffer_size);
+
 void basic_eval(char *line);
 
 // For extensions

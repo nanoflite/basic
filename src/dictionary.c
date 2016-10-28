@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
@@ -112,6 +113,7 @@ dictionary_del(dictionary* d, char* name)
       previous = entry;
     }
     void *value = element->value;
+    free(element->name);
     free(element); 
     return value;
   }
@@ -122,7 +124,8 @@ dictionary_del(dictionary* d, char* name)
 void
 dictionary_each(dictionary* d, dictionary_each_cb cb, void* context)
 {
-
+  entry* next_entry = NULL;
+  
   if (!cb) {
     return;
   }
@@ -130,8 +133,9 @@ dictionary_each(dictionary* d, dictionary_each_cb cb, void* context)
   for(size_t i=0; i < HASHSIZE; i++) {
     entry* entry = d->hashtab[i];
     while(entry) {
+      next_entry = entry->next;
       cb(entry->name, entry->value, context);
-      entry = entry->next;
+      entry = next_entry;
     }
   }
 }
@@ -150,9 +154,27 @@ dictionary_new()
   return d;
 }
 
+typedef struct {
+ dictionary* d;
+ dictionary_each_cb cb;
+} _free_s;
+
+static void
+destroy_cb(char* name, void* value, void* context)
+{
+	_free_s *ctx = (_free_s*) context;
+	dictionary *d = ctx->d;
+	dictionary_each_cb free_cb = ctx->cb;
+        free_cb(name, value, NULL); 
+       	dictionary_del(d, name);
+}
 void
 dictionary_destroy(dictionary* d, dictionary_each_cb free_cb)
 {
-  dictionary_each(d, free_cb, NULL);
+  _free_s ctx = {
+	.d = d,
+        .cb = free_cb
+  };
+  dictionary_each(d, destroy_cb, &ctx);
   free(d);
 }

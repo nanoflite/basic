@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -1988,6 +1989,17 @@ statement(void)
   return last_error == NULL;
 }
 
+
+void basic_destroy(void)
+{
+	puts("### DESTROY DA BASIC");
+  	variables_destroy();
+	tokenizer_free_registered_tokens();
+	array_destroy(basic_tokens);
+	array_destroy(basic_functions);
+	free(__stack);
+	free(__memory);
+}
 
 void basic_init(size_t memory_size, size_t stack_size)
 {

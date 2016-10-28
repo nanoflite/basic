@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "arch.h"
 #include <stdio.h>
 #include <stdbool.h>
