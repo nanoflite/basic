@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
   sound_play(1000, 100);
 
   basic_register_io(uart_putc, uart_getc);
-  basic_init(3072, 512);
+  basic_init(2048, 512);
   
   register_function_2(basic_function_type_keyword, "SOUND", do_sound, kind_numeric, kind_numeric);
   register_function_1(basic_function_type_keyword, "LED", do_led, kind_numeric);
