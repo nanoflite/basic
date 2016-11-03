@@ -1992,8 +1992,7 @@ statement(void)
 
 void basic_destroy(void)
 {
-	puts("### DESTROY DA BASIC");
-  	variables_destroy();
+  variables_destroy();
 	tokenizer_free_registered_tokens();
 	array_destroy(basic_tokens);
 	array_destroy(basic_functions);
