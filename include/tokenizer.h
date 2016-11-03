@@ -3,6 +3,9 @@
 
 #include <stdlib.h>
 
+#define tokenizer_string_length 81
+#define tokenizer_variable_length 33
+
 typedef size_t token;
 typedef char* token_name;
 typedef char* token_keyword;
@@ -48,7 +51,7 @@ token tokenizer_get_next_token(void);
 
 float tokenizer_get_number(void);
 char * tokenizer_get_string(void);
-char * tokenizer_get_variable_name(void);
+void tokenizer_get_variable_name(char *name);
 
 char *tokenizer_token_name(token);
 

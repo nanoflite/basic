@@ -43,8 +43,8 @@ char *tokenizer_next_p = NULL;
 token tokenizer_actual_token;
 float tokenizer_actual_number;
 char tokenizer_actual_char;
-char tokenizer_actual_string[81];
-char tokenizer_actual_variable[33];
+char tokenizer_actual_string[tokenizer_string_length];
+char tokenizer_actual_variable[tokenizer_variable_length];
 
 void tokenizer_setup(void)
 {
@@ -233,9 +233,9 @@ char *tokenizer_get_string(void)
   return tokenizer_actual_string;
 }
 
-char *tokenizer_get_variable_name(void)
+void tokenizer_get_variable_name(char *name)
 {
-  return tokenizer_actual_variable;
+  strncpy(name, tokenizer_actual_variable, sizeof(tokenizer_actual_variable));
 }
 
   void

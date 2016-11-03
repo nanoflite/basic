@@ -234,7 +234,7 @@ typedef enum
 typedef struct
 {
   stack_frame_type type;
-  char *variable_name; 
+  char variable_name[tokenizer_variable_length]; 
   float end_value;
   float step;
   size_t line;
@@ -583,13 +583,17 @@ numeric_factor(void)
     number = tokenizer_get_number();
     accept(T_NUMBER);
   } else if (sym == T_VARIABLE_NUMBER) {
-    char* var_name = tokenizer_get_variable_name();
+      char var_name[tokenizer_variable_length];
+      tokenizer_get_variable_name(var_name);
       get_sym();
       if (sym == T_LEFT_BANANA)
       {
         // printf("is array\n");  
-        var_name = realloc(var_name, strlen(var_name)+2);
-        var_name = strcat(var_name, "(");
+        //var_name = realloc(var_name, strlen(var_name)+2);
+        //var_name = strcat(var_name, "(");
+        size_t l = strlen(var_name);
+        var_name[l] = '(';
+        var_name[l+1] = '\0';
         // printf("name: %s\n", var_name);
         accept(T_LEFT_BANANA);
         size_t vector[5];
@@ -748,7 +752,7 @@ static char*
 string_term(void)
 {
   char *string = NULL;
-  char *var_name;
+  char var_name[tokenizer_variable_length];
 
   switch (sym)
   {
@@ -757,13 +761,16 @@ string_term(void)
       accept(T_STRING);
       break;
     case T_VARIABLE_STRING:
-      var_name = tokenizer_get_variable_name();
+      tokenizer_get_variable_name(var_name);
       get_sym();
       if (sym == T_LEFT_BANANA)
       {
         // printf("is array\n");  
-        var_name = realloc(var_name, strlen(var_name)+2);
-        var_name = strcat(var_name, "(");
+        // var_name = realloc(var_name, strlen(var_name)+2);
+        // var_name = strcat(var_name, "(");
+        size_t l = strlen(var_name);
+        var_name[l] = '(';
+        var_name[l+1] = '\0';
         // printf("name: %s\n", var_name);
         accept(T_LEFT_BANANA);
         size_t vector[5];
@@ -1078,7 +1085,8 @@ do_for(basic_type* rv)
     return 0;
   }
 
-  char *name = tokenizer_get_variable_name();
+  char name[tokenizer_variable_length];
+  tokenizer_get_variable_name(name);
   get_sym();
   expect(T_EQUALS);
   float value = numeric_expression();
@@ -1106,7 +1114,7 @@ do_for(basic_type* rv)
   f = (stack_frame_for*) &(__stack[__stack_p]);
   
   f->type = stack_frame_type_for;
-  f->variable_name = name;
+  strncpy(f->variable_name, name, tokenizer_variable_length);
   f->end_value = end_value;
   f->step = step;
   f->line = __line;
@@ -1132,7 +1140,8 @@ do_next(basic_type* rv)
 
   if (sym == T_VARIABLE_NUMBER)
   {
-    char* var_name = tokenizer_get_variable_name();
+    char var_name[tokenizer_variable_length];
+    tokenizer_get_variable_name(var_name);
     accept(T_VARIABLE_NUMBER);
     if ( strcmp(var_name, f->variable_name) != 0 )
     {
@@ -1226,11 +1235,14 @@ do_dim(basic_type* rv)
     {
       variable_type type = (sym == T_VARIABLE_STRING) ? variable_type_string : variable_type_numeric ;
       size_t vector[5];
-      char* name = tokenizer_get_variable_name();
+      char name[tokenizer_variable_length];
+      tokenizer_get_variable_name(name);
 
-      size_t name_len = strlen(name);
-      name = realloc(name, name_len + 2);
-      strcat(name, "(");
+      size_t l = strlen(name);
+      name[l] = '(';
+      name[l+1] = '\0';
+      //name = realloc(name, name_len + 2);
+      //strcat(name, "(");
       // printf(" n: %s\n", name);
       accept(sym);
       expect(T_LEFT_BANANA); 
@@ -1379,13 +1391,17 @@ do_read(basic_type* rv)
     if ( sym == T_VARIABLE_NUMBER || sym == T_VARIABLE_STRING )
     {
       variable_type type = (sym == T_VARIABLE_STRING) ? variable_type_string : variable_type_numeric ;
-      char* name = tokenizer_get_variable_name();
+      char name[tokenizer_variable_length];
+      tokenizer_get_variable_name(name);
       accept(sym);
       if (sym == T_LEFT_BANANA)
       {
         is_array = true;
-        name = realloc(name, strlen(name)+2);
-        name = strcat(name, "(");
+        //name = realloc(name, strlen(name)+2);
+        //name = strcat(name, "(");
+        size_t l = strlen(name);
+        name[l] = '(';
+        name[l+1] = '\0';
         accept(T_LEFT_BANANA);
         get_vector(vector,5);
         expect(T_RIGHT_BANANA);
@@ -1810,15 +1826,19 @@ do_let(basic_type* rv)
     return 0;
   }
 
-  char *name = tokenizer_get_variable_name();
+  char name[tokenizer_variable_length];
+  tokenizer_get_variable_name(name);
   token var_type = sym;
   get_sym();
   if (sym == T_LEFT_BANANA)
   {
     is_array = true;
     // printf("is array\n");  
-    name = realloc(name, strlen(name)+2);
-    name = strcat(name, "(");
+    // name = realloc(name, strlen(name)+2);
+    // name = strcat(name, "(");
+    size_t l = strlen(name);
+    name[l] = '(';
+    name[l+1] = '\0';
     accept(T_LEFT_BANANA);
     get_vector(vector, 5);
     expect(T_RIGHT_BANANA);
@@ -1828,6 +1848,7 @@ do_let(basic_type* rv)
   expect(T_EQUALS);
   
   if (var_type == T_VARIABLE_NUMBER) {
+    // printf("number\n");
     float value = numeric_expression();
     if (is_array)
     {
@@ -1835,6 +1856,7 @@ do_let(basic_type* rv)
     }
     else
     {
+      // printf("set %s to %f\n", name, value);
       variable_set_numeric(name, value);
     }
   }
@@ -1871,15 +1893,15 @@ do_input(basic_type* rv)
     return 0;
   }
 
-  char* name;
+  char name[tokenizer_variable_length];
   token type = sym; 
   if (type == T_VARIABLE_NUMBER) {
-    name = tokenizer_get_variable_name();
+    tokenizer_get_variable_name(name);
     accept(T_VARIABLE_NUMBER);
   }
 
   if (type == T_VARIABLE_STRING) {
-    name = tokenizer_get_variable_name();
+    tokenizer_get_variable_name(name);
     accept(T_VARIABLE_STRING);
   }
 
@@ -1913,7 +1935,9 @@ do_get(basic_type* rv)
     return 0;
   }
 
-  char* name = tokenizer_get_variable_name();
+  char name[tokenizer_variable_length];
+  tokenizer_get_variable_name(name);
+
   accept(T_VARIABLE_STRING);
 
   char c[4] = "";
