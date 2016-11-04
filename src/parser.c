@@ -168,8 +168,8 @@ static token t_keyword_load;
 static token t_keyword_save;
 static token t_keyword_delete;
 static token t_keyword_dir;
-static token t_keyword_def;
-static token t_keyword_fn;
+// static token t_keyword_def;
+// static token t_keyword_fn;
 
 // static token t_keyword_clear;
 static token t_op_or;
@@ -1593,23 +1593,23 @@ do_dir(basic_type* rv)
   return 0;
 }
 
-  static int
-do_def_fn(basic_type* rv)
-{
-  accept(t_keyword_def);
-
-  if(sym != t_keyword_fn){
-    error("Expected FN");
-    return 0;
-  }
-
-  // Find 'X' between '(', ')'.
-  
-  // Associate 'X' with the location of the expression (string pointer).
-  // When 'evalled', use the string pointer to run the expression valuator.
-
-  return 0;
-}  
+//   static int
+// do_def_fn(basic_type* rv)
+// {
+//   accept(t_keyword_def);
+// 
+//   if(sym != t_keyword_fn){
+//     error("Expected FN");
+//     return 0;
+//   }
+// 
+//   // Find 'X' between '(', ')'.
+//   
+//   // Associate 'X' with the location of the expression (string pointer).
+//   // When 'evalled', use the string pointer to run the expression valuator.
+// 
+//   return 0;
+// }  
 
 static void parse_line(void);
 static bool statement(void);
@@ -2082,8 +2082,8 @@ void basic_init(size_t memory_size, size_t stack_size)
   t_keyword_save = register_function_0(basic_function_type_keyword, "SAVE", do_save);
   t_keyword_delete = register_function_0(basic_function_type_keyword, "DELETE", do_delete);
   t_keyword_dir = register_function_0(basic_function_type_keyword, "DIR", do_dir);
-  t_keyword_def = register_function_0(basic_function_type_keyword, "DEF", do_def_fn);
-  t_keyword_fn = register_token("FN", "FN");
+  // t_keyword_def = register_function_0(basic_function_type_keyword, "DEF", do_def_fn);
+  // t_keyword_fn = register_token("FN", "FN");
  
   register_function_0(basic_function_type_keyword, "LET", do_let);
   register_function_0(basic_function_type_keyword, "INPUT", do_input);
