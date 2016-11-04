@@ -64,17 +64,17 @@ It should be easy to port the interpreter to other architectures. As an example 
 
 For the moment I have only programmed a simple REPL for the BASIC interpreter. You can use it in an interactive way, just as you would do on a 80's era computer.
 
-However, it is easy to embed the interpreter into you own application.
+However, it is easy to embed the interpreter into your own application.
 
 ```C
-  char memory[4096];
-  basic_init(memory, sizeof(memory), 512); // memory*, memory size, stack size
+  basic_init(2048, 512); // memory size, stack size
   basic_register_io(putchar, getchar);
   basic_eval("10 PRINT \"HELLO\"");
   basic_eval("RUN"); 
+  basic_destroy();  
 ```
 
-On OSX you can use the 'BASIC\_PATH' environment variable to set the folder used for loading and saving BASIC programs. The 'BASIC\_PATH' defaults to '.'.
+On OSX/POSIX you can use the 'BASIC\_PATH' environment variable to set the folder used for loading and saving BASIC programs. The 'BASIC\_PATH' defaults to '.'.
 BASIC programs are expected to end with '.bas'. You can use LOAD, SAVE, DELETE and DIR.
 
 # Copyright
