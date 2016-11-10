@@ -346,7 +346,7 @@ expression_print(expression_result* expr)
     }
     else
     {
-      error("unknown expression");
+      error("UNKNOWN EXPRESSION");
     }
 }
 
@@ -558,7 +558,7 @@ expect(token t)
   if (accept(t)) {
     return true;
   }
-  error("Expect: unexpected symbol");
+  error("UNEXPECTED SYMBOL");
   return false;
 }
 
@@ -576,7 +576,7 @@ numeric_factor(void)
     basic_dispatch_function( bf, &rv);
     if (rv.kind != kind_numeric)
     {
-      error("Expected numeric.");
+      error("EXPECTED NUMERIC FACTOR");
     }
     number = rv.value.number;
   } else if (sym == T_NUMBER) {
@@ -610,7 +610,7 @@ numeric_factor(void)
     number = numeric_expression();
     expect(T_RIGHT_BANANA);
   } else {
-    error("Factor: syntax error");
+    error("FACTOR SYNTAX ERROR");
     get_sym();
   }
 
@@ -623,6 +623,7 @@ numeric_factor(void)
 
   return number; 
 }
+
 static float
 factor(void)
 {
@@ -631,7 +632,7 @@ factor(void)
     relop op = get_relop();
     if (op == OP_NOP)
     {
-      error("Expecting a relop.");
+      error("EXPECTED RELOP");
       return 0;
     }
     char* s2 = string_term();
@@ -665,7 +666,7 @@ term(void)
         }
         else
         {
-        error("term: oops");    
+        error("TERM SYNTAX ERROR");    
         }
     }
   }
@@ -705,7 +706,7 @@ numeric_expression(void)
         }
         else
         {
-        error("expression: oops");
+        error("EXPRESSION SYNTAX ERROR");
         }
     }
   }
@@ -793,7 +794,7 @@ string_term(void)
           basic_dispatch_function( bf, &rv);
           if (rv.kind != kind_string)
           {
-            error("Expected string.");
+            error("EXPECTED STRING TERM");
           }
           string = rv.value.string;
         }
@@ -917,7 +918,7 @@ do_goto(basic_type* rv)
   accept(t_keyword_goto);
   
   if (sym != T_NUMBER) {
-    error("Number expected");
+    error("GOTO EXPECTED NUMBER");
     return 0;
   }
 
@@ -926,7 +927,7 @@ do_goto(basic_type* rv)
 
   char* line = lines_get_contents(line_number);
   if (line == NULL) {
-    error("Line not found.");
+    error("GOTO LINE NOT FOUND");
     return 0;
   }
 
@@ -953,7 +954,7 @@ get_list(size_t* list, size_t max_size)
     size++;
     if (size>max_size)
     {
-      error("List max size reached.");
+      error("LIST MAX SIZE");
       return size;
     }
   } while (sym == T_COMMA);
@@ -975,7 +976,7 @@ do_on_goto(basic_type* rv)
   if (sym == t_keyword_gosub){
     what = t_keyword_gosub;
   } else {
-    error("Only ON for GOTO and GOSUB");
+    error("ON WITHOUT GOTO OR GOSUB");
     return 0;
   }
   accept(what);
@@ -984,7 +985,7 @@ do_on_goto(basic_type* rv)
   size_t size = get_list(list, 10);
 
   if(index>size){
-    error("ON out of bounds");
+    error("ON OUT OF BOUNDS");
     return 0;
   }
 
@@ -993,7 +994,7 @@ do_on_goto(basic_type* rv)
     //TODO: refactor to helper and use in goto as well
     char* line = lines_get_contents(line_number);
     if (line == NULL) {
-      error("Line not found.");
+      error("LINE NOT FOUND");
     }
     set_line( line_number );
   } else {
@@ -1001,7 +1002,7 @@ do_on_goto(basic_type* rv)
     stack_frame_gosub *g;
     if ( __stack_p < sizeof(stack_frame_gosub) )
     {
-      error("Stack too small.");
+      error("STACK FULL");
       return 0;
     }
 
@@ -1024,7 +1025,7 @@ do_gosub(basic_type* rv)
   accept(t_keyword_gosub);
   
   if (sym != T_NUMBER) {
-    error("Number expected");
+    error("EXPECTED NUMBER");
     return 0;
   }
   int line_number = (int) tokenizer_get_number();
@@ -1034,7 +1035,7 @@ do_gosub(basic_type* rv)
   stack_frame_gosub *g;
   if ( __stack_p < sizeof(stack_frame_gosub) )
   {
-    error("Stack too small.");
+    error("STACK FULL");
     return 0;
   }
 
@@ -1061,7 +1062,7 @@ do_return(basic_type* rv)
 
   if ( g->type != stack_frame_type_gosub )
   {
-    error("Uncorrect stack frame, expected gosub");
+    error("EXPECTED GOSUB STACK FRAME");
     return 0;
   }
 
@@ -1081,7 +1082,7 @@ do_for(basic_type* rv)
   accept(t_keyword_for);
 
   if ( sym != T_VARIABLE_NUMBER ) {
-    error("Variable expected");
+    error("EXPECTED VAR");
     return 0;
   }
 
@@ -1106,7 +1107,7 @@ do_for(basic_type* rv)
   stack_frame_for *f;
   if ( __stack_p <  sizeof(stack_frame_for) )
   {
-    error("Stack too small.");
+    error("STACK FULL");
     return 0;
   }  
 
@@ -1134,7 +1135,7 @@ do_next(basic_type* rv)
 
   if ( f->type != stack_frame_type_for )
   {
-    error("Uncorrect stack frame, expected for");
+    error("EXPECTED FOR STACK FRAME");
     return 0;
   }
 
@@ -1145,8 +1146,9 @@ do_next(basic_type* rv)
     accept(T_VARIABLE_NUMBER);
     if ( strcmp(var_name, f->variable_name) != 0 )
     {
-      printf("name: %s, expected: %s\n", var_name, f->variable_name);
-      error("Expected for with other var");
+      char _error[32];
+      snprintf(_error, sizeof(_error), "EXPECTED NEXT WITH %s, GOT %s", var_name, f->variable_name);
+      error(_error);
       return 0;
     }
   }
@@ -1205,7 +1207,7 @@ get_vector(size_t* vector, size_t size)
     dimensions++;
     if (dimensions>size)
     {
-      error("DIM up to n dimensions.");
+      error("MAX DIM");
       return dimensions;
     }
     // accept(T_NUMBER);
@@ -1411,7 +1413,7 @@ do_read(basic_type* rv)
       bool read_ok = _do_data_read(type, &v);
       if ( ! read_ok)
       {
-        error("read without data.");
+        error("READ WITHOUT DATA");
         return 0;
       }
       if ( type == variable_type_string )
@@ -1506,7 +1508,7 @@ do_load(basic_type* rv)
 {
   accept(t_keyword_load);
   if (sym != T_STRING) {
-    error("Literal string expected");
+    error("EXPECTED LITERAL STRING");
     return 0;
   }
   char *filename = tokenizer_get_string();
@@ -1539,7 +1541,7 @@ do_save(basic_type* rv)
 {
   accept(t_keyword_save);
   if (sym != T_STRING) {
-    error("Literal string expected");
+    error("EXPECTED LITERAL STRING");
     return 0;
   }
   char *filename = tokenizer_get_string();
@@ -1557,7 +1559,7 @@ do_delete(basic_type* rv)
 {
   accept(t_keyword_delete);
   if (sym != T_STRING) {
-    error("Literal string expected");
+    error("EXPECTED LITERAL STRING");
     return 0;
   }
   char *filename = tokenizer_get_string();
@@ -1599,7 +1601,7 @@ do_dir(basic_type* rv)
 //   accept(t_keyword_def);
 // 
 //   if(sym != t_keyword_fn){
-//     error("Expected FN");
+//     error("EXPECTED FN");
 //     return 0;
 //   }
 // 
@@ -1690,7 +1692,7 @@ numeric_condition(float left, float right, relop op)
 
   switch(op) {
     case OP_NOP:
-      error("No valid relation operator found");
+      error("EXPECTED RELOP");
       break;
     case OP_LT:
       return left < right;
@@ -1718,7 +1720,7 @@ string_condition(char *left, char *right, relop op)
 
   switch(op) {
     case OP_NOP:
-      error("No valid relation operator found");
+      error("EXPECTED RELOP");
       break;
     case OP_LT:
       return comparison < 0;
@@ -1745,7 +1747,7 @@ condition(expression_result *left_er, expression_result *right_er, relop op)
   {
     if (right_er->type != expression_type_numeric)
     {
-      error("Illegal right hand type, expected numeric.");  
+      error("EXPECTED NUMERIC RIGHT HAND TYPE");  
     }
     return numeric_condition(left_er->value.numeric, right_er->value.numeric, op);
   }
@@ -1753,7 +1755,7 @@ condition(expression_result *left_er, expression_result *right_er, relop op)
   {
     if (right_er->type != expression_type_string)
     {
-      error("Illegal right hand type, expected string");
+      error("EXPECTED STRING RIGHT HAND TYPE");
     }
     return string_condition(left_er->value.string, right_er->value.string, op);;
   }
@@ -1788,7 +1790,7 @@ do_if(basic_type* rv)
   }
 
   if (sym != t_keyword_then) {
-    error("IF without THEN.");
+    error("IF WITHOUT THEN");
     return 0;
   } 
   
@@ -1822,7 +1824,7 @@ do_let(basic_type* rv)
   size_t vector[5];
 
   if (sym != T_VARIABLE_NUMBER && sym != T_VARIABLE_STRING) {
-    error("Expected a variable");
+    error("EXPECTED VAR");
     return 0;
   }
 
@@ -1889,7 +1891,7 @@ do_input(basic_type* rv)
   }
 
   if (sym != T_VARIABLE_NUMBER && sym != T_VARIABLE_STRING) {
-    error("Expected a variable");
+    error("EXPECTED VAR");
     return 0;
   }
 
@@ -1931,7 +1933,7 @@ do_input(basic_type* rv)
 do_get(basic_type* rv)
 {
   if (sym != T_VARIABLE_STRING) {
-    error("Expected a string variable");
+    error("EXPECTED STRING VAR");
     return 0;
   }
 
@@ -1993,7 +1995,7 @@ statement(void)
 {
   switch(sym) {
     case T_ERROR:
-      error("Oh no... T_ERROR");
+      error("STATEMENT ERROR");
       break;
     default:
       {
@@ -2035,7 +2037,7 @@ void basic_init(size_t memory_size, size_t stack_size)
 
   __memory = malloc(memory_size);
   if(!__memory){
-    error("Could not allocate program space.");
+    error("CANNOT ALLOCATE PROGRAM SPACE");
     return;
   }
   __memory_size = memory_size;
@@ -2043,7 +2045,7 @@ void basic_init(size_t memory_size, size_t stack_size)
 
   __stack = malloc(stack_size);
   if(!__stack){
-    error("Could not allocate stack space.");
+    error("CANNOT ALLOCATE STACK SPACE");
     return;
   }
   __stack_size = stack_size;
@@ -2424,7 +2426,7 @@ basic_dispatch_function(basic_function* function, basic_type* rv)
       function->function.function_5(&v1, &v2, &v3, &v4, &v5, rv);
       break;
     default:
-      error("Max nr vars exceeded");
+      error("MAX VAR");
       return -1;
   }
   return 0;

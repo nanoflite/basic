@@ -15,6 +15,8 @@
 
 #include "diskio.h"
 
+extern uint16_t __line;
+
 // 100 Hz
 ISR(TCC0_OVF_vect)
 {
@@ -234,8 +236,7 @@ int main(int argc, char *argv[])
     basic_io_readline("", input, sizeof(input)); 
     basic_eval(input);
     if (evaluate_last_error()) {
-      printf("ERR: %s\n", evaluate_last_error());
-      puts(tokenizer_char_pointer(NULL));
+      printf("ERR LINE %d: %s\n", __line, evaluate_last_error());
     }
   }
   

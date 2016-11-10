@@ -27,6 +27,9 @@ struct variable
 
 dictionary *_dictionary = NULL;
 
+const char* E_INDEX_OUT_OF_BOUNDS = "INDEX OUT OF BOUNDS";
+const char* E_VAR_NOT_FOUND = "VAR NOT FOUND";
+
 #if ARCH!=ARCH_XMEGA
 static void vector_print(size_t* vector, size_t dimensions);
 #endif
@@ -254,13 +257,13 @@ variable_array_set_string(char *name, char *value, size_t* vector)
   variable* var = dictionary_get(_dictionary, name);
   if (var == NULL)
   {
-    error("Variable not found");
+    error(E_VAR_NOT_FOUND);
     return NULL;
   }
 
   if ( ! check_in_bounds(var, vector) )
   {
-    error("Index not in bounds");
+    error(E_INDEX_OUT_OF_BOUNDS);
     return NULL;
   }
 
@@ -278,13 +281,13 @@ variable_array_get_string(char *name, size_t* vector)
   variable* var = dictionary_get(_dictionary, name);
   if (var == NULL)
   {
-    error("Variable not found");
+    error(E_VAR_NOT_FOUND);
     return NULL;
   }
 
   if ( ! check_in_bounds(var, vector) )
   {
-    error("Index not in bounds");
+    error(E_INDEX_OUT_OF_BOUNDS);
     return NULL;
   }
 
@@ -301,13 +304,13 @@ variable_array_set_numeric(char *name, float value, size_t* vector)
   variable* var = dictionary_get(_dictionary, name);
   if (var == NULL)
   {
-    error("Variable not found");
+    error(E_VAR_NOT_FOUND);
     return NULL;
   }
 
   if ( ! check_in_bounds(var, vector) )
   {
-    error("Index not in bounds");
+    error(E_INDEX_OUT_OF_BOUNDS);
     return NULL;
   }
 
@@ -328,13 +331,13 @@ variable_array_get_numeric(char *name, size_t* vector)
   variable* var = dictionary_get(_dictionary, name);
   if (var == NULL)
   {
-    error("Variable not found");
+    error(E_VAR_NOT_FOUND);
     return 0;
   }
 
   if ( ! check_in_bounds(var, vector) )
   {
-    error("Index not in bounds");
+    error(E_INDEX_OUT_OF_BOUNDS);
     return 0;
   }
 
