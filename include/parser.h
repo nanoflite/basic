@@ -21,6 +21,7 @@ void basic_register_io(basic_putchar putch, basic_getchar getch);
 char* basic_readline(char* prompt, char* buffer, size_t buffer_size);
 
 void basic_eval(char *line);
+void basic_run(void);
 
 // For extensions
 

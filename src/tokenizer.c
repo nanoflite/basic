@@ -10,11 +10,6 @@
 #include "hexdump.h"
 #include "array.h"
 
-/*
-static size_t registered_tokens_count = 0;
-static token_entry* registered_tokens_ptr = NULL;
-*/
-
 static array* token_array = NULL;
 
 add_token( T_ERROR, NULL );
@@ -185,7 +180,7 @@ token tokenizer_get_next_token(void)
     }
 
     memcpy(tokenizer_actual_string, tokenizer_p, l);
-    tokenizer_actual_string[l+1] = '\0';
+    tokenizer_actual_string[l] = '\0';
    
     tokenizer_p = tokenizer_next_p;
 

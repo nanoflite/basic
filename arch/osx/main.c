@@ -30,7 +30,7 @@ int in(void)
   return getchar();
 }
 
-int main(int argc, char *argv[])
+void repl(void)
 {
   puts(" _               _      ");
   puts("| |__   __ _ ___(_) ___ ");
@@ -39,45 +39,63 @@ int main(int argc, char *argv[])
   puts("|_.__/ \\__,_|___/_|\\___|");
   puts("(c) 2015-2016 Johan Van den Brande");
 
+  using_history();
+ 
+  char *input;
+  while ((input = readline_gets()) != NULL )
+  {
+    if (strcmp(input, "QUIT") == 0) {
+      free(input);
+      break;
+    }
+    
+    basic_eval(input);
+    
+    if (evaluate_last_error()) {
+      printf("ERROR: %s\n", evaluate_last_error());
+    }
+
+    free(input);
+  }
+
+  clear_history();
+}
+
+void run(char *file_name){
+  FILE* file = fopen(file_name, "r");
+
+  if (file == NULL) {
+    fprintf(stderr, "Can't open %s\n", file_name);
+    return;  
+  }  
+
+  char line[256];
+  if (fgets(line, sizeof(line), file)) { // Skip shebang
+    while (fgets(line, sizeof(line), file)) {
+      if(strlen(line)==1 && line[0]=='\n') continue;
+      if(line[strlen(line)-1] == '\n'){
+        line[strlen(line)-1] = '\0';
+      }
+      basic_eval(line);
+    }
+  }
+  fclose(file);
+
+  basic_run();
+}
+
+int main(int argc, char *argv[])
+{
   basic_init(1024*8, 2048);
   basic_register_io(out, in);
 
-  // basic_eval("10 FOR X=1 TO 30");
-  // basic_eval("20 FOR Y=1 TO 30");
-  // basic_eval("30 PRINT X, X");
-  // basic_eval("40 NEXT Y");
-  // basic_eval("50 NEXT X");
-  // basic_eval("LIST");
-  // basic_eval("RUN");
-  // basic_eval("LIST");
- 
-  using_history();
- 
-   char *input;
-   while ((input = readline_gets()) != NULL )
-   {
-     if (strcmp(input, "quit") == 0) {
-       free(input);
-       break;
-     }
-     
-     basic_eval(input);
-     
-     if (evaluate_last_error()) {
-       printf("ERROR: %s\n", evaluate_last_error());
-     }
-
-     free(input);
-   }
-
-   clear_history();
-
+  if (argc > 1){
+    run(argv[1]);
+  } else {  
+    repl();
+  }
 
   basic_destroy();
-
-  // 
-  // puts("");
-  // puts("bye...");
 
   return EXIT_SUCCESS;
 }

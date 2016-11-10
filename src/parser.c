@@ -141,6 +141,7 @@ typedef struct {
 static array* basic_tokens = NULL;
 static array* basic_functions = NULL;
 static token t_keyword_print;
+static token t_keyword_print_short;
 static token t_keyword_spc;
 static token t_keyword_tab;
 static token t_keyword_goto;
@@ -188,6 +189,7 @@ basic_putchar __putch = putchar;
 basic_getchar __getch = getchar;
 
 bool __RUNNING = false;
+bool __REPL = true;
 
 typedef enum
 {
@@ -720,7 +722,9 @@ numeric_expression(void)
 static void
 ready(void)
 {
-  puts("READY.");
+  if(__REPL){
+    puts("READY.");
+  }
 }
 
 static void
@@ -828,6 +832,7 @@ do_print(basic_type* rv)
 {
 
   accept(t_keyword_print);
+  accept(t_keyword_print_short);
 
   if ( sym == T_EOF || sym == T_COLON ) // Just a print stm
   {
@@ -2097,6 +2102,7 @@ void basic_init(size_t memory_size, size_t stack_size)
 
   // Output related
   t_keyword_print = register_function_0(basic_function_type_keyword, "PRINT", do_print);
+  t_keyword_print_short = register_function_0(basic_function_type_keyword, "?", do_print);
   t_keyword_spc = register_function_1(basic_function_type_print, "SPC", do_spc, kind_numeric);
   t_keyword_tab = register_function_1(basic_function_type_print, "TAB", do_tab, kind_numeric);
   t_keyword_cls = register_function_0(basic_function_type_keyword, "CLS", do_cls);
@@ -2137,8 +2143,6 @@ void basic_init(size_t memory_size, size_t stack_size)
   __data.state = data_state_init;
 
   arch_init();
-
-  ready();
 }
 
   void
@@ -2148,6 +2152,13 @@ basic_register_io(basic_putchar putch, basic_getchar getch)
   __getch = getch;
 }
 
+
+void
+basic_run(void)
+{
+  __REPL = false;
+  basic_eval("RUN");
+}
 
 void
 basic_eval(char *line_string)
