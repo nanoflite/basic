@@ -18,7 +18,7 @@ Most of the common BASIC keywords are supported:
   * GOSUB expression
   * RETURN
   * FOR numeric\_variable '=' numeric\_expression TO numeric_expression [ STEP number ] 
-  * CLEAR
+  * CLEAR, NEW
   * LIST
   * RUN
   * END
@@ -62,9 +62,68 @@ It should be easy to port the interpreter to other architectures. As an example 
 
 # Use
 
-For the moment I have only programmed a simple REPL for the BASIC interpreter. You can use it in an interactive way, just as you would do on a 80's era computer.
+There is a simple REPL for the BASIC interpreter. You can use it in an interactive way, just as you would do on a 80's era computer.
 
-However, it is easy to embed the interpreter into your own application.
+```
+ _               _
+| |__   __ _ ___(_) ___
+| '_ \ / _` / __| |/ __|
+| |_) | (_| \__ \ | (__
+|_.__/ \__,_|___/_|\___|
+(c) 2015-2016 Johan Van den Brande
+10 PRINT "HELLO"
+20 GOTO 10
+```
+
+You can give it a BASIC file on the command line.
+
+```
+$> basic examples/diamond.bas
+         *
+        ***
+       *****
+      *******
+     *********
+    ***********
+   *************
+  ***************
+ *****************
+  ***************
+   *************
+    ***********
+     *********
+      *******
+       *****
+        ***
+         *
+```
+
+You can also use the shebang operator to make standalone BASIC scripts
+
+```
+#!/usr/bin/env basic
+
+10 RADIUS=10
+20 FOR I=1 TO RADIUS-1
+30 W=INT(RADIUS*SIN(180/RADIUS*I*3.1415/180))
+40 PRINT SPC(RADIUS-W);:FOR J=1 TO 2*W:PRINT "*";:NEXT J:PRINT
+50 NEXT I
+```
+
+```
+$> ./examples/circle.bas
+       ******
+     **********
+  ****************
+ ******************
+********************
+ ******************
+  ****************
+     **********
+       ******
+```
+
+It is easy to embed the interpreter into your own application.
 
 ```C
   basic_init(2048, 512); // memory size, stack size
