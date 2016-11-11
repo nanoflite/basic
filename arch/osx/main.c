@@ -4,8 +4,21 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <string.h>
+#include <signal.h>
+#include <stdbool.h>
 
 #include "parser.h"
+
+extern bool __RUNNING;
+
+static void
+sigint_handler(int signum)
+{
+  signal(SIGINT, sigint_handler);
+  printf("STOP\n");
+  __RUNNING = false;
+  fflush(stdout);
+}
 
 static char *
 readline_gets ()
@@ -69,15 +82,9 @@ void run(char *file_name){
     return;  
   }  
 
-  char line[256];
-  if (fgets(line, sizeof(line), file)) { // Skip shebang
-    while (fgets(line, sizeof(line), file)) {
-      if(strlen(line)==1 && line[0]=='\n') continue;
-      if(line[strlen(line)-1] == '\n'){
-        line[strlen(line)-1] = '\0';
-      }
-      basic_eval(line);
-    }
+  char line[tokenizer_string_length];
+  while (fgets(line, sizeof(line), file)) {
+    basic_eval(line);
   }
   fclose(file);
 
@@ -86,6 +93,8 @@ void run(char *file_name){
 
 int main(int argc, char *argv[])
 {
+  signal(SIGINT, sigint_handler);
+
   basic_init(1024*8, 2048);
   basic_register_io(out, in);
 

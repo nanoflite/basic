@@ -45,7 +45,7 @@ void delay_ms(uint16_t count) {
     | GOSUB expression
     | RETURN
     | FOR numeric_variable '=' numeric_expression TO numeric_expression [ STEP number ] 
-    | CLEAR
+    | CLEAR | NEW
     | LIST
     | RUN
     | END
@@ -152,6 +152,7 @@ static token t_keyword_gosub;
 static token t_keyword_return;
 static token t_keyword_list;
 static token t_keyword_clear;
+static token t_keyword_new;
 static token t_keyword_run;
 static token t_keyword_end;
 static token t_keyword_stop;
@@ -172,7 +173,6 @@ static token t_keyword_dir;
 // static token t_keyword_def;
 // static token t_keyword_fn;
 
-// static token t_keyword_clear;
 static token t_op_or;
 static token t_op_and;
 
@@ -1461,6 +1461,12 @@ do_restore(basic_type* rv)
 }
 
   static int
+is_comment(const char *s)
+{
+  return s[0] == '#';
+}
+
+  static int
 is_empty(const char *s)
 {
   while (*s != '\0') {
@@ -1476,7 +1482,7 @@ is_empty(const char *s)
 _trim(char* s)
 {
   char* p = s + strlen(s) - 1; // without the '\0'
-  while(isspace(*p) && p > s){
+  while(isspace(*p) && p >= s){
     --p;
   } 
   *(p+1) = '\0'; 
@@ -1503,7 +1509,7 @@ _store(char* line)
   static void
 _load_cb(char* line, void* context)
 {
-  if(!is_empty(line)){
+  if(!(is_empty(line) || is_comment(line))){
     _store(line);
   }
 }  
@@ -2071,6 +2077,7 @@ void basic_init(size_t memory_size, size_t stack_size)
   // BASIC keywords
   t_keyword_list = register_function_0(basic_function_type_keyword, "LIST", do_list);
   t_keyword_clear = register_function_0(basic_function_type_keyword, "CLEAR", do_clear);
+  t_keyword_new = register_function_0(basic_function_type_keyword, "NEW", do_clear);
   t_keyword_goto = register_function_0(basic_function_type_keyword, "GOTO", do_goto);
   t_keyword_on = register_function_0(basic_function_type_keyword, "ON", do_on_goto);
   t_keyword_gosub = register_function_0(basic_function_type_keyword, "GOSUB", do_gosub); 
@@ -2165,8 +2172,15 @@ basic_run(void)
 }
 
 void
-basic_eval(char *line_string)
+basic_eval(char *line)
 {
+  char line_string[tokenizer_string_length];
+  strncpy(line_string, line, sizeof(line_string));
+  _trim(line_string);
+  if(is_empty(line_string) || is_comment(line_string)){
+    return;
+  }
+
   last_error = NULL;
   tokenizer_init( line_string );
   get_sym();

@@ -23,7 +23,7 @@ error(const char *error_msg)
   size = backtrace (array, 10);
   strings = backtrace_symbols (array, size);
 
-  printf ("Showing %zd stack frames:\n", size);
+  printf ("SHOW %zd STACK FRAMES:\n", size);
 
   for (i = 0; i < size; i++)
   {
@@ -31,6 +31,4 @@ error(const char *error_msg)
   }
 
   free (strings);
-
-  exit(1);
 }
