@@ -1891,7 +1891,11 @@ do_input(basic_type* rv)
 
   if (sym != T_VARIABLE_NUMBER && sym != T_VARIABLE_STRING) {
     expression(&expr);
-    expect(T_COMMA);
+    if(sym == T_COMMA || sym == T_SEMICOLON){
+      get_sym();
+    } else {
+      error("UNEXPECTED TOKEN");
+    }
     prompt = true;
   }
 
