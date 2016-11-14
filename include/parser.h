@@ -54,6 +54,7 @@ typedef union {
 typedef struct {
   kind kind;
   bool empty;
+  bool mallocd;
   value value;
 } basic_type;
 

@@ -314,6 +314,8 @@ expression(expression_result *result)
       char *string_right = string_expression();
       result->type = expression_type_numeric;
       result->value.numeric = string_condition(string, string_right, op);
+      free(string_right);
+      free(string);
     }
   }
   else
@@ -509,6 +511,7 @@ str_chr(basic_type* n, basic_type* rv)
   char *chr;
   asprintf(&chr, "%c", (int) n->value.number);
   rv->value.string = chr;
+  rv->mallocd = true;
   return 0;
 }
 
@@ -529,6 +532,7 @@ str_mid(basic_type* str, basic_type* start, basic_type* length, basic_type* rv)
   char* string = strdup(&source[_start]);
   string[_length] = '\0'; 
   rv->value.string = string;
+  rv->mallocd = true;
   return 0;
 }
 
@@ -538,6 +542,7 @@ str_right(basic_type* str, basic_type* length, basic_type* rv)
   rv->kind = kind_string;
   char* source = str->value.string;
   rv->value.string = strdup(&source[strlen(source) - (int) length->value.number]);
+  rv->mallocd = true;
   return 0;
 }
 
@@ -547,6 +552,7 @@ str_left(basic_type* str, basic_type* length, basic_type* rv)
   rv->kind = kind_string;
   rv->value.string = strdup(str->value.string);
   rv->value.string[(int) length->value.number] = '\0';
+  rv->mallocd = true;
   return 0;
 }
 
@@ -643,11 +649,15 @@ factor(void)
     relop op = get_relop();
     if (op == OP_NOP)
     {
+      free(s1);
       error("EXPECTED RELOP");
       return 0;
     }
     char* s2 = string_term();
-    return string_condition(s1, s2, op);
+    float r = string_condition(s1, s2, op);
+    free(s2);
+    free(s1);
+    return r;
   } else {
     return numeric_factor();
   }
@@ -771,7 +781,7 @@ string_term(void)
   switch (sym)
   {
     case T_STRING:
-      string = tokenizer_get_string();
+      string = strdup(tokenizer_get_string());
       accept(T_STRING);
       break;
     case T_VARIABLE_STRING:
@@ -789,12 +799,12 @@ string_term(void)
         accept(T_LEFT_BANANA);
         size_t vector[5];
         get_vector(vector,5);
-        string = variable_array_get_string(var_name, vector);
+        string = strdup(variable_array_get_string(var_name, vector));
         expect(T_RIGHT_BANANA);
       }
       else
       {
-        string = variable_get_string(var_name);
+        string = strdup(variable_get_string(var_name));
         accept(T_VARIABLE_STRING);
       }
       break;
@@ -809,7 +819,8 @@ string_term(void)
           {
             error("EXPECTED STRING TERM");
           }
-          string = rv.value.string;
+          string = strdup(rv.value.string);
+          if(rv.mallocd==true) free(rv.value.string);
         }
       }
       break;
@@ -830,6 +841,7 @@ string_expression(void)
     size_t len = strlen(s1) + strlen(s2) + 1;
     s1 = realloc(s1, len);
     s1 = strcat(s1, s2);
+    free(s2);
   }
  
   return s1; 
@@ -862,6 +874,9 @@ do_print(basic_type* rv)
         expression_result expr;
         expression(&expr);
         expression_print(&expr);
+        if (expr.type == expression_type_string){
+           free(expr.value.string);
+        }
       }
 
       if (sym == T_SEMICOLON)
@@ -1901,6 +1916,7 @@ do_let(basic_type* rv)
     {
       variable_set_string(name, value);
     }
+    free(value);
   }
 
   return 0;
@@ -1942,6 +1958,9 @@ do_input(basic_type* rv)
   if (prompt)
   {
     expression_print(&expr);
+    if (expr.type == expression_type_string){
+      free(expr.value.string);
+    }
   }
   // char* line = readline( prompt ? "" : "?" );
 
@@ -2393,6 +2412,8 @@ find_basic_function_by_type(token sym, basic_function_type type)
   static void
 get_parameter(kind k, basic_type* v)
 {
+  v->empty = false;
+  v->mallocd = false;
   if (k == kind_string)
   {
     char *s = string_expression();
@@ -2458,9 +2479,12 @@ basic_dispatch_function(basic_function* function, basic_type* rv)
   // loop further, marking empty the variables
   for(; i<function->nr_arguments; i++){
     v[i].empty = true;
+    v[i].mallocd = false;
+    v[i].kind = kind_numeric;
   }
   expect(T_RIGHT_BANANA);
 
+  rv->mallocd = false;
   switch (function->nr_arguments)
   {
     case 0:
@@ -2484,6 +2508,13 @@ basic_dispatch_function(basic_function* function, basic_type* rv)
     default:
       return -1;
   }
+
+  for(int i=0; i<function->nr_arguments; i++){
+    if(v[i].kind == kind_string){
+       free(v[i].value.string);
+    }
+  }
+
   return 0;
 }
 
@@ -2516,6 +2547,7 @@ str_str(basic_type* number, basic_type* rv)
 {
   rv->kind = kind_string;
   asprintf(&(rv->value.string), "%f", number->value.number);
+  rv->mallocd = true;
   return 0;
 }
 
