@@ -53,6 +53,7 @@ typedef union {
 
 typedef struct {
   kind kind;
+  bool empty;
   value value;
 } basic_type;
 

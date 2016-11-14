@@ -257,6 +257,8 @@ static size_t get_vector(size_t* vector, size_t size);
 static char* string_term(void);
 int str_len(basic_type* str, basic_type* rv);
 int str_asc(basic_type* str, basic_type* rv);
+int str_val(basic_type* str, basic_type* rv);
+int str_str(basic_type* number, basic_type* rv);
 int dump(basic_type* rv);
 static void move_to_next_statement(void);
 
@@ -514,9 +516,16 @@ static int
 str_mid(basic_type* str, basic_type* start, basic_type* length, basic_type* rv)
 {
   rv->kind = kind_string;
-  int _start = (int) start->value.number - 1;
-  int _length = (int) length->value.number;
   char* source = str->value.string;
+  int _start = (int) start->value.number - 1;
+  if(_start>strlen(source)) _start = strlen(source);
+  int _length;
+  if(length->empty){
+    _length = strlen(source) - _start;
+  } else {
+    _length = (int) length->value.number;
+    if(_length+_start>strlen(source)) _length = strlen(source) - _start;
+  }
   char* string = strdup(&source[_start]);
   string[_length] = '\0'; 
   rv->value.string = string;
@@ -2148,6 +2157,8 @@ void basic_init(size_t memory_size, size_t stack_size)
   register_function_2(basic_function_type_string, "LEFT$", str_left, kind_string, kind_numeric);
   register_function_2(basic_function_type_string, "RIGHT$", str_right, kind_string, kind_numeric);
   register_function_1(basic_function_type_numeric, "ASC", str_asc, kind_string);
+  register_function_1(basic_function_type_numeric, "VAL", str_val, kind_string);
+  register_function_1(basic_function_type_string, "STR$", str_str, kind_numeric);
 
   // Special
   register_function_1(basic_function_type_keyword, "SLEEP", do_sleep, kind_numeric);
@@ -2382,8 +2393,6 @@ find_basic_function_by_type(token sym, basic_function_type type)
   static void
 get_parameter(kind k, basic_type* v)
 {
-  // printf("get_parameter %d\n", k);
-
   if (k == kind_string)
   {
     char *s = string_expression();
@@ -2398,78 +2407,81 @@ get_parameter(kind k, basic_type* v)
   }
 }
 
+static kind function_kind_i(basic_function *function, int i)
+{
+  switch(i){
+    case 0:
+      return function->kind_1;
+    case 1:
+      return function->kind_2;
+    case 2:
+      return function->kind_3;
+    case 3:
+      return function->kind_4;
+    case 4:
+      return function->kind_5;
+    default:
+      return kind_numeric;
+  }
+}
+
 static int
 basic_dispatch_function(basic_function* function, basic_type* rv)
 {
-  basic_type v1, v2, v3, v4, v5;
+  if(function->nr_arguments>5){
+    error("MAX ARGUMENTS");
+    return -1;
+  }
+
+  accept(sym);
+
+  if(function->nr_arguments==0 && function->type == basic_function_type_keyword){
+    function->function.function_0(rv);
+    return 0;
+  }
+
+  basic_type v[5];
+  expect(T_LEFT_BANANA);
+  int i = 0;
+  for(; i<function->nr_arguments; i++){
+    if(sym!=T_RIGHT_BANANA){
+      get_parameter(function_kind_i(function, i), &(v[i]));
+      if(i<function->nr_arguments-1){
+        if(sym!=T_COMMA){
+          // Probably the rest are default parameters...
+          break; // break for loop 
+        }  
+        expect(T_COMMA);
+      }
+    }
+  }
+  // loop further, marking empty the variables
+  for(; i<function->nr_arguments; i++){
+    v[i].empty = true;
+  }
+  expect(T_RIGHT_BANANA);
+
   switch (function->nr_arguments)
   {
     case 0:
-      accept(sym);
-      if (function->type != basic_function_type_keyword)
-      {
-        expect(T_LEFT_BANANA);
-        expect(T_RIGHT_BANANA);
-      }
       function->function.function_0(rv);
-      break; 
+      break;
     case 1:
-      accept(sym);
-      expect(T_LEFT_BANANA);
-      get_parameter(function->kind_1, &v1);
-      expect(T_RIGHT_BANANA);
-      function->function.function_1(&v1, rv);
+      function->function.function_1(&(v[0]), rv);
       break;
     case 2:
-      accept(sym);
-      expect(T_LEFT_BANANA);
-      get_parameter(function->kind_1, &v1);
-      expect(T_COMMA);
-      get_parameter(function->kind_2, &v2);
-      expect(T_RIGHT_BANANA);
-      function->function.function_2(&v1, &v2, rv);
+      function->function.function_2(&(v[0]), &(v[1]), rv);
       break;
     case 3:
-      accept(sym);
-      expect(T_LEFT_BANANA);
-      get_parameter(function->kind_1, &v1);
-      expect(T_COMMA);
-      get_parameter(function->kind_2, &v2);
-      expect(T_COMMA);
-      get_parameter(function->kind_3, &v3);
-      expect(T_RIGHT_BANANA);
-      function->function.function_3(&v1, &v2, &v3, rv);
+      function->function.function_3(&(v[0]), &(v[1]), &(v[2]), rv);
       break;
     case 4:
-      accept(sym);
-      expect(T_LEFT_BANANA);
-      get_parameter(function->kind_1, &v1);
-      expect(T_COMMA);
-      get_parameter(function->kind_2, &v2);
-      expect(T_COMMA);
-      get_parameter(function->kind_3, &v3);
-      expect(T_COMMA);
-      get_parameter(function->kind_4, &v4);
-      expect(T_RIGHT_BANANA);
-      function->function.function_4(&v1, &v2, &v3, &v4, rv);
+      function->function.function_4(&(v[0]), &(v[1]), &(v[2]), &(v[3]), rv);
       break;
     case 5:
-      accept(sym);
-      expect(T_LEFT_BANANA);
-      get_parameter(function->kind_1, &v1);
-      expect(T_COMMA);
-      get_parameter(function->kind_2, &v2);
-      expect(T_COMMA);
-      get_parameter(function->kind_3, &v3);
-      expect(T_COMMA);
-      get_parameter(function->kind_4, &v4);
-      expect(T_COMMA);
-      get_parameter(function->kind_5, &v5);
-      expect(T_RIGHT_BANANA);
-      function->function.function_5(&v1, &v2, &v3, &v4, &v5, rv);
+      function->function.function_5(&(v[0]), &(v[1]), &(v[2]), &(v[3]), &(v[4]), rv);
       break;
     default:
-      error("MAX VAR");
       return -1;
   }
   return 0;
@@ -2488,6 +2500,22 @@ str_asc(basic_type* str, basic_type* rv)
 {
   rv->kind = kind_numeric;
   rv->value.number = (int) *(str->value.string);
+  return 0;
+}
+
+int
+str_val(basic_type* str, basic_type* rv)
+{
+  rv->kind = kind_numeric;
+  rv->value.number = atof(str->value.string);
+  return 0;
+}
+
+int
+str_str(basic_type* number, basic_type* rv)
+{
+  rv->kind = kind_string;
+  asprintf(&(rv->value.string), "%f", number->value.number);
   return 0;
 }
 
