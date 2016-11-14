@@ -84,6 +84,11 @@ void run(char *file_name){
 
   char line[tokenizer_string_length];
   while (fgets(line, sizeof(line), file)) {
+    if(line[strlen(line)-1]!='\n')
+    {
+      printf("ERROR: NO EOL\n");
+      exit(1);      
+    }
     basic_eval(line);
   }
   fclose(file);

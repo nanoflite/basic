@@ -201,13 +201,13 @@ token tokenizer_get_next_token(void)
     tokenizer_next_p++;
   }
 
-  if(len>32){
+  if(len>tokenizer_variable_length){
     return T_ERROR;
   }
 
   if (len > 0) {
     memcpy(tokenizer_actual_variable, tokenizer_p, len);
-    tokenizer_actual_variable[len+1] = '\0';
+    tokenizer_actual_variable[len] = '\0';
     tokenizer_p = tokenizer_next_p;
     if (tokenizer_actual_variable[len-1] == '$') {
       return T_VARIABLE_STRING;

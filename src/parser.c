@@ -1780,6 +1780,13 @@ move_to_next_statement(void)
   }
 }
 
+static void
+move_to_next_line(void)
+{
+  set_line(lines_next(__line));
+  get_sym();
+}
+
 static int
 do_if(basic_type* rv)
 {
@@ -1816,11 +1823,11 @@ do_if(basic_type* rv)
     }
     else
     { 
-      statement();
+      parse_line();
     }
 
   } else {
-    move_to_next_statement();
+    move_to_next_line();
   }
 
   return 0;
@@ -1875,6 +1882,7 @@ do_let(basic_type* rv)
   }
 
   if (var_type == T_VARIABLE_STRING) {
+    // printf("string\n");
     char *value = string_expression();
     if (is_array)
     {
@@ -2174,6 +2182,12 @@ basic_run(void)
 void
 basic_eval(char *line)
 {
+  if((strlen(line)-1)>tokenizer_string_length)
+  {
+    error("LINE TOO LONG");
+    return;
+  }
+
   char line_string[tokenizer_string_length];
   strncpy(line_string, line, sizeof(line_string));
   _trim(line_string);

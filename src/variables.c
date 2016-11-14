@@ -98,7 +98,9 @@ variable_set_string(char* name, char* value)
     var->type = variable_type_string;
     var->is_array = false;
   } else {
-    free(var->value.string);
+    if(var->value.string!=NULL){
+      free(var->value.string);
+    }
   }
   var->value.string = strdup(value);
   dictionary_put(_dictionary, name, var);

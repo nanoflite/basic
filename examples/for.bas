@@ -3,4 +3,3 @@
 120 PRINT A
 130 NEXT
 140 PRINT "done"
-RUN
