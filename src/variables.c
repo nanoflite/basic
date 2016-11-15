@@ -49,6 +49,9 @@ cb(char* name, void* value, void* context)
   if(var->type == variable_type_string){
     if(var->value.string!=NULL) free(var->value.string);
   }
+  if(var->is_array){
+    array_destroy(var->array); 
+  }
   if(var->name!=NULL) free(var->name);
   free(var);
 }

@@ -97,28 +97,33 @@ dictionary_put(dictionary* d, char* name, void* value)
 void*
 dictionary_del(dictionary* d, char* name)
 {
-  entry* element = _get(d, name);
+    entry* root = d->hashtab[hash(name)];
 
-  if (element != NULL) {
-    entry* previous = NULL;
-    for(entry* entry = d->hashtab[hash(name)]; entry != NULL; entry = entry->next) {
-      if (strcmp(name, entry->name) == 0) {
-        if (previous && entry->next) {
-          previous->next = entry->next;
-        }
-        if (!previous && !entry->next) {
-          d->hashtab[hash(name)] = NULL;
-        }
-      }
-      previous = entry;
-    }
-    void *value = element->value;
-    free(element->name);
-    free(element); 
-    return value;
-  }
-  
-  return NULL;
+	if(root==NULL){
+		return NULL;
+	}
+
+	if(strcmp(name, root->name)==0){
+		d->hashtab[hash(name)] = root->next; 
+	    void *value = root->value;
+    	free(root->name);
+    	free(root);
+    	return value;
+	}
+
+	entry* element = root;
+	while(element->next){
+		entry *next = element->next;
+		if(strcmp(name, next->name) == 0){
+			element->next = next->next;
+	    	void *value = next->value;
+    		free(next->name);
+    		free(next); 
+    		return value;
+		}
+	}
+
+  	return NULL;
 }
 
 void
@@ -160,14 +165,26 @@ typedef struct {
 } _free_s;
 
 static void
-destroy_cb(char* name, void* value, void* context)
+destroy_cb_pass_1(char* name, void* value, void* context)
+{
+	_free_s *ctx = (_free_s*) context;
+	// dictionary *d = ctx->d;
+	dictionary_each_cb free_cb = ctx->cb;
+        free_cb(name, value, NULL); 
+       	// dictionary_del(d, name);
+}
+
+static void
+destroy_cb_pass_2(char* name, void* value, void* context)
 {
 	_free_s *ctx = (_free_s*) context;
 	dictionary *d = ctx->d;
-	dictionary_each_cb free_cb = ctx->cb;
-        free_cb(name, value, NULL); 
+	// dictionary_each_cb free_cb = ctx->cb;
+        // free_cb(name, value, NULL); 
        	dictionary_del(d, name);
 }
+
+
 void
 dictionary_destroy(dictionary* d, dictionary_each_cb free_cb)
 {
@@ -175,6 +192,7 @@ dictionary_destroy(dictionary* d, dictionary_each_cb free_cb)
 	.d = d,
         .cb = free_cb
   };
-  dictionary_each(d, destroy_cb, &ctx);
+  dictionary_each(d, destroy_cb_pass_1, &ctx);
+  dictionary_each(d, destroy_cb_pass_2, &ctx);
   free(d);
 }

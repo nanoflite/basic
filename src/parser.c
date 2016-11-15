@@ -1182,6 +1182,7 @@ do_next(basic_type* rv)
     }
   }
 
+  // check end condition 
   float value = variable_get_numeric(f->variable_name) + f->step;
   if ( (f->step > 0 && value > f->end_value) || (f->step < 0 && value < f->end_value) )
   {
@@ -1506,7 +1507,7 @@ is_empty(const char *s)
 _trim(char* s)
 {
   char* p = s + strlen(s) - 1; // without the '\0'
-  while(isspace(*p) && p >= s){
+  while(p >= s && isspace(*p)){
     --p;
   } 
   *(p+1) = '\0'; 
