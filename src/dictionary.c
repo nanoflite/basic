@@ -97,7 +97,7 @@ dictionary_put(dictionary* d, char* name, void* value)
 void*
 dictionary_del(dictionary* d, char* name)
 {
-    entry* root = d->hashtab[hash(name)];
+  entry* root = d->hashtab[hash(name)];
 
 	if(root==NULL){
 		return NULL;
@@ -123,7 +123,7 @@ dictionary_del(dictionary* d, char* name)
 		}
 	}
 
-  	return NULL;
+  return NULL;
 }
 
 void

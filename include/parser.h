@@ -4,6 +4,8 @@
 #include <tokenizer.h>
 #include <io.h>
 
+#include <stdbool.h>
+
 float evaluate(char *expression_string);
 
 void evaluate_print(char *line);

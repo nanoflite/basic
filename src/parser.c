@@ -2213,7 +2213,7 @@ basic_run(void)
 void
 basic_eval(char *line)
 {
-  if((strlen(line)-1)>tokenizer_string_length)
+  if((strlen(line) > 0 && strlen(line)-1)>tokenizer_string_length)
   {
     error("LINE TOO LONG");
     return;
@@ -2263,7 +2263,9 @@ void evaluate_print(char *line)
 
 const char *evaluate_last_error(void)
 {
-  return last_error;
+  char* err = last_error;
+  last_error = NULL;
+  return err;
 }
 
 // - Register functions
