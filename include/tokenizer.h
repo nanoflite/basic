@@ -6,7 +6,7 @@
 #define tokenizer_string_length 64 
 #define tokenizer_variable_length 8
 
-typedef size_t token;
+typedef unsigned int token;
 typedef char* token_name;
 typedef char* token_keyword;
 

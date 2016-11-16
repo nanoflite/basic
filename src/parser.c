@@ -128,13 +128,13 @@ typedef union
 
 typedef struct {
   token token;
-  basic_function_type type;
-  size_t nr_arguments;
-  kind kind_1;
-  kind kind_2;
-  kind kind_3;
-  kind kind_4;
-  kind kind_5;
+  basic_function_type type : 3;
+  size_t nr_arguments : 3;
+  kind kind_1 : 1;
+  kind kind_2 : 1;
+  kind kind_3 : 1;
+  kind kind_4 : 1;
+  kind kind_5 : 1;
   basic_function_union function; 
 } basic_function;
 
@@ -2111,9 +2111,11 @@ void basic_init(size_t memory_size, size_t stack_size)
 
   tokenizer_setup();
 
+  // Which ones do we keep for xmega if memory pressure too big? (X marks delete for xmega)
+
   // BASIC keywords
   t_keyword_list = register_function_0(basic_function_type_keyword, "LIST", do_list);
-  t_keyword_clear = register_function_0(basic_function_type_keyword, "CLEAR", do_clear);
+  t_keyword_clear = register_function_0(basic_function_type_keyword, "CLEAR", do_clear); // X
   t_keyword_new = register_function_0(basic_function_type_keyword, "NEW", do_clear);
   t_keyword_goto = register_function_0(basic_function_type_keyword, "GOTO", do_goto);
   t_keyword_on = register_function_0(basic_function_type_keyword, "ON", do_on_goto);
@@ -2404,9 +2406,13 @@ register_function_5(basic_function_type type, char* keyword, function_5 function
 static basic_function*
 find_basic_function_by_type(token sym, basic_function_type type)
 {
+  // printf("find bf token=%d, type=%d\n", sym, type);
+  printf("#functions: %d\n", array_size(basic_functions));
+  printf("#size: %d\n", sizeof(basic_function) * array_size(basic_functions));
   for(size_t i=0; i<array_size(basic_functions); i++)
   {
     basic_function* bf = (basic_function*) array_get(basic_functions, i);
+    // printf(">token:%d, type:%d\n", bf->token, bf->type);
     if (bf->type == type && bf->token == sym)
     {
       return bf;
