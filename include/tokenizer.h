@@ -3,8 +3,8 @@
 
 #include <stdlib.h>
 
-#define tokenizer_string_length 255 
-#define tokenizer_variable_length 16
+#define tokenizer_string_length 64 
+#define tokenizer_variable_length 8
 
 typedef size_t token;
 typedef char* token_name;

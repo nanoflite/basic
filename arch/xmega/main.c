@@ -237,6 +237,7 @@ int main(int argc, char *argv[])
     basic_eval(input);
     if (evaluate_last_error()) {
       printf("ERR LINE %d: %s\n", __line, evaluate_last_error());
+      clear_last_error();
     }
   }
   

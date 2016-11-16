@@ -114,7 +114,7 @@ void delay_ms(uint16_t count) {
 
 */
 
-#define MAX_LINE 256
+#define MAX_LINE tokenizer_string_length
 
 typedef union
 {
@@ -749,7 +749,7 @@ ready(void)
 static void
 list_out(uint16_t number, char* contents)
 {
-  char buffer[256];
+  char buffer[tokenizer_string_length];
   snprintf(buffer, sizeof(buffer), "%d %s\n", number, contents);
   basic_io_print(buffer);
 }
@@ -2261,11 +2261,14 @@ void evaluate_print(char *line)
   printf("%s = %f\n", line, result);
 }
 
-const char *evaluate_last_error(void)
+const char* evaluate_last_error(void)
 {
-  char* err = last_error;
+  return last_error;
+}
+
+void clear_last_error(void)
+{
   last_error = NULL;
-  return err;
 }
 
 // - Register functions

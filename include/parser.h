@@ -12,7 +12,8 @@ void evaluate_print(char *line);
 
 void evaluate_print_func_param( char *func, float param);
 
-const char *evaluate_last_error(void);
+const char* evaluate_last_error(void);
+void clear_last_error(void);
 
 void basic_init(size_t memory_size, size_t stack_size);
 

@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <readline/readline.h>
@@ -66,6 +65,7 @@ void repl(void)
     
     if (evaluate_last_error()) {
       printf("ERROR: %s\n", evaluate_last_error());
+      clear_last_error();
     }
 
     free(input);
