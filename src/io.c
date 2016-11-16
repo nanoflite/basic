@@ -30,7 +30,19 @@ basic_io_readline(char* prompt, char* buffer, size_t buffer_size)
 #   ifdef BASIC_READLINE_ECHO
     __putch(ch);
 #   endif
-    buffer[len++] = ch;
+    switch(ch){
+      case '\b':
+        if(len>0){
+          buffer[--len] = '\0';
+#         ifdef BASIC_READLINE_ECHO
+          __putch(' ');
+          __putch('\b');
+#         endif
+        }  
+        break;
+      default:
+        buffer[len++] = ch;
+    }
   }
 # ifdef BASIC_READLINE_ECHO
   __putch('\n');

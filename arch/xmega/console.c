@@ -32,4 +32,16 @@ console_cursor(int cursor)
   } else {
     putchar('f');
   }
-}  
+}
+
+  void
+console_cursor_type(int block)
+{
+  putchar(0x1b);
+  if(block){
+    putchar('x');
+  } else {
+    putchar('y');
+  }
+  putchar('4');
+} 

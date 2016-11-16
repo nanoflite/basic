@@ -200,11 +200,10 @@ typedef enum
 
 typedef struct
 {
-  // bool inited;
   uint16_t line;
   char* cursor;
   char* char_pointer;
-  data_state state;
+  data_state state : 2;
 } data_pointer;
 
 static data_pointer __data;
@@ -281,7 +280,7 @@ static void
 get_sym(void)
 {
   sym = tokenizer_get_next_token();
-  // printf("sym: %ld\n", sym);
+  // printf("sym: %d\n", sym);
 }
 
 static void
@@ -2406,8 +2405,8 @@ static basic_function*
 find_basic_function_by_type(token sym, basic_function_type type)
 {
   // printf("find bf token=%d, type=%d\n", sym, type);
-  printf("#functions: %d\n", array_size(basic_functions));
-  printf("#size: %d\n", sizeof(basic_function) * array_size(basic_functions));
+  // printf("#functions: %ld\n", array_size(basic_functions));
+  // printf("#size: %ld\n", sizeof(basic_function) * array_size(basic_functions));
   for(size_t i=0; i<array_size(basic_functions); i++)
   {
     basic_function* bf = (basic_function*) array_get(basic_functions, i);

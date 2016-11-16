@@ -206,6 +206,7 @@ int main(int argc, char *argv[])
   sei();
 
   console_cursor(1);
+  console_cursor_type(1);
   puts("  (\\/)");
   puts(" ( ..)");
   puts("C(\")(\")");

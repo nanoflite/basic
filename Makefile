@@ -53,7 +53,7 @@ $(TARGET): $(BUILD_FOLDER)/($(_OBJECTS))
 
 run: all
 	@ echo "-- Running $(TARGET)"
-	@ $(BUILD_FOLDER)/$(TARGET)
+	@ BASIC_PATH=./examples $(BUILD_FOLDER)/$(TARGET)
 
 test: all
 	@ make -C ./t run
