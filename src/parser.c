@@ -2123,10 +2123,10 @@ void basic_init(size_t memory_size, size_t stack_size)
   t_keyword_return = register_function_0(basic_function_type_keyword, "RETURN", do_return);
   t_keyword_run = register_function_0(basic_function_type_keyword, "RUN", do_run);
   t_keyword_if = register_function_0(basic_function_type_keyword, "IF", do_if);
-  t_keyword_then = register_token("THEN", "THEN");
+  t_keyword_then = register_token("THEN");
   t_keyword_for = register_function_0(basic_function_type_keyword, "FOR", do_for);
-  t_keyword_to = register_token("TO", "TO");
-  t_keyword_step = register_token("STEP", "STEP");
+  t_keyword_to = register_token("TO");
+  t_keyword_step = register_token("STEP");
   t_keyword_next = register_function_0(basic_function_type_keyword, "NEXT", do_next);
   t_keyword_end = register_function_0(basic_function_type_keyword, "END", do_end);
   t_keyword_stop = register_function_0(basic_function_type_keyword, "STOP", do_end);
@@ -2140,15 +2140,15 @@ void basic_init(size_t memory_size, size_t stack_size)
   t_keyword_delete = register_function_0(basic_function_type_keyword, "DELETE", do_delete);
   t_keyword_dir = register_function_0(basic_function_type_keyword, "DIR", do_dir);
   // t_keyword_def = register_function_0(basic_function_type_keyword, "DEF", do_def_fn);
-  // t_keyword_fn = register_token("FN", "FN");
+  // t_keyword_fn = register_token("FN");
  
   register_function_0(basic_function_type_keyword, "LET", do_let);
   register_function_0(basic_function_type_keyword, "INPUT", do_input);
   register_function_0(basic_function_type_keyword, "GET", do_get);
 
   // LOGICAL and BINARY operators
-  t_op_or = register_token("OR", "OR");
-  t_op_and = register_token("AND", "AND");
+  t_op_or = register_token("OR");
+  t_op_and = register_token("AND");
 
   // Output related
   t_keyword_print = register_function_0(basic_function_type_keyword, "PRINT", do_print);
@@ -2278,13 +2278,12 @@ void clear_last_error(void)
 static size_t basic_token_id = TOKEN_TYPE_END + 1000; 
 
 token
-register_token(char* name , char* keyword)
+register_token(char* token_name)
 {
   token_entry token;
 
   token.token = basic_token_id++;
-  token.name = name;
-  token.keyword = keyword;
+  token.name = token_name;
 
   // printf("token '%s' = %ld\n", keyword, token.token);
   tokenizer_register_token(&token);
@@ -2295,7 +2294,7 @@ register_token(char* name , char* keyword)
 token
 register_function_0(basic_function_type type, char* keyword, function_0 function)
 {
-  token t = register_token(keyword, keyword);
+  token t = register_token(keyword);
   basic_function bf = {
     .token = t,
     .type = type,
@@ -2311,7 +2310,7 @@ register_function_0(basic_function_type type, char* keyword, function_0 function
 token
 register_function_1(basic_function_type type, char* keyword, function_1 function, kind v1)
 {
-  token t = register_token(keyword, keyword);
+  token t = register_token(keyword);
   basic_function bf = {
     .token = t,
     .type = type,
@@ -2328,7 +2327,7 @@ register_function_1(basic_function_type type, char* keyword, function_1 function
 token
 register_function_2(basic_function_type type, char* keyword, function_2 function, kind v1, kind v2)
 {
-  token t = register_token(keyword, keyword);
+  token t = register_token(keyword);
   basic_function bf = {
     .token = t,
     .type = type,
@@ -2346,7 +2345,7 @@ register_function_2(basic_function_type type, char* keyword, function_2 function
 token
 register_function_3(basic_function_type type, char* keyword, function_3 function, kind v1, kind v2, kind v3)
 {
-  token t = register_token(keyword, keyword);
+  token t = register_token(keyword);
   basic_function bf = {
     .token = t,
     .type = type,
@@ -2365,7 +2364,7 @@ register_function_3(basic_function_type type, char* keyword, function_3 function
 token
 register_function_4(basic_function_type type, char* keyword, function_4 function, kind v1, kind v2, kind v3, kind v4)
 {
-  token t = register_token(keyword, keyword);
+  token t = register_token(keyword);
   basic_function bf = {
     .token = t,
     .type = type,
@@ -2385,7 +2384,7 @@ register_function_4(basic_function_type type, char* keyword, function_4 function
 token
 register_function_5(basic_function_type type, char* keyword, function_5 function, kind v1, kind v2, kind v3, kind v4, kind v5)
 {
-  token t = register_token(keyword, keyword);
+  token t = register_token(keyword);
   basic_function bf = {
     .token = t,
     .type = type,

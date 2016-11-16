@@ -112,13 +112,13 @@ token _find_registered(void)
   
     // printf("t: '%s'\n", entry->name);
 
-    if ( entry->keyword == NULL ) continue;
+    if ( entry->name == NULL ) continue;
 
-    // printf("look for: '%s', in '%s'\n", entry->keyword, tokenizer_p);
+    // printf("look for: '%s', in '%s'\n", entry->name, tokenizer_p);
 
-    if (strncmp(tokenizer_p, entry->keyword, strlen(entry->keyword)) == 0) {
-       // printf("found '%s'\n", entry->keyword);
-       tokenizer_next_p = tokenizer_p + strlen(entry->keyword);
+    if (strncmp(tokenizer_p, entry->name, strlen(entry->name)) == 0) {
+       // printf("found '%s'\n", entry->name);
+       tokenizer_next_p = tokenizer_p + strlen(entry->name);
        tokenizer_p = tokenizer_next_p;
        return entry->token;
     }

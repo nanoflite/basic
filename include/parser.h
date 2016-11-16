@@ -68,7 +68,7 @@ typedef int (*function_3)(basic_type* v1, basic_type* v2, basic_type* v3, basic_
 typedef int (*function_4)(basic_type* v1, basic_type* v2, basic_type* v3, basic_type* v4, basic_type* rv);
 typedef int (*function_5)(basic_type* v1, basic_type* v2, basic_type* v3, basic_type* v4, basic_type* v5, basic_type* rv);
 
-token register_token(char* name , char* keyword);
+token register_token(char* token_name);
 token register_function_0(basic_function_type type, char* keyword, function_0 function);
 token register_function_1(basic_function_type type, char* keyword, function_1 function, kind v1);
 token register_function_2(basic_function_type type, char* keyword, function_2 function, kind v1, kind v2);

@@ -13,11 +13,10 @@ typedef char* token_keyword;
 typedef struct {
   token token;
   token_name name;  
-  token_keyword keyword;
 } token_entry;
 
 #define add_token(t, k) \
-  static token_entry _##t = { t, #t, k };
+  static token_entry _##t = { t, k };
 
 typedef enum {
   // Standard token types needed by the tokenizer
