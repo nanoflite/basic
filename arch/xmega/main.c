@@ -53,8 +53,6 @@ void set_usartctrl( USART_t *usart, uint8_t bscale, uint16_t bsel)
 
 void init_uart_bscale_bsel(USART_t *usart, int8_t bscale, int16_t bsel)
 {
-  PORTE.DIRSET = PIN3_bm;
-  PORTE.DIRCLR = PIN2_bm;
   usart->CTRLA = 0;
   usart->CTRLB = USART_TXEN_bm | USART_RXEN_bm;
   usart->CTRLC = USART_CMODE_ASYNCHRONOUS_gc | USART_PMODE_DISABLED_gc | USART_CHSIZE_8BIT_gc;
@@ -106,14 +104,40 @@ int uart_fgetc(FILE* stream)
   return uart_getc();
 }
 
+int tellymate_getc(void)
+{
+  while ( ! (USARTD0.STATUS & USART_RXCIF_bm) ) {};
+  unsigned char ch = (unsigned char) USARTD0.DATA;
+  return ch;
+}
+
+void tellymate_enable_transmit(void)
+{
+  uart_putc(0x1b);
+  for(int i=0; i<4; i++){
+    uart_putc('~');
+  }
+}
+
+int console_charat(int x, int y)
+{
+  putchar(0x1b);
+  putchar('`');
+  putchar(' ' + y);
+  putchar(' ' + x);
+  return tellymate_getc();
+}
+
 FILE uart_stdio = FDEV_SETUP_STREAM(uart_fputc, uart_fgetc, _FDEV_SETUP_RW);
 
 void init_xmega(void)
 {
-  // init_uart_bscale_bsel(&USARTC1, -7, 1539); // 9K6 @ 2MHz
-  // init_uart_bscale_bsel(&USARTC1, -7, 705); // 19K2 @ 2MHz
+  PORTE.DIRSET = PIN3_bm;
+  PORTE.DIRCLR = PIN2_bm;
   init_uart_bscale_bsel(&USARTE0, -5, 3301); // 19K2 @ 32MHz
-  // init_uart_bscale_bsel(&USARTE0, -7, 2049); // 115200 @ 32 MHz
+  PORTD.DIRSET = PIN3_bm;
+  PORTD.DIRCLR = PIN2_bm;
+  init_uart_bscale_bsel(&USARTD0, -5, 3301); // 19K2 @ 32MHz
   stdout = stdin = &uart_stdio;
 
   _delay_ms(500);
@@ -187,6 +211,23 @@ do_cursor(basic_type* cursor, basic_type* rv)
   return 0;
 }
 
+  static int
+do_charat(basic_type* x, basic_type* y, basic_type* rv)
+{
+  rv->kind = kind_numeric;
+  rv->value.number = console_charat((int)x->value.number, (int)y->value.number);
+  return 0;
+}  
+
+  static int
+do_fontbank(basic_type* row, basic_type* bank, basic_type* rv)
+{
+  console_fontbank((int)row->value.number, (int)bank->value.number);
+  rv->kind = kind_numeric;
+  rv->value.number = 0;
+  return 0;
+}  
+
   static void
 autorun(void)
 {
@@ -221,8 +262,10 @@ int main(int argc, char *argv[])
   PMIC.CTRL |= PMIC_LOLVLEN_bm;
   sei();
 
+  tellymate_enable_transmit();
   console_cursor(1);
   console_cursor_type(1);
+  console_line_overflow(1);
   puts("  (\\/)");
   puts(" ( ..)");
   puts("C(\")(\")");
@@ -247,6 +290,8 @@ int main(int argc, char *argv[])
   register_function_3(basic_function_type_keyword, "PLOT", do_plot, kind_numeric, kind_numeric, kind_numeric);
   register_function_2(basic_function_type_keyword, "DEFCHAR", do_defchar, kind_numeric, kind_string);
   register_function_1(basic_function_type_keyword, "CURSOR", do_cursor, kind_numeric);
+  register_function_2(basic_function_type_numeric, "CHARAT", do_charat, kind_numeric, kind_numeric);
+  register_function_2(basic_function_type_keyword, "FONTBANK", do_fontbank, kind_numeric, kind_numeric);
 
   autorun();
 

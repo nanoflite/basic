@@ -18,8 +18,11 @@ console_plot(int x, int y, unsigned char code)
 {
   putchar(0x1b);
   putchar('Y');
-  putchar(' ' + x);
   putchar(' ' + y);
+  putchar(' ' + x);
+  if(code < 32){
+    putchar(0x10); // Data link escape
+  }
   putchar(code);
 }
 
@@ -44,4 +47,43 @@ console_cursor_type(int block)
     putchar('y');
   }
   putchar('4');
-} 
+}
+
+  void
+console_line_overflow(int overflow)
+{
+  putchar(0x1b);
+  if(overflow){
+    putchar('v');
+  } else {
+    putchar('w');
+  }
+}  
+  
+  void
+console_fontbank(int row, int bank)
+{
+  char banks[] = {'6', '7', '8', '9', ':', ';', '<', '=', '>', '?', '@'}; 
+
+  // save cursor
+  putchar(0x1b);
+  putchar('j');
+
+  // set cursor
+  putchar(0x1b);
+  putchar('Y');
+  putchar(' ' + row);
+  putchar(' ' + 0);
+
+  // set bank for actual row
+  putchar(0x1b);
+  putchar('_');
+  if(bank<0) bank = 0;
+  if(bank>10) bank = 10;
+  putchar(banks[bank]); 
+
+  // restore cursor
+  putchar(0x1b);
+  putchar('k');
+}  
+
