@@ -18,34 +18,13 @@ void lines_init(char *memory, size_t memory_size);
 size_t lines_memory_used(void);
 size_t lines_memory_available(void);
 
-// 
-// void lines_reset(void);
-// 
-// line* lines_next(void);
-// 
-// line* lines_get_by_number(size_t line_number);
-// 
-// line* lines_current(void);
-// 
-// line* lines_previous(line* current);
-// 
-// line* lines_last(void);
-// 
-// void lines_set_by_number(size_t line_number);
-// 
-// bool lines_exists(size_t number);
-// 
-// bool lines_insert(size_t number, char *contents);
-// 
 bool lines_delete(uint16_t number);
-// 
-// bool lines_replace(size_t number, char *contents);
-// 
+
 bool lines_store(uint16_t number, char* contents );
  
 typedef void (*lines_list_cb)(uint16_t number, char* contents);
  
-void lines_list(lines_list_cb out);
+void lines_list(uint16_t start, uint16_t end, lines_list_cb out);
 
 void lines_clear(void);
 

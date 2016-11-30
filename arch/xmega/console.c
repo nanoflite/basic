@@ -14,12 +14,18 @@ console_def_char(unsigned char code, char* definition)
 }
 
   void
-console_plot(int x, int y, unsigned char code)
+console_move_cursor(int x, int y)
 {
   putchar(0x1b);
   putchar('Y');
   putchar(' ' + y);
   putchar(' ' + x);
+}  
+
+  void
+console_plot(int x, int y, unsigned char code)
+{
+  console_move_cursor(x, y);
   if(code < 32){
     putchar(0x10); // Data link escape
   }
@@ -87,3 +93,21 @@ console_fontbank(int row, int bank)
   putchar('k');
 }  
 
+  void
+console_cls(void)
+{
+  putchar(0x1b);
+  putchar('E');
+}
+
+  void
+console_invert(int invert)
+{
+  putchar(0x1b);
+  if(invert){
+    putchar('x');
+  } else {
+    putchar('y');
+  }
+  putchar('>'); 
+}

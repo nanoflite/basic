@@ -7,5 +7,8 @@ void console_cursor(int cursor);
 void console_cursor_type(int block);
 void console_line_overflow(int overflow);
 void console_fontbank(int row, int bank);
+void console_cls(void);
+void console_move_cursor(int x, int y);
+void console_invert(int invert);
 
 #endif

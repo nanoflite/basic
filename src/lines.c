@@ -254,15 +254,40 @@ lines_delete(uint16_t number)
   return true;
 }
 
+  static bool
+_in_range(uint16_t i, uint16_t low, uint16_t high)
+{
+  if(low==0 && high==0)
+  {
+    return true;
+  }
+  if(low==0 && i<=high)
+  {
+    return true;
+  }
+  if(high==0 && i>=low)
+  {
+    return true;
+  }
+  if(i>= low && i<=high)
+  {
+    return true;
+  }
+  return false;
+} 
+
   void
-lines_list(lines_list_cb out)
+lines_list(uint16_t start, uint16_t end, lines_list_cb out)
 {
   char *p = __memory;
   
   line* l = (line*) p;
   while( ! _is_end( l ) )
   {
-    out(l->number, &(l->contents) );
+    if(_in_range(l->number, start, end))
+    {
+      out(l->number, &(l->contents) );
+    }
     l = _next( l );
   }
 }

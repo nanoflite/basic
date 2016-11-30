@@ -18,6 +18,7 @@
 #include "ff.h"
 
 extern uint16_t __line;
+extern bool __STOPPED;
 
 // 100 Hz
 ISR(TCC0_OVF_vect)
@@ -99,16 +100,16 @@ int uart_fputc(char c, FILE* stream)
   return 0;
 }
 
-int uart_fgetc(FILE* stream)
-{
-  return uart_getc();
-}
-
-int tellymate_getc(void)
+int keyboard_getc(void)
 {
   while ( ! (USARTD0.STATUS & USART_RXCIF_bm) ) {};
   unsigned char ch = (unsigned char) USARTD0.DATA;
   return ch;
+}
+
+int uart_fgetc(FILE* stream)
+{
+  return keyboard_getc();
 }
 
 void tellymate_enable_transmit(void)
@@ -125,7 +126,7 @@ int console_charat(int x, int y)
   putchar('`');
   putchar(' ' + y);
   putchar(' ' + x);
-  return tellymate_getc();
+  return uart_getc();
 }
 
 FILE uart_stdio = FDEV_SETUP_STREAM(uart_fputc, uart_fgetc, _FDEV_SETUP_RW);
@@ -134,7 +135,8 @@ void init_xmega(void)
 {
   PORTE.DIRSET = PIN3_bm;
   PORTE.DIRCLR = PIN2_bm;
-  init_uart_bscale_bsel(&USARTE0, -5, 3301); // 19K2 @ 32MHz
+  // init_uart_bscale_bsel(&USARTE0, -5, 3301); // 19K2 @ 32MHz
+  init_uart_bscale_bsel(&USARTE0, -5, 1079); // 57K6 @ 32MHz
   PORTD.DIRSET = PIN3_bm;
   PORTD.DIRCLR = PIN2_bm;
   init_uart_bscale_bsel(&USARTD0, -5, 3301); // 19K2 @ 32MHz
@@ -220,13 +222,139 @@ do_charat(basic_type* x, basic_type* y, basic_type* rv)
 }  
 
   static int
-do_fontbank(basic_type* row, basic_type* bank, basic_type* rv)
+do_fontbank(basic_type* p1, basic_type* p2, basic_type* rv)
 {
-  console_fontbank((int)row->value.number, (int)bank->value.number);
+  if(p2->empty){ // Called with 1 parameter
+    int bank = (int) p1->value.number;
+    for(int row=0; row<25; row++){
+      console_fontbank(row, bank);
+    }
+  } else {  
+    int row = (int) p1->value.number;
+    int bank = (int) p2->value.number;
+    console_fontbank(row, bank);
+  }
   rv->kind = kind_numeric;
   rv->value.number = 0;
   return 0;
 }  
+
+  static int
+do_gfx(basic_type* gfx, basic_type* rv)
+{
+  if(gfx->value.number>0){
+    console_cursor(0);
+    console_cls();
+    console_line_overflow(0);
+    for(int row=0; row<25; row++){
+      console_fontbank(row, 1);
+    }
+  } else {
+    console_cursor(1);
+    console_cls();
+    console_line_overflow(1);
+    for(int row=0; row<25; row++){
+      console_fontbank(row, 0);
+    }
+  }  
+  rv->kind = kind_numeric;
+  rv->value.number = 0; 
+  return 0;
+}  
+
+  static int
+do_hplot(basic_type* _x, basic_type* _y, basic_type* _set, basic_type* rv)
+{
+  unsigned char x = (unsigned char)_x->value.number;
+  unsigned char y = (unsigned char)_y->value.number;
+  unsigned char set = (unsigned char)_set->value.number;
+
+  unsigned char row ;
+  unsigned char col ;
+  unsigned char screen ;
+
+  static unsigned char s_row = -1;
+  static unsigned char s_col = -1;
+  static unsigned char s_s = 0 ;
+
+  row = y / 3 ; // 3 pixels down per character
+  col = x / 2 ; // 2 pixels across per character
+      
+  if ((row == s_row) & (col == s_col))
+  {
+    screen = s_s;
+  }
+  else
+  {
+    screen = console_charat(col, row);
+  }
+
+  if (screen >= 0)
+  {
+    s_row = row;
+    s_col = col;
+
+    unsigned char s = screen;
+    s = s & 0b00111111 ;
+
+    unsigned char yy = row * 3;
+    unsigned char xx = col * 2;
+
+    unsigned char shift = 0;
+    if (x > xx) shift += 1;
+    if (y > yy) shift += 2;
+    if (y > (yy+1)) shift += 2;
+    unsigned char bitvalue = 1 << shift ;
+
+    if (set)
+    {
+      s = s | bitvalue ; // set the bit
+    }
+    else
+    {
+      s = s & ~bitvalue ; // clear the bit
+    }
+    s = 0b11000000 | s  ;
+
+    s_s = s ;
+
+    if (s != screen)
+    {
+      console_plot(col, row, s);
+    }
+  }
+
+  rv->kind = kind_numeric;
+  rv->value.number = 0;
+  return 0;
+}
+
+  static int
+do_overflow(basic_type* overflow, basic_type* rv)
+{
+  if(overflow->value.number>0){
+    console_line_overflow(1);
+  } else {
+    console_line_overflow(0);
+  }  
+  rv->kind = kind_numeric;
+  rv->value.number = 0; 
+  return 0;
+}  
+
+  static int
+do_invert(basic_type* invert, basic_type* rv)
+{
+  if(invert->value.number>0){
+    console_invert(1);
+  } else {
+    console_invert(0);
+  }  
+  rv->kind = kind_numeric;
+  rv->value.number = 0; 
+  return 0;
+}  
+
 
   static void
 autorun(void)
@@ -280,7 +408,7 @@ int main(int argc, char *argv[])
   }
   sound_play(1000, 100);
 
-  basic_register_io(uart_putc, uart_getc);
+  basic_register_io(uart_putc, keyboard_getc);
   basic_init(2048, 512);
   
   register_function_2(basic_function_type_keyword, "SOUND", do_sound, kind_numeric, kind_numeric);
@@ -292,7 +420,10 @@ int main(int argc, char *argv[])
   register_function_1(basic_function_type_keyword, "CURSOR", do_cursor, kind_numeric);
   register_function_2(basic_function_type_numeric, "CHARAT", do_charat, kind_numeric, kind_numeric);
   register_function_2(basic_function_type_keyword, "FONTBANK", do_fontbank, kind_numeric, kind_numeric);
-
+  register_function_1(basic_function_type_keyword, "GFX", do_gfx, kind_numeric);
+  register_function_3(basic_function_type_keyword, "HPLOT", do_hplot, kind_numeric, kind_numeric, kind_numeric);
+  register_function_1(basic_function_type_keyword, "OVERFLOW", do_overflow, kind_numeric);
+  register_function_1(basic_function_type_keyword, "INVERT", do_invert, kind_numeric);
   autorun();
 
   while(1)
@@ -302,6 +433,10 @@ int main(int argc, char *argv[])
     if (evaluate_last_error()) {
       printf("ERR LINE %d: %s\n", __line, evaluate_last_error());
       clear_last_error();
+    }
+    if(__STOPPED){
+      console_cursor(1);
+      __STOPPED = false;
     }
   }
   

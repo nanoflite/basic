@@ -190,6 +190,7 @@ basic_getchar __getch = getchar;
 
 bool __RUNNING = false;
 bool __REPL = true;
+bool __STOPPED = false;
 
 typedef enum
 {
@@ -756,9 +757,28 @@ list_out(uint16_t number, char* contents)
 static int
 do_list(basic_type* rv)
 {
+  uint16_t start = 0;
+  uint16_t end = 0;
+
   accept(t_keyword_list);
-  lines_list(list_out);
+  if(sym == T_NUMBER)
+  {
+    start = (uint16_t) tokenizer_get_number();
+    accept(T_NUMBER);
+    if(sym==T_MINUS)
+    {
+      accept(T_MINUS);
+      if(sym==T_NUMBER)
+      {
+        end = (uint16_t) tokenizer_get_number();
+        accept(T_NUMBER);
+      }
+    }
+  }
+
+  lines_list(start, end, list_out);
   ready();
+
   return 0;
 }
 
@@ -1658,12 +1678,11 @@ do_run(basic_type* rv)
   __cursor = lines_get_contents(__line);
   tokenizer_init( __cursor );
   __RUNNING = true;
+  __STOPPED = false;
   while (__cursor && __RUNNING)
   {
-
     // printf("stack available: %" PRIu16 "\n", __stack_p);
     // printf("memory used: %" PRIu16 "\n", lines_memory_used() );
-
     get_sym();
     if ( sym == T_EOF ) {
       __line = lines_next(__line);
@@ -2038,6 +2057,25 @@ parse_line(void)
     {
       break;
     }
+
+#   if ARCH==ARCH_XMEGA
+    if (kbhit())
+    {
+      int ch = __getch();
+      if ( ch == 115 ) {
+        if (__RUNNING)
+        {
+          __RUNNING = false;
+          __STOPPED = true;
+          printf("STOP\n");
+        }
+        break;
+      } else {
+        ungetc(ch, stdin);
+      }
+    }
+#   endif    
+
   }
 }
 

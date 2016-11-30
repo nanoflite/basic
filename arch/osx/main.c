@@ -9,14 +9,18 @@
 #include "parser.h"
 
 extern bool __RUNNING;
+extern bool __STOPPED;
 
 static void
 sigint_handler(int signum)
 {
   signal(SIGINT, sigint_handler);
-  printf("STOP\n");
-  __RUNNING = false;
-  fflush(stdout);
+  if(__RUNNING){
+    __RUNNING = false;
+    __STOPPED = true;
+    printf("STOP\n");
+    fflush(stdout);
+  }
 }
 
 static char *
@@ -24,9 +28,9 @@ readline_gets ()
 {
   char * line_read = readline ("");
 
-  // if (line_read && *line_read) {
-  //   add_history (line_read);
-  // }
+  if (line_read && *line_read) {
+     add_history (line_read);
+  }
 
   return line_read;
 }
