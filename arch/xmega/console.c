@@ -1,16 +1,22 @@
 #include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 
 #include "io.h"
 
   void
 console_def_char(unsigned char code, char* definition)
 {
-  char buf[8];
+  char buf[20];
   putchar(0x1b);
   putchar('T');
   snprintf(buf, sizeof(buf), "%02x", code);
   basic_io_print(buf);
-  basic_io_print(definition);
+  for(int i=0; i<18; i++){
+    buf[i] = tolower(definition[i]);
+  }
+  buf[18] = '\0';
+  basic_io_print(buf);
 }
 
   void
