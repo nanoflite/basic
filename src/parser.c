@@ -1379,7 +1379,6 @@ _data_read(variable_type type, value* value)
   }
   else
   {  
-    __data.line = lines_next(__data.line);
     __data.cursor = lines_get_contents(__data.line);
   }
   return rv;
