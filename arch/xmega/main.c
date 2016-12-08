@@ -355,6 +355,14 @@ do_invert(basic_type* invert, basic_type* rv)
   return 0;
 }  
 
+  static int
+do_at(basic_type* x, basic_type* y, basic_type* rv)
+{
+  rv->kind = kind_numeric;
+  rv->value.number = 10;
+  console_move_cursor((int)x->value.number, (int)y->value.number);
+  return 0;
+}  
 
   static void
 autorun(void)
@@ -409,7 +417,7 @@ int main(int argc, char *argv[])
   sound_play(1000, 100);
 
   basic_register_io(uart_putc, keyboard_getc);
-  basic_init(2048, 512);
+  basic_init(3072, 256);
   
   register_function_2(basic_function_type_keyword, "SOUND", do_sound, kind_numeric, kind_numeric);
   register_function_1(basic_function_type_keyword, "LED", do_led, kind_numeric);
@@ -424,6 +432,7 @@ int main(int argc, char *argv[])
   register_function_3(basic_function_type_keyword, "HPLOT", do_hplot, kind_numeric, kind_numeric, kind_numeric);
   register_function_1(basic_function_type_keyword, "OVERFLOW", do_overflow, kind_numeric);
   register_function_1(basic_function_type_keyword, "INVERT", do_invert, kind_numeric);
+  register_function_2(basic_function_type_keyword, "AT", do_at, kind_numeric, kind_numeric);
   autorun();
 
   while(1)
