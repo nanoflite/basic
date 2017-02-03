@@ -277,7 +277,7 @@ static bool numeric_condition(float left, float right, relop op);
 static relop get_relop(void);
 
 token sym;
-static void
+void
 get_sym(void)
 {
   sym = tokenizer_get_next_token();
@@ -556,7 +556,7 @@ str_left(basic_type* str, basic_type* length, basic_type* rv)
   return 0;
 }
 
-static bool
+bool
 accept(token t)
 {
   // printf("accept %ld\n", t);

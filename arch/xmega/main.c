@@ -15,10 +15,17 @@
 
 #include "diskio.h"
 
+#include "error.h"
+
 #include "ff.h"
 
 extern uint16_t __line;
 extern bool __STOPPED;
+
+extern token sym;
+extern bool accept(token t);
+extern void get_sym(void);
+static token t_keyword_batch;
 
 // 100 Hz
 ISR(TCC0_OVF_vect)
@@ -216,8 +223,9 @@ do_cursor(basic_type* cursor, basic_type* rv)
   static int
 do_charat(basic_type* x, basic_type* y, basic_type* rv)
 {
+  unsigned char at = console_charat((int)x->value.number, (int)y->value.number);
   rv->kind = kind_numeric;
-  rv->value.number = console_charat((int)x->value.number, (int)y->value.number);
+  rv->value.number = at;
   return 0;
 }  
 
@@ -362,21 +370,38 @@ do_at(basic_type* x, basic_type* y, basic_type* rv)
   rv->value.number = 10;
   console_move_cursor((int)x->value.number, (int)y->value.number);
   return 0;
-}  
+}
 
   static void
-autorun(void)
+batch(char *filename)
 {
   FIL fil;
   FRESULT fr;
   char line[tokenizer_string_length];
-  fr = f_open(&fil, "AUTORUN.BAS", FA_READ);
-  if(fr) return; // Does not exist or can't open
+  fr = f_open(&fil, filename, FA_READ);
+  if(fr) return;
   while (f_gets(line, sizeof line, &fil)){
     basic_eval(line);
   }
   f_close(&fil);
 }  
+
+  static int
+do_batch(basic_type* rv)
+{
+  char filename[8+1+3+1];
+  accept(t_keyword_batch);
+  if (sym != T_STRING) {
+    error("EXPECTED LITERAL STRING");
+    return 0;
+  }
+  char *name = tokenizer_get_string();
+  accept(T_STRING);
+  strncpy(filename,name,9);
+  strcat(filename,".BAS");
+  batch(filename);
+  return 0;
+}
 
 int main(int argc, char *argv[])
 {
@@ -407,7 +432,7 @@ int main(int argc, char *argv[])
   puts("C(\")(\")");
   puts("");
   puts("~BASIC-1~");
-  puts("(c) 2015-2016 JVdB");
+  puts("(c) 2015-2017 JVdB");
   puts("");
 
   for(uint16_t i=0; i<3; i++){
@@ -433,7 +458,9 @@ int main(int argc, char *argv[])
   register_function_1(basic_function_type_keyword, "OVERFLOW", do_overflow, kind_numeric);
   register_function_1(basic_function_type_keyword, "INVERT", do_invert, kind_numeric);
   register_function_2(basic_function_type_keyword, "AT", do_at, kind_numeric, kind_numeric);
-  autorun();
+  t_keyword_batch = register_function_0(basic_function_type_keyword, "BATCH", do_batch);
+
+  batch("AUTORUN.BAS");
 
   while(1)
   {
