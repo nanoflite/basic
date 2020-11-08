@@ -28,6 +28,8 @@ array_alloc(array* array, size_t size)
 {
   array->size = size;
   array->ptr = realloc(array->ptr, array->element_size * array->size);
+  // Always clear arrays
+  memset(array->ptr, 0, array->element_size * array->size);
   return array;
 }
 

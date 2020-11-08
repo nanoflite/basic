@@ -244,6 +244,8 @@ variable_array_init(char* name, variable_type type, size_t dimensions, size_t* v
   variable* var = (variable*) malloc(sizeof(variable));
   var->name = C_STRDUP(name);
   var->is_array = true;
+  var->value.string = NULL;
+  var->value.num = 0;
   var->type = type;
   var->nr_dimensions = dimensions;
   var->dimensions[0] = vector[0] + 1;

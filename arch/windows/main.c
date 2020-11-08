@@ -5,7 +5,6 @@
 #include <string.h>
 #include <signal.h>
 #include <stdbool.h>
-//https://github.com/MaJerle/lwmem
 
 #include "parser.h"
 

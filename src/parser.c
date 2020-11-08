@@ -37,6 +37,8 @@ void delay_ms(uint16_t count) {
 
 #include "usingwin.h"
 
+char *_dummy = 0;
+
 /*
   line = [number] statement [ : statement ] CR
 
@@ -193,6 +195,7 @@ basic_putchar __putch = putchar;
 basic_getchar __getch = getchar;
 
 bool __RUNNING = false;
+bool __EVALUATING = false;
 bool __REPL = true;
 bool __STOPPED = false;
 
@@ -828,6 +831,8 @@ string_term(void)
         size_t vector[5];
         get_vector(vector,5);
         string = C_STRDUP(variable_array_get_string(var_name, vector));
+        if (string == NULL) string = &_dummy;
+
         expect(T_RIGHT_BANANA);
       }
       else
@@ -903,7 +908,8 @@ do_print(basic_type* rv)
         expression(&expr);
         expression_print(&expr);
         if (expr.type == expression_type_string){
-           free(expr.value.string);
+            if (expr.value.string != &_dummy)
+                free(expr.value.string);
         }
       }
 
@@ -2074,7 +2080,9 @@ int do_sleep(basic_type* delay, basic_type* rv)
 static void
 parse_line(void)
 {
-  while (sym != T_EOF && sym != T_COLON) {
+  while (sym != T_EOF
+      //&& sym != T_COLON
+      ) {
     bool ok = statement();
     if ( ! ok )
     {
@@ -2110,6 +2118,9 @@ statement(void)
   switch(sym) {
     case T_ERROR:
       error("STATEMENT ERROR");
+      break;
+    case T_COLON:
+        accept(sym);
       break;
     default:
       {
@@ -2303,7 +2314,15 @@ basic_eval(char *line)
       lines_store( line_number, line);
     }
   } else {
-    parse_line();
+      __EVALUATING = true;
+      while (__EVALUATING)
+      {
+            parse_line();
+            accept(sym);
+
+            if (sym == T_EOF || sym == T_ERROR)
+              __EVALUATING = false;
+      }
   }
   // printf("stack available: %" PRIu16 "\n", __stack_p);
   // printf("memory available: %" PRIu16 "\n", lines_memory_available() );
