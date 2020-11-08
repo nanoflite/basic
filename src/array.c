@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "array.h"
+#include "usingwin.h"
 
 struct array {
   size_t element_size;

@@ -8,6 +8,8 @@
 #include <dictionary.h>
 #include <array.h>
 
+#include "usingwin.h"
+
 typedef union
 {
   float num;
@@ -97,7 +99,7 @@ variable_set_string(char* name, char* value)
   variable *var = dictionary_get(_dictionary, name);
   if(var==NULL){
     var = (variable*) malloc(sizeof(variable));
-    var->name = strdup(name);
+    var->name = C_STRDUP(name);
     var->type = variable_type_string;
     var->is_array = false;
   } else {
@@ -105,7 +107,7 @@ variable_set_string(char* name, char* value)
       free(var->value.string);
     }
   }
-  var->value.string = strdup(value);
+  var->value.string = C_STRDUP(value);
   dictionary_put(_dictionary, name, var);
   return var;
 }
@@ -117,7 +119,7 @@ variable_set_numeric(char* name, float value)
   variable *var = dictionary_get(_dictionary, name);
   if(var==NULL){
     var = (variable*) malloc(sizeof(variable));
-    var->name = strdup(name);
+    var->name = C_STRDUP(name);
     var->type = variable_type_numeric;
     var->is_array = false;
   }
@@ -240,7 +242,7 @@ variable*
 variable_array_init(char* name, variable_type type, size_t dimensions, size_t* vector)
 {
   variable* var = (variable*) malloc(sizeof(variable));
-  var->name = strdup(name);
+  var->name = C_STRDUP(name);
   var->is_array = true;
   var->type = type;
   var->nr_dimensions = dimensions;
@@ -274,7 +276,7 @@ variable_array_set_string(char *name, char *value, size_t* vector)
 
   size_t index = calc_index(var, vector); 
   variable_value val;
-  val.string = strdup(value);
+  val.string = C_STRDUP(value);
   array_set(var->array, index, &val);
 
   return var;

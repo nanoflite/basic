@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #include <dictionary.h>
+#include "usingwin.h"
 
 typedef struct entry entry;
 struct entry
@@ -15,11 +16,14 @@ struct entry
     void* value;
 };
 
-
+#ifndef _WIN32
 #if ARCH!=ARCH_XMEGA
 #   define HASHSIZE 13
 #else
 #   define HASHSIZE 101
+#endif
+#else
+#   define HASHSIZE 13
 #endif
 
 struct dictionary {
@@ -83,7 +87,7 @@ dictionary_put(dictionary* d, char* name, void* value)
 
     if (element == NULL) {
         element = (entry*) malloc(sizeof(*element));
-        if (element == NULL || (element->name = strdup(name)) == NULL) {
+        if (element == NULL || (element->name = C_STRDUP(name)) == NULL) {
           return;
         }
         hashval = hash(name);
