@@ -2251,7 +2251,7 @@ basic_run(void)
 void
 basic_eval(char *line)
 {
-  if((strlen(line) > 0 && strlen(line)-1)>tokenizer_string_length)
+  if( (strlen(line) > 0 && (strlen(line)-1)>tokenizer_string_length))
   {
     error("LINE TOO LONG");
     return;
