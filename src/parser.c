@@ -1194,7 +1194,7 @@ do_next(basic_type* rv)
     accept(T_VARIABLE_NUMBER);
     if ( strcmp(var_name, f->variable_name) != 0 )
     {
-      char _error[32];
+      char _error[40];
       snprintf(_error, sizeof(_error), "EXPECTED NEXT WITH %s, GOT %s", var_name, f->variable_name);
       error(_error);
       return 0;
