@@ -150,7 +150,12 @@ token tokenizer_get_next_token(void)
       l++;
       tokenizer_next_p++;
     }
+#ifdef _WIN32
+    char *number;
+    number = malloc(l + 1);
+#else
     char number[l+1];
+#endif
     memset(number, 0, l+1);
     // strlcpy(number, tokenizer_p, sizeof(number) );
     strncpy(number, tokenizer_p, l );
@@ -161,6 +166,11 @@ token tokenizer_get_next_token(void)
     sscanf(number, "%f", &f);
     // printf("Got float: '%f'\n", f);
     tokenizer_actual_number = f;
+
+#ifdef _WIN32
+    free(number);
+#endif
+
     return T_NUMBER;
   }
 

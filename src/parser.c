@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <time.h>
 
+#ifndef _WIN32
 #if ARCH==ARCH_XMEGA
 #   include <util/delay.h>
 
@@ -20,6 +21,7 @@ void delay_ms(uint16_t count) {
 #else
 #   include <unistd.h>
 #endif
+#endif
 
 // #include <readline/readline.h>
 
@@ -32,6 +34,10 @@ void delay_ms(uint16_t count) {
 #include "kbhit.h"
 #include "io.h"
 #include "parser.h"
+
+#include "usingwin.h"
+
+char *_dummy = 0;
 
 /*
   line = [number] statement [ : statement ] CR
@@ -189,6 +195,7 @@ basic_putchar __putch = putchar;
 basic_getchar __getch = getchar;
 
 bool __RUNNING = false;
+bool __EVALUATING = false;
 bool __REPL = true;
 bool __STOPPED = false;
 
@@ -509,7 +516,12 @@ str_chr(basic_type* n, basic_type* rv)
 {
   rv->kind = kind_string;
   char *chr;
+#ifdef _WIN32
+  chr = malloc(16);
+  sprintf(&chr, "%c", (int)n->value.number);
+#else
   asprintf(&chr, "%c", (int) n->value.number);
+#endif
   rv->value.string = chr;
   rv->mallocd = true;
   return 0;
@@ -529,7 +541,7 @@ str_mid(basic_type* str, basic_type* start, basic_type* length, basic_type* rv)
     _length = (int) length->value.number;
     if(_length+_start>strlen(source)) _length = strlen(source) - _start;
   }
-  char* string = strdup(&source[_start]);
+  char* string = C_STRDUP(&source[_start]);
   string[_length] = '\0'; 
   rv->value.string = string;
   rv->mallocd = true;
@@ -541,7 +553,7 @@ str_right(basic_type* str, basic_type* length, basic_type* rv)
 {
   rv->kind = kind_string;
   char* source = str->value.string;
-  rv->value.string = strdup(&source[strlen(source) - (int) length->value.number]);
+  rv->value.string = C_STRDUP(&source[strlen(source) - (int) length->value.number]);
   rv->mallocd = true;
   return 0;
 }
@@ -550,7 +562,7 @@ static int
 str_left(basic_type* str, basic_type* length, basic_type* rv)
 {
   rv->kind = kind_string;
-  rv->value.string = strdup(str->value.string);
+  rv->value.string = C_STRDUP(str->value.string);
   rv->value.string[(int) length->value.number] = '\0';
   rv->mallocd = true;
   return 0;
@@ -800,7 +812,7 @@ string_term(void)
   switch (sym)
   {
     case T_STRING:
-      string = strdup(tokenizer_get_string());
+      string = C_STRDUP(tokenizer_get_string());
       accept(T_STRING);
       break;
     case T_VARIABLE_STRING:
@@ -818,12 +830,14 @@ string_term(void)
         accept(T_LEFT_BANANA);
         size_t vector[5];
         get_vector(vector,5);
-        string = strdup(variable_array_get_string(var_name, vector));
+        string = C_STRDUP(variable_array_get_string(var_name, vector));
+        if (string == NULL) string = &_dummy;
+
         expect(T_RIGHT_BANANA);
       }
       else
       {
-        string = strdup(variable_get_string(var_name));
+        string = C_STRDUP(variable_get_string(var_name));
         accept(T_VARIABLE_STRING);
       }
       break;
@@ -838,7 +852,7 @@ string_term(void)
           {
             error("EXPECTED STRING TERM");
           }
-          string = strdup(rv.value.string);
+          string = C_STRDUP(rv.value.string);
           if(rv.mallocd==true) free(rv.value.string);
         }
       }
@@ -894,7 +908,8 @@ do_print(basic_type* rv)
         expression(&expr);
         expression_print(&expr);
         if (expr.type == expression_type_string){
-           free(expr.value.string);
+            if (expr.value.string != &_dummy)
+                free(expr.value.string);
         }
       }
 
@@ -947,6 +962,7 @@ do_tab(basic_type* n, basic_type* rv)
   static int
 do_cls(basic_type* rv)
 {
+#ifndef _WIN32
 #if ARCH==ARCH_XMEGA
   basic_io_print("\x1b");
   basic_io_print("E");
@@ -954,6 +970,10 @@ do_cls(basic_type* rv)
   basic_io_print("\033[2J");
   basic_io_print("\033[0;0H");
 #endif  
+#else
+  basic_io_print("\033[2J");
+  basic_io_print("\033[0;0H");
+#endif
   rv->kind = kind_numeric;
   rv->value.number = 0;
   return 0;
@@ -1631,11 +1651,15 @@ _dir_cb(char* name, size_t size, bool label, void* context)
   if (label) {
     printf("-- %-13s --\n", name);
   } else {
+#ifndef _WIN32
 #   if ARCH==ARCH_XMEGA
     printf("> %-8s : %6d\n", name, size);
 #   else
     printf("> %-8s : %6ld\n", name, size);
 #   endif    
+#else
+    printf("> %-8s : %6ld\n", name, size);
+#endif
   }
 }  
 
@@ -2029,6 +2053,7 @@ int do_sleep(basic_type* delay, basic_type* rv)
 {
   int milliseconds = delay->value.number;
  
+#ifndef _WIN32
 #if ARCH==ARCH_XMEGA
 
   delay_ms(milliseconds);
@@ -2040,7 +2065,12 @@ int do_sleep(basic_type* delay, basic_type* rv)
   ts.tv_nsec = (milliseconds % 1000) * 1000000;
   nanosleep(&ts, NULL);
 
-#endif  
+#endif
+  struct timespec ts;
+  ts.tv_sec = milliseconds / 1000;
+  ts.tv_nsec = (milliseconds % 1000) * 1000000;
+  nanosleep(&ts, NULL);
+#endif
 
   rv->kind = kind_numeric;
   rv->value.number = 0;
@@ -2050,13 +2080,16 @@ int do_sleep(basic_type* delay, basic_type* rv)
 static void
 parse_line(void)
 {
-  while (sym != T_EOF && sym != T_COLON) {
+  while (sym != T_EOF
+      //&& sym != T_COLON
+      ) {
     bool ok = statement();
     if ( ! ok )
     {
       break;
     }
 
+#ifndef _WIN32
 #   if ARCH==ARCH_XMEGA
     if (kbhit())
     {
@@ -2074,6 +2107,7 @@ parse_line(void)
       }
     }
 #   endif    
+#endif
 
   }
 }
@@ -2084,6 +2118,9 @@ statement(void)
   switch(sym) {
     case T_ERROR:
       error("STATEMENT ERROR");
+      break;
+    case T_COLON:
+        accept(sym);
       break;
     default:
       {
@@ -2251,7 +2288,8 @@ basic_run(void)
 void
 basic_eval(char *line)
 {
-  if( (strlen(line) > 0 && (strlen(line)-1)>tokenizer_string_length))
+
+  if(strlen(line) > 0 && (strlen(line)-1)>tokenizer_string_length)
   {
     error("LINE TOO LONG");
     return;
@@ -2277,7 +2315,15 @@ basic_eval(char *line)
       lines_store( line_number, line);
     }
   } else {
-    parse_line();
+      __EVALUATING = true;
+      while (__EVALUATING)
+      {
+            parse_line();
+            accept(sym);
+
+            if (sym == T_EOF || sym == T_ERROR)
+              __EVALUATING = false;
+      }
   }
   // printf("stack available: %" PRIu16 "\n", __stack_p);
   // printf("memory available: %" PRIu16 "\n", lines_memory_available() );
@@ -2593,15 +2639,22 @@ int
 str_str(basic_type* number, basic_type* rv)
 {
   rv->kind = kind_string;
+#ifdef _WIN32
+  rv->value.string = calloc(16, 1);
+  sprintf(&(rv->value.string), "%f", number->value.number);
+#else
   asprintf(&(rv->value.string), "%f", number->value.number);
+#endif
   rv->mallocd = true;
   return 0;
 }
 
 void dump_var(variable* var, void* context)
 {
+#ifndef _WIN32
 #if ARCH!=ARCH_XMEGA  
   variable_dump(var);
+#endif
 #endif
 }
 

@@ -5,10 +5,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#ifndef _WIN32
 #if ARCH==ARCH_XMEGA
 int asprintf(char **ret, const char *format, ...);
 float strtof(const char *restrict nptr, char **restrict endptr);
 char *strndup(const char *s1, size_t n);
+#endif
 #endif
 
 int arch_init(void);
