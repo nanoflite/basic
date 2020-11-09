@@ -15,3 +15,4 @@ CVS
 *.o
 t/test
 TODO
+autom4te.cache 
