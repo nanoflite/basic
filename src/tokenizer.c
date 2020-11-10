@@ -244,7 +244,7 @@ char *tokenizer_get_string(void)
 
 void tokenizer_get_variable_name(char *name)
 {
-  strncpy(name, tokenizer_actual_variable, sizeof(tokenizer_actual_variable));
+  strncpy(name, &tokenizer_actual_variable[0], sizeof(tokenizer_actual_variable));
 }
 
   void

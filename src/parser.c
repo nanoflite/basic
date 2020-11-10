@@ -831,7 +831,7 @@ string_term(void)
         size_t vector[5];
         get_vector(vector,5);
         string = C_STRDUP(variable_array_get_string(var_name, vector));
-        if (string == NULL) string = &_dummy;
+        if (string == NULL) string = (char*)&_dummy;
 
         expect(T_RIGHT_BANANA);
       }
@@ -908,7 +908,7 @@ do_print(basic_type* rv)
         expression(&expr);
         expression_print(&expr);
         if (expr.type == expression_type_string){
-            if (expr.value.string != &_dummy)
+            if (expr.value.string != (char*)&_dummy)
                 free(expr.value.string);
         }
       }
@@ -2066,10 +2066,8 @@ int do_sleep(basic_type* delay, basic_type* rv)
   nanosleep(&ts, NULL);
 
 #endif
-  struct timespec ts;
-  ts.tv_sec = milliseconds / 1000;
-  ts.tv_nsec = (milliseconds % 1000) * 1000000;
-  nanosleep(&ts, NULL);
+#else
+  Sleep(milliseconds);
 #endif
 
   rv->kind = kind_numeric;
