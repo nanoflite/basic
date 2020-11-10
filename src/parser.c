@@ -134,8 +134,8 @@ typedef union
 
 typedef struct {
   token token;
-  basic_function_type type : 3;
-  size_t nr_arguments : 3;
+  basic_function_type type : 4;
+  size_t nr_arguments : 4;
   kind kind_1 : 1;
   kind kind_2 : 1;
   kind kind_3 : 1;
