@@ -4,8 +4,9 @@ BUILD_FOLDER = build/basic
 
 SOURCE_FOLDERS += ./arch/osx ./src
 
-CC = gcc-10
-CFLAGS = -g -Wall -Werror -std=c99 -lreadline -lm -DARCH_OSX=1 -DARCH_XMEGA=2 -DARCH=1
+CC = gcc
+CFLAGS = -g -Wall -Werror -std=c99 -DARCH_OSX=1 -DARCH_XMEGA=2 -DARCH=1
+LDFLAGS = -lreadline -lm
 
 VPATH = $(SOURCE_FOLDERS)
 
