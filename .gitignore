@@ -12,6 +12,7 @@ build/*
 xcuserdata
 .svn
 CVS
+.vs/
 *.swp
 *.o
 t/test
