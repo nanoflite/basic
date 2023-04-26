@@ -1,0 +1,75 @@
+TARGET	= basic
+#ARCH	= -m32
+
+TARGET_FOLDER = build
+BUILD_FOLDER = $(TARGET_FOLDER)/obj
+
+SOURCE_FOLDERS += ./arch/linux ./src
+
+DEFS	= -DARCH=2
+
+
+CC	= gcc $(ARCH)
+LD	= gcc $(ARCH)
+
+CFLAGS	= -O2 -Wall -std=c99 $(DEFS) -D_POSIX_SOURCE -D_GNU_SOURCE
+LDFLAGS	= -s
+LDLIBS	= -lreadline -lm
+
+
+VPATH	= $(SOURCE_FOLDERS)
+
+SOURCES	= $(foreach folder,$(SOURCE_FOLDERS),$(wildcard $(folder)/*.c))
+ifneq "$(strip $(SOURCES))" "" 
+ _OBJECTS = $(patsubst %.c,%.o,$(notdir $(SOURCES)))
+endif
+OBJECTS	= $(patsubst %,$(BUILD_FOLDER)/%,$(_OBJECTS))
+INCLUDE_FLAGS += \
+    $(addprefix -I,$(INCLUDE_FOLDERS)) $(addprefix -I,$(SOURCE_FOLDERS)) -Iinclude
+
+
+.PHONY:	start end all clean run
+
+all:	start $(BUILD_FOLDER) $(TARGET) end
+
+
+define run-cc
+	@echo "CC $<"
+	@$(CC) -c $(CFLAGS) $(INCLUDE_FLAGS) $< -o $(BUILD_FOLDER)/$%
+endef
+
+start:
+	@echo "-- Creating $(TARGET)..."
+
+end:
+	@echo "done"
+	@echo ""
+
+clean:
+	@echo $@
+	@rm -rf $(BUILD_FOLDER)
+	@make -C ./t clean	
+
+$(BUILD_FOLDER):
+	@mkdir -p $@
+
+(%.o):	%.c
+	$(run-cc)
+
+$(TARGET): $(TARGET_FOLDER)/($(_OBJECTS))
+	@echo "LD $@"
+	@$(LD) $(LDFLAGS) -o $(TARGET_FOLDER)/$@ $(OBJECTS) $(LDLIBS)
+
+run:	all
+	@echo "-- Running $(TARGET)"
+	@BASIC_PATH=./examples $(BUILD_FOLDER)/$(TARGET)
+
+test:	all
+	@make -C ./t run
+
+testdebug: all
+	@make -C ./t debug
+
+debug: all
+	@echo "-- Debugging $(TARGET)"
+	@echo "run" | gdb $(BUILD_FOLDER)/$(TARGET)

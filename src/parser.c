@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -7,25 +6,7 @@
 #include <stdbool.h>
 #include <time.h>
 
-#ifndef _WIN32
-#if ARCH==ARCH_XMEGA
-#   include <util/delay.h>
-
-void delay_ms(uint16_t count) {
-  while(count--) {
-    _delay_ms(1);
-
-  }
-}
-
-#else
-#   include <unistd.h>
-#endif
-#endif
-
-// #include <readline/readline.h>
-
-#include "arch.h"
+#include "../arch/arch.h"
 #include "error.h"
 #include "tokenizer.h"
 #include "variables.h"
@@ -333,7 +314,7 @@ expression(expression_result *result)
   }
 }
 
-  static void
+static void
 expression_print(expression_result* expr)
 {
   if (expr->type == expression_type_string)
@@ -520,7 +501,7 @@ str_chr(basic_type* n, basic_type* rv)
   chr = malloc(16);
   sprintf(&chr, "%c", (int)n->value.number);
 #else
-  asprintf(&chr, "%c", (int) n->value.number);
+  (void)asprintf(&chr, "%c", (int) n->value.number);
 #endif
   rv->value.string = chr;
   rv->mallocd = true;
@@ -794,7 +775,7 @@ do_list(basic_type* rv)
   return 0;
 }
 
-  static int
+static int
 do_clear(basic_type* rv)
 {
   accept(t_keyword_clear);
@@ -831,7 +812,11 @@ string_term(void)
         size_t vector[5];
         get_vector(vector,5);
         string = C_STRDUP(variable_array_get_string(var_name, vector));
+#if 1
+        if (string == NULL) string = _dummy;
+#else
         if (string == NULL) string = &_dummy;
+#endif
 
         expect(T_RIGHT_BANANA);
       }
@@ -881,7 +866,7 @@ string_expression(void)
 }
 
 
-  static int
+static int
 do_print(basic_type* rv)
 {
 
@@ -908,7 +893,11 @@ do_print(basic_type* rv)
         expression(&expr);
         expression_print(&expr);
         if (expr.type == expression_type_string){
+#if 1
+            if (expr.value.string != _dummy)
+#else
             if (expr.value.string != &_dummy)
+#endif
                 free(expr.value.string);
         }
       }
@@ -959,7 +948,7 @@ do_tab(basic_type* n, basic_type* rv)
   return 0;
 }
 
-  static int
+static int
 do_cls(basic_type* rv)
 {
 #ifndef _WIN32
@@ -999,12 +988,12 @@ do_goto(basic_type* rv)
     return 0;
   }
 
-  set_line( line_number );
+  set_line(line_number);
 
   return 0;
 }
 
-  static size_t
+static size_t
 get_list(size_t* list, size_t max_size)
 {
   // printf("get list\n");
@@ -1030,7 +1019,7 @@ get_list(size_t* list, size_t max_size)
   return size;
 }
 
-  static int
+static int
 do_on_goto(basic_type* rv)
 {
   accept(t_keyword_on);
@@ -1253,7 +1242,7 @@ do_rem(basic_type* rv)
   return 0;
 }
 
-  static size_t
+static size_t
 get_vector(size_t* vector, size_t size)
 {
 
@@ -1288,7 +1277,7 @@ get_vector(size_t* vector, size_t size)
   return dimensions;
 }
 
-  static int
+static int
 do_dim(basic_type* rv)
 {
   accept(t_keyword_dim);
@@ -1334,7 +1323,7 @@ do_dim(basic_type* rv)
   return 0;
 }
 
-  static int
+static int
 do_data(basic_type* rv)
 {
   // printf("data\n");
@@ -1343,7 +1332,7 @@ do_data(basic_type* rv)
   return 0;
 }
 
-  static bool
+static bool
 _data_find(variable_type type, value* value)
 {
   tokenizer_init( __data.cursor );
@@ -1375,7 +1364,7 @@ _data_find(variable_type type, value* value)
   return false;
 }  
 
-  static bool
+static bool
 _data_read(variable_type type, value* value)
 {
   bool rv = false;
@@ -1404,7 +1393,7 @@ _data_read(variable_type type, value* value)
   return rv;
 }  
 
-  static bool
+static bool
 _do_data_read(variable_type type, value* value)
 {
   char* save_pointer = tokenizer_char_pointer(NULL);
@@ -1444,7 +1433,7 @@ _do_data_read(variable_type type, value* value)
   return rv;
 }
 
-  static int
+static int
 do_read(basic_type* rv)
 {
   bool is_array =  false;
@@ -1512,7 +1501,7 @@ do_read(basic_type* rv)
   return 0;
 }
 
-  static int
+static int
 do_restore(basic_type* rv)
 {
   accept(t_keyword_restore);
@@ -1523,13 +1512,13 @@ do_restore(basic_type* rv)
   return 0;
 }
 
-  static int
+static int
 is_comment(const char *s)
 {
   return s[0] == '#';
 }
 
-  static int
+static int
 is_empty(const char *s)
 {
   while (*s != '\0') {
@@ -1541,7 +1530,7 @@ is_empty(const char *s)
 }
 
 // Insert '\0' behind first non space character, starting from right.
-  static void
+static void
 _trim(char* s)
 {
   char* p = s + strlen(s) - 1; // without the '\0'
@@ -1551,7 +1540,7 @@ _trim(char* s)
   *(p+1) = '\0'; 
 }  
 
-  static void
+static void
 _store(char* line)
 {
   int number;
@@ -1569,7 +1558,7 @@ _store(char* line)
   lines_store((uint16_t)number, p);
 }  
 
-  static void
+static void
 _load_cb(char* line, void* context)
 {
   if(!(is_empty(line) || is_comment(line))){
@@ -1577,7 +1566,7 @@ _load_cb(char* line, void* context)
   }
 }  
 
-  static int
+static int
 do_load(basic_type* rv)
 {
   accept(t_keyword_load);
@@ -1598,7 +1587,7 @@ typedef struct {
   uint16_t number;
 } _save_cb_ctx;
 
-  static uint16_t 
+static uint16_t 
 _save_cb(char** line, void* context)
 {
   _save_cb_ctx* ctx = (_save_cb_ctx*) context;
@@ -1610,7 +1599,7 @@ _save_cb(char** line, void* context)
   return number;
 }  
 
-  static int
+static int
 do_save(basic_type* rv)
 {
   accept(t_keyword_save);
@@ -1628,7 +1617,7 @@ do_save(basic_type* rv)
   return 0;
 }
 
-  static int
+static int
 do_delete(basic_type* rv)
 {
   accept(t_keyword_delete);
@@ -1645,25 +1634,25 @@ do_delete(basic_type* rv)
   return 0;
 }
 
-  static void
+static void
 _dir_cb(char* name, size_t size, bool label, void* context)
 {
   if (label) {
     printf("-- %-13s --\n", name);
   } else {
-#ifndef _WIN32
-#   if ARCH==ARCH_XMEGA
-    printf("> %-8s : %6d\n", name, size);
-#   else
-    printf("> %-8s : %6ld\n", name, size);
-#   endif    
+#ifdef _WIN32
+    printf("> %-8s : %6ld\n", name, (unsigned long)size);
 #else
-    printf("> %-8s : %6ld\n", name, size);
+# if ARCH == ARCH_XMEGA
+    printf("> %-8s : %6d\n", name, size);
+# else
+    printf("> %-8s : %6ld\n", name, (unsigned long)size);
+# endif    
 #endif
   }
 }  
 
-  static int
+static int
 do_dir(basic_type* rv)
 {
   accept(t_keyword_dir);
@@ -1673,7 +1662,7 @@ do_dir(basic_type* rv)
   return 0;
 }
 
-//   static int
+// static int
 // do_def_fn(basic_type* rv)
 // {
 //   accept(t_keyword_def);
@@ -1899,7 +1888,7 @@ do_if(basic_type* rv)
   return 0;
 }
 
-  static int
+static int
 do_let(basic_type* rv)
 {
   // printf("do let\n");
@@ -1964,7 +1953,7 @@ do_let(basic_type* rv)
   return 0;
 }
 
-  static int
+static int
 do_input(basic_type* rv)
 {
   bool prompt = false;
@@ -2022,7 +2011,7 @@ do_input(basic_type* rv)
   return 0;
 }
 
-  static int
+static int
 do_get(basic_type* rv)
 {
   if (sym != T_VARIABLE_STRING) {
@@ -2049,33 +2038,19 @@ do_get(basic_type* rv)
   return 0;
 }
 
-int do_sleep(basic_type* delay, basic_type* rv)
+
+int
+do_sleep(basic_type* delay, basic_type* rv)
 {
   int milliseconds = delay->value.number;
  
-#ifndef _WIN32
-#if ARCH==ARCH_XMEGA
-
-  delay_ms(milliseconds);
-
-#else 
-
-  struct timespec ts;
-  ts.tv_sec = milliseconds / 1000;
-  ts.tv_nsec = (milliseconds % 1000) * 1000000;
-  nanosleep(&ts, NULL);
-
-#endif
-  struct timespec ts;
-  ts.tv_sec = milliseconds / 1000;
-  ts.tv_nsec = (milliseconds % 1000) * 1000000;
-  nanosleep(&ts, NULL);
-#endif
+  arch_sleep(milliseconds);
 
   rv->kind = kind_numeric;
   rv->value.number = 0;
   return 0;
 }
+
 
 static void
 parse_line(void)
@@ -2141,7 +2116,8 @@ statement(void)
 }
 
 
-void basic_destroy(void)
+void
+basic_destroy(void)
 {
   variables_destroy();
 	tokenizer_free_registered_tokens();
@@ -2151,7 +2127,9 @@ void basic_destroy(void)
 	free(__memory);
 }
 
-void basic_init(size_t memory_size, size_t stack_size)
+
+void
+basic_init(size_t memory_size, size_t stack_size)
 {
 
   //printf("stack sizes\n");
@@ -2270,7 +2248,7 @@ void basic_init(size_t memory_size, size_t stack_size)
   arch_init();
 }
 
-  void
+void
 basic_register_io(basic_putchar putch, basic_getchar getch)
 {
   __putch = putch;
@@ -2329,7 +2307,8 @@ basic_eval(char *line)
   // printf("memory available: %" PRIu16 "\n", lines_memory_available() );
 }
 
-float evaluate(char *expression_string)
+float
+evaluate(char *expression_string)
 {
   last_error = NULL;
   tokenizer_init( expression_string );
@@ -2339,18 +2318,21 @@ float evaluate(char *expression_string)
   return result;
 }
 
-void evaluate_print(char *line)
+void
+evaluate_print(char *line)
 {
   float result = evaluate(line); 
   printf("%s = %f\n", line, result);
 }
 
-const char* evaluate_last_error(void)
+const char *
+evaluate_last_error(void)
 {
   return last_error;
 }
 
-void clear_last_error(void)
+void
+clear_last_error(void)
 {
   last_error = NULL;
 }
@@ -2502,7 +2484,7 @@ find_basic_function_by_type(token sym, basic_function_type type)
   return NULL;
 }
 
-  static void
+static void
 get_parameter(kind k, basic_type* v)
 {
   v->empty = false;
@@ -2521,7 +2503,8 @@ get_parameter(kind k, basic_type* v)
   }
 }
 
-static kind function_kind_i(basic_function *function, int i)
+static kind
+function_kind_i(basic_function *function, int i)
 {
   switch(i){
     case 0:
@@ -2649,7 +2632,8 @@ str_str(basic_type* number, basic_type* rv)
   return 0;
 }
 
-void dump_var(variable* var, void* context)
+void
+dump_var(variable* var, void* context)
 {
 #ifndef _WIN32
 #if ARCH!=ARCH_XMEGA  

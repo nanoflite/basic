@@ -51,5 +51,8 @@
     <ClCompile Include="..\arch\windows\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\arch\windows\sleep.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

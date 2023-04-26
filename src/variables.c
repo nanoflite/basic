@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -407,7 +406,7 @@ vector_print(size_t* vector, size_t dimensions)
 {
   for(size_t j=0; j<dimensions; j++)
   {
-    printf("%ld", vector[j]);
+    printf("%ld", (long)vector[j]);
     if ( j < dimensions - 1 )
     {
       printf(",");
@@ -428,17 +427,17 @@ variable_dump(variable* var)
 
   if (var->is_array)
   {
-    printf("\tdimensions: %ld\n", var->nr_dimensions);
+    printf("\tdimensions: %ld\n", (long)var->nr_dimensions);
     for(size_t d=0; d<var->nr_dimensions; d++)
     {    
-      printf("\tdim %ld size = %ld\n", d, var->dimensions[d]);
+      printf("\tdim %ld size = %ld\n", (long)d, (long)var->dimensions[d]);
     }
-    printf("\tarray size: %ld\n", array_size(var->array));
+    printf("\tarray size: %ld\n", (long)array_size(var->array));
     for(size_t i=0; i<array_size(var->array); i++)
     {
       size_t vector[5];
       calc_vector(var, i, vector);
-      printf("\t%3ld %s", i, var->name);
+      printf("\t%3ld %s", (long)i, var->name);
       vector_print(vector, var->nr_dimensions);
       printf(") = ");
       variable_value* val = array_get(var->array, i);

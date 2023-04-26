@@ -1,19 +1,20 @@
-#define _GNU_SOURCE
-#include "arch.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 //#include <dirent.h>
 #include <sys/stat.h>
+#include "../arch.h"
 
-  int
+
+int
 arch_init(void)
 {
   // stub
   return 0;
 }
 
-  static char*
+
+static char*
 _get_path(void)
 {
   static char* _path = NULL;
@@ -27,7 +28,8 @@ _get_path(void)
   return _path;
 }  
 
-  int
+
+int
 arch_load(char* name, arch_load_out_cb cb, void* context)
 {
   char* filename = malloc(256);
@@ -45,7 +47,7 @@ arch_load(char* name, arch_load_out_cb cb, void* context)
   return 0;
 }
 
-  int
+int
 arch_save(char* name, arch_save_cb cb, void* context)
 {
   char* line;
@@ -70,7 +72,8 @@ arch_save(char* name, arch_save_cb cb, void* context)
   return 0;
 }
 
-  int
+
+int
 arch_dir(arch_dir_out_cb cb, void* context)
 {
   //char out[256];
@@ -98,7 +101,8 @@ arch_dir(arch_dir_out_cb cb, void* context)
   return 0;
 }
 
-  int
+
+int
 arch_delete(char* name){
   char* filename = malloc(256);
   sprintf(&filename, "%s/%s.bas", _get_path(), name);
@@ -106,5 +110,3 @@ arch_delete(char* name){
   free(filename);
   return 0;
 }
-
-

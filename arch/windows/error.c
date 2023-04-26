@@ -3,12 +3,16 @@
 //#include <execinfo.h>
 #include <stdint.h>
 // or inttypes.h
+#include "../arch.h"
+
 
 extern uint16_t __line;
 
+
 const char *last_error = NULL;
 
-  void
+
+void
 error(const char *error_msg)
 {
   void *array[10];
