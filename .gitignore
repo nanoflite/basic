@@ -1,7 +1,6 @@
 .DS_Store
 profile
 patches/
-build/*
 *.mode1
 *.mode1v3
 *.mode2v3
@@ -15,5 +14,7 @@ CVS
 .vs/
 *.swp
 *.o
+*.obj
+*.exe
 t/test
 TODO
