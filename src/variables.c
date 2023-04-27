@@ -255,7 +255,17 @@ variable_array_init(char* name, variable_type type, size_t dimensions, size_t* v
   var->dimensions[4] = vector[4] + 1;
   var->array = array_new(sizeof(variable_value));
   // array_alloc(var->array, calc_size(var, var->nr_dimensions, -1)); 
-  array_alloc(var->array, calc_size(var)); 
+  size_t size = calc_size(var);
+  array_alloc(var->array, size);
+  if (type == variable_type_string)
+  {
+      for (size_t i = 0 ; i < size ; ++i)
+      {
+        variable_value val;
+        val.string = C_STRDUP("");
+        array_set(var->array, i, &val);
+      }
+  }
   dictionary_put(_dictionary, name, var);
   return var;
 }

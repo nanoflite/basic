@@ -4,6 +4,7 @@
 
 typedef struct line line;
 
+/* NOTE: we should probably PACK this thing, just to be sure. */
 struct line
 {
   uint16_t  number;

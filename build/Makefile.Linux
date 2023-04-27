@@ -1,19 +1,27 @@
 TARGET	= basic
 #ARCH	= -m32
+#DEBUG	= n
 
 TARGET_FOLDER = output
 BUILD_FOLDER = $(TARGET_FOLDER)/obj
 
 SOURCE_FOLDERS += ../arch/linux ../src
 
-DEFS	= -DARCH=2
+DEFS	= -DPLATFORM=2
 
 
 CC	= gcc $(ARCH)
 LD	= gcc $(ARCH)
 
-CFLAGS	= -O2 -Wall -std=c99 $(DEFS) -D_POSIX_SOURCE -D_GNU_SOURCE
-LDFLAGS	= -s
+ifeq "$(DEBUG)" "y"
+ CFLAGS	= -Og -ggdb
+ LDFLAGS =
+else
+ CFLAGS = -O2
+ LDFLAGS = -s
+endif
+CFLAGS	+= -Wall -std=c99 $(DEFS) -D_POSIX_SOURCE -D_GNU_SOURCE
+LDFLAGS	+=
 LDLIBS	= -lreadline -lm
 
 

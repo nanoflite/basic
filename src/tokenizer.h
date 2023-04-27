@@ -2,7 +2,7 @@
 #define __TOKENIZER_H__
 
 
-#define tokenizer_string_length 64 
+#define tokenizer_string_length 1024
 #define tokenizer_variable_length 8
 
 typedef unsigned int token;
@@ -32,6 +32,7 @@ typedef enum {
   T_MINUS,
   T_MULTIPLY,
   T_DIVIDE,
+  T_POWER,
   T_LEFT_BANANA,
   T_RIGHT_BANANA,
   T_COLON,

@@ -26,7 +26,9 @@ static line *
 _next(line *l)
 {
   char* p = (char *)l;
+
   p += sizeof(line) - 1 + l->length;
+
   return (line *)p;
 }
 
@@ -42,10 +44,12 @@ static line *
 _find_end(line *l)
 {
   line *n = l;
+
   while ( ! _is_end( n ) )
   {
     n = _next( n );
   }
+
   return n;  
 }
 
@@ -70,6 +74,7 @@ lines_memory_used(void)
   char *p = __memory;
   line *start = (line*)p;
   line *end = _find_end(start);
+
   end = _next(end);
       
   char *m_start = (char *)start;
@@ -92,6 +97,7 @@ lines_store(uint16_t number, char* contents)
   // support insert
   char *p = __memory;
   line *l = (line*)p;
+  char *foo;
 
   while ( ! _is_end( l ) )
   {
@@ -125,7 +131,26 @@ lines_store(uint16_t number, char* contents)
       // Set the data of the insert
       insert->number = number;
       insert->length = (uint8_t)strlen(contents) + 1;
+      /*
+       * Current GCC seriously barfs on the original code, where
+       * we 'strcpy' the contents directly into the line struct
+       * at the address of the 'contents' member.  GCC *knows*
+       * that this member is only 1 byte in size, and so when
+       * we do our strcpy into it, the underlying strcpy_chk
+       * will see that its overrunning that buffer...
+       *
+       * Workaround is to use a generic byte pointer derived from
+       * that same address.
+       *
+       * We see this several times in this function.
+       */
+#if 0
       strcpy( &(insert->contents), contents );
+#else
+      foo = (char *)insert;
+      foo += ((uintptr_t)&insert->contents - (uintptr_t)insert);
+      strcpy( foo, contents );
+#endif
 
       // hexdump( "insert", __memory, 256 );
       
@@ -157,7 +182,13 @@ lines_store(uint16_t number, char* contents)
 
       // Set the data of the replace
       l->length = (uint8_t)strlen(contents) + 1;
+#if 0
       strcpy( &(l->contents), contents );
+#else
+      foo = (char *)l;
+      foo += ((uintptr_t)&l->contents - (uintptr_t)l);
+      strcpy( foo, contents );
+#endif
 
       // hexdump( "replace", __memory, 256 );
       
@@ -190,7 +221,13 @@ lines_store(uint16_t number, char* contents)
       // Set the data of the insert
       insert->number = number;
       insert->length = (uint8_t)strlen(contents) + 1;
+#if 0
       strcpy( &(insert->contents), contents );
+#else
+      foo = (char *)insert;
+      foo += ((uintptr_t)&insert->contents - (uintptr_t)insert);
+      strcpy( foo, contents );
+#endif
 
       // hexdump( "prepend", __memory, 256 );
  
@@ -202,7 +239,13 @@ lines_store(uint16_t number, char* contents)
   
   l->number = number;
   l->length = (uint8_t)strlen(contents) + 1; // Length is offset to next line
+#if 0
   strcpy( &(l->contents), contents );
+#else
+  foo = (char *)l;
+  foo += ((uintptr_t)&l->contents - (uintptr_t)l);
+  strcpy( foo, contents );
+#endif
 
   line *end = _next( l );
   end->number = 0;

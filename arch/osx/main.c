@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 {
   signal(SIGINT, sigint_handler);
 
-  basic_init(1024*8, 2048);
+  basic_init(1024*64, 2048);
   basic_register_io(out, in);
 
   if (argc > 1){

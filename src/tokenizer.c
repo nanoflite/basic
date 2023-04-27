@@ -24,6 +24,7 @@ add_token( T_PLUS, "+" );
 add_token( T_MINUS, "-" );
 add_token( T_MULTIPLY, "*" );
 add_token( T_DIVIDE, "/" );
+add_token( T_POWER, "^" );
 add_token( T_LEFT_BANANA, "(" );
 add_token( T_RIGHT_BANANA, ")" );
 add_token( T_COLON, ":" );
@@ -58,6 +59,7 @@ tokenizer_setup(void)
   tokenizer_register_token( &_T_MINUS);
   tokenizer_register_token( &_T_MULTIPLY);
   tokenizer_register_token( &_T_DIVIDE);
+  tokenizer_register_token( &_T_POWER);
   tokenizer_register_token( &_T_LEFT_BANANA);
   tokenizer_register_token( &_T_RIGHT_BANANA);
   tokenizer_register_token( &_T_COLON);
