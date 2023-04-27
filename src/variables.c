@@ -1,13 +1,14 @@
+#include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "error.h"
+#include "../arch/arch.h"
+#include "variables.h"
+#include "dictionary.h"
+#include "array.h"
 
-#include <error.h>
-#include <variables.h>
-#include <dictionary.h>
-#include <array.h>
-
-#include "usingwin.h"
 
 typedef union
 {
@@ -31,7 +32,7 @@ dictionary *_dictionary = NULL;
 const char* E_INDEX_OUT_OF_BOUNDS = "INDEX OUT OF BOUNDS";
 const char* E_VAR_NOT_FOUND = "VAR NOT FOUND";
 
-#if ARCH!=ARCH_XMEGA
+#if PLATFORM != PLATFORM_XMEGA
 static void vector_print(size_t* vector, size_t dimensions);
 #endif
 
@@ -379,7 +380,7 @@ variables_each(variables_each_cb each, void* context)
   dictionary_each(_dictionary, each_v, &ctx);
 }
 
-#if ARCH!=ARCH_XMEGA
+#if PLATFORM != PLATFORM_XMEGA
 
   static void
 calc_vector(variable* var, size_t index, size_t* vector)

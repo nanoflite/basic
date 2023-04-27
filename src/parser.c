@@ -1,11 +1,11 @@
+#include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
-#include <ctype.h>
 #include <string.h>
-#include <stdbool.h>
+#include <ctype.h>
+#include <math.h>
 #include <time.h>
-
 #include "../arch/arch.h"
 #include "error.h"
 #include "tokenizer.h"
@@ -16,9 +16,9 @@
 #include "io.h"
 #include "parser.h"
 
-#include "usingwin.h"
 
-char *_dummy = 0;
+char _dummy = 0;
+
 
 /*
   line = [number] statement [ : statement ] CR
@@ -348,7 +348,7 @@ static int
 f_abs(basic_type* n, basic_type* rv)
 {
   rv->kind = kind_numeric;
-  rv->value.number = fabs(n->value.number);
+  rv->value.number = (float)fabs(n->value.number);
   return 0;
 }
 
@@ -359,15 +359,15 @@ f_rnd(basic_type* n, basic_type* rv)
   if (n->value.number > 0)
   {
     int random = rand();
-    rv->value.number = (random * 1.0) / RAND_MAX;
+    rv->value.number = (float)((random * 1.0) / RAND_MAX);
     return 0;
   }
 
   if (n->value.number < 0)
   {
-    srand(n->value.number);
+    srand((unsigned int)n->value.number);
     int random = rand();
-    rv->value.number = (random * 1.0) / RAND_MAX;
+    rv->value.number = (float)((random * 1.0) / RAND_MAX);
     return 0;
   }
 
@@ -375,7 +375,7 @@ f_rnd(basic_type* n, basic_type* rv)
   struct tm *tm;
   now = time(NULL);    
   tm = localtime(&now);
-  rv->value.number = (tm->tm_sec * 1.0) / 60;
+  rv->value.number = (float)((tm->tm_sec * 1.0) / 60);
   return 0;
 }
 
@@ -384,7 +384,7 @@ f_int(basic_type* n, basic_type* rv)
 {
   rv->kind = kind_numeric;
   int i = (int) n->value.number;  
-  rv->value.number = 1.0 * i;
+  rv->value.number = (float)(1.0 * i);
   return 0;
 }
 
@@ -392,7 +392,7 @@ static int
 f_sqr(basic_type* n, basic_type* rv)
 {
   rv->kind = kind_numeric;
-  rv->value.number = (float) sqrt( (double) n->value.number );
+  rv->value.number = (float)sqrt( (double) n->value.number );
   return 0;
 }
 
@@ -400,14 +400,14 @@ static int
 f_sgn(basic_type* n, basic_type* rv)
 {
   rv->kind = kind_numeric;
-  if (n->value.number < 0)
+  if (n->value.number < 0.0)
   {
-    rv->value.number = -1.0;
+    rv->value.number = (float)-1.0;
   }
   else
-  if (n->value.number > 0)
+  if (n->value.number > 0.0)
   {
-    rv->value.number = 1.0;
+    rv->value.number = (float)1.0;
   }
   else
   {
@@ -499,9 +499,9 @@ str_chr(basic_type* n, basic_type* rv)
   char *chr;
 #ifdef _WIN32
   chr = malloc(16);
-  sprintf(&chr, "%c", (int)n->value.number);
+  sprintf(chr, "%c", (int)n->value.number);
 #else
-  (void)asprintf(&chr, "%c", (int) n->value.number);
+  asprintf(&chr, "%c", (int) n->value.number);
 #endif
   rv->value.string = chr;
   rv->mallocd = true;
@@ -514,13 +514,13 @@ str_mid(basic_type* str, basic_type* start, basic_type* length, basic_type* rv)
   rv->kind = kind_string;
   char* source = str->value.string;
   int _start = (int) start->value.number - 1;
-  if(_start>strlen(source)) _start = strlen(source);
+  if(_start>strlen(source)) _start = (int)strlen(source);
   int _length;
   if(length->empty){
-    _length = strlen(source) - _start;
+    _length = (int)(strlen(source) - _start);
   } else {
     _length = (int) length->value.number;
-    if(_length+_start>strlen(source)) _length = strlen(source) - _start;
+    if(_length+_start>strlen(source)) _length = (int)strlen(source) - _start;
   }
   char* string = C_STRDUP(&source[_start]);
   string[_length] = '\0'; 
@@ -812,11 +812,7 @@ string_term(void)
         size_t vector[5];
         get_vector(vector,5);
         string = C_STRDUP(variable_array_get_string(var_name, vector));
-#if 1
-        if (string == NULL) string = _dummy;
-#else
         if (string == NULL) string = &_dummy;
-#endif
 
         expect(T_RIGHT_BANANA);
       }
@@ -893,11 +889,7 @@ do_print(basic_type* rv)
         expression(&expr);
         expression_print(&expr);
         if (expr.type == expression_type_string){
-#if 1
-            if (expr.value.string != _dummy)
-#else
             if (expr.value.string != &_dummy)
-#endif
                 free(expr.value.string);
         }
       }
@@ -951,14 +943,9 @@ do_tab(basic_type* n, basic_type* rv)
 static int
 do_cls(basic_type* rv)
 {
-#ifndef _WIN32
-#if ARCH==ARCH_XMEGA
+#if PLATFORM == PLATFORM_XMEGA
   basic_io_print("\x1b");
   basic_io_print("E");
-#else
-  basic_io_print("\033[2J");
-  basic_io_print("\033[0;0H");
-#endif  
 #else
   basic_io_print("\033[2J");
   basic_io_print("\033[0;0H");
@@ -1007,7 +994,7 @@ get_list(size_t* list, size_t max_size)
     //printf(" sym: %ld\n", sym);
     float n = numeric_expression();
     //printf(" l[%ld] = %d\n", size, (int)n);
-    list[size] = n;
+    list[size] = (size_t)n;
     size++;
     if (size>max_size)
     {
@@ -1024,7 +1011,7 @@ do_on_goto(basic_type* rv)
 {
   accept(t_keyword_on);
   
-  int index = numeric_expression();
+  int index = (int)numeric_expression();
 
   token what = T_EOF;
   if (sym == t_keyword_goto){
@@ -1049,11 +1036,11 @@ do_on_goto(basic_type* rv)
   size_t line_number = list[index-1];  
   if (what == t_keyword_goto){
     //TODO: refactor to helper and use in goto as well
-    char* line = lines_get_contents(line_number);
+    char* line = lines_get_contents((uint16_t)line_number);
     if (line == NULL) {
       error("LINE NOT FOUND");
     }
-    set_line( line_number );
+    set_line( (uint16_t) line_number );
   } else {
     //TODO: refactor to helper and use in gosub as well
     stack_frame_gosub *g;
@@ -1069,7 +1056,7 @@ do_on_goto(basic_type* rv)
     g->type = stack_frame_type_gosub;
     g->line = __line;
     g->cursor = tokenizer_char_pointer(NULL); 
-    set_line( line_number );
+    set_line( (uint16_t)line_number );
   }
   return 0;
 }
@@ -1123,7 +1110,7 @@ do_return(basic_type* rv)
     return 0;
   }
 
-  __line = g->line;
+  __line = (uint16_t)g->line;
   tokenizer_char_pointer( g->cursor );
 
   __stack_p += sizeof(stack_frame_gosub);
@@ -1220,7 +1207,7 @@ do_next(basic_type* rv)
 
   variable_set_numeric(f->variable_name, value); 
 
-  __line = f->line;
+  __line = (uint16_t)f->line;
   tokenizer_char_pointer( f->cursor );
 
   return 0;
@@ -1261,7 +1248,7 @@ get_vector(size_t* vector, size_t size)
     // float n = tokenizer_get_number();
     float n = numeric_expression();
     // printf(" dim %ld = %d\n", dimensions, (int) n);
-    vector[dimensions] = n;
+    vector[dimensions] = (size_t)n;
     dimensions++;
     if (dimensions>size)
     {
@@ -1640,14 +1627,10 @@ _dir_cb(char* name, size_t size, bool label, void* context)
   if (label) {
     printf("-- %-13s --\n", name);
   } else {
-#ifdef _WIN32
-    printf("> %-8s : %6ld\n", name, (unsigned long)size);
-#else
-# if ARCH == ARCH_XMEGA
+#if PLATFORM == PLATFORM_XMEGA
     printf("> %-8s : %6d\n", name, size);
-# else
+#else
     printf("> %-8s : %6ld\n", name, (unsigned long)size);
-# endif    
 #endif
   }
 }  
@@ -1874,7 +1857,7 @@ do_if(basic_type* rv)
     {
       float line_number = tokenizer_get_number();
       accept(T_NUMBER);
-      set_line(line_number);
+      set_line( (uint16_t)line_number );
     }
     else
     { 
@@ -2042,7 +2025,7 @@ do_get(basic_type* rv)
 int
 do_sleep(basic_type* delay, basic_type* rv)
 {
-  int milliseconds = delay->value.number;
+  int milliseconds = (int)delay->value.number;
  
   arch_sleep(milliseconds);
 
@@ -2064,8 +2047,7 @@ parse_line(void)
       break;
     }
 
-#ifndef _WIN32
-#   if ARCH==ARCH_XMEGA
+#if PLATFORM == PLATFORM_XMEGA
     if (kbhit())
     {
       int ch = __getch();
@@ -2081,9 +2063,7 @@ parse_line(void)
         ungetc(ch, stdin);
       }
     }
-#   endif    
 #endif
-
   }
 }
 
@@ -2274,7 +2254,7 @@ basic_eval(char *line)
   }
 
   char line_string[tokenizer_string_length];
-  strncpy(line_string, line, sizeof(line_string));
+  strncpy(line_string, line, sizeof(line_string) - 1);
   _trim(line_string);
   if(is_empty(line_string) || is_comment(line_string)){
     return;
@@ -2288,9 +2268,9 @@ basic_eval(char *line)
     char* line = tokenizer_char_pointer(NULL);
     get_sym();
     if (sym == T_EOF) {
-      lines_delete( line_number );
+      lines_delete( (uint16_t)line_number );
     } else {
-      lines_store( line_number, line);
+      lines_store( (uint16_t)line_number, line);
     }
   } else {
       __EVALUATING = true;
@@ -2346,7 +2326,7 @@ register_token(char* token_name)
 {
   token_entry token;
 
-  token.token = basic_token_id++;
+  token.token = (unsigned int) basic_token_id++;   //FIXME: cast to 'token' fails in VS2019 ??
   token.name = token_name;
 
   // printf("token '%s' = %ld\n", keyword, token.token);
@@ -2537,7 +2517,7 @@ basic_dispatch_function(basic_function* function, basic_type* rv)
     return 0;
   }
 
-  basic_type v[5];
+  basic_type v[6];	//FIXME: was 5, warning on overflow in get_param below
   expect(T_LEFT_BANANA);
   int i = 0;
   for(; i<function->nr_arguments; i++){
@@ -2598,7 +2578,7 @@ int
 str_len(basic_type* str, basic_type* rv)
 {
   rv->kind = kind_numeric;
-  rv->value.number = (int) strlen(str->value.string);
+  rv->value.number = (float) strlen(str->value.string);
   return 0;
 }
 
@@ -2606,7 +2586,7 @@ int
 str_asc(basic_type* str, basic_type* rv)
 {
   rv->kind = kind_numeric;
-  rv->value.number = (int) *(str->value.string);
+  rv->value.number = (float) *(str->value.string);
   return 0;
 }
 
@@ -2614,7 +2594,7 @@ int
 str_val(basic_type* str, basic_type* rv)
 {
   rv->kind = kind_numeric;
-  rv->value.number = atof(str->value.string);
+  rv->value.number = (float)atof(str->value.string);
   return 0;
 }
 
@@ -2624,9 +2604,9 @@ str_str(basic_type* number, basic_type* rv)
   rv->kind = kind_string;
 #ifdef _WIN32
   rv->value.string = calloc(16, 1);
-  sprintf(&(rv->value.string), "%f", number->value.number);
+  sprintf(rv->value.string, "%f", number->value.number);
 #else
-  asprintf(&(rv->value.string), "%f", number->value.number);
+  asprintf(&rv->value.string, "%f", number->value.number);
 #endif
   rv->mallocd = true;
   return 0;
@@ -2635,10 +2615,8 @@ str_str(basic_type* number, basic_type* rv)
 void
 dump_var(variable* var, void* context)
 {
-#ifndef _WIN32
-#if ARCH!=ARCH_XMEGA  
+#if PLATFORM != PLATFORM_XMEGA  
   variable_dump(var);
-#endif
 #endif
 }
 

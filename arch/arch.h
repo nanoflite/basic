@@ -1,18 +1,28 @@
 #ifndef __ARCH_H__
 # define __ARCH_H__
 
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdint.h>
+
+/* Some compilers define or, or the other, or both.. */
+#if defined(WIN32) && !defined(_WIN32)
+# define _WIN32
+#endif
+
+#ifdef _WIN32
+# define C_STRDUP       _strdup
+#else
+# define C_STRDUP       strdup
+#endif
 
 
-typedef enum archs {
-    ARCH_WINDOWS = 1,
-    ARCH_LINUX,
-    ARCH_OSX,
+#define PLATFORM_WIN32	1
+#define PLATFORM_LINUX	2
+#define PLATFORM_OSX	3
+#define PLATFORM_XMEGA	10
 
-    ARCH_XMEGA
-} archs_t;
+
+#ifdef _WIN32
+# define PLATFORM	PLATFORM_WIN32
+#endif
 
 
 typedef void (*arch_load_out_cb)(char *line, void* context);
@@ -20,7 +30,7 @@ typedef uint16_t (*arch_save_cb)(char** line, void* context);
 typedef void (*arch_dir_out_cb)(char *name, size_t size, bool label, void* context);
 
 
-#if ARCH == ARCH_XMEGA
+#if PLATFORM == PLATFORM_XMEGA
 int asprintf(char **ret, const char *format, ...);
 float strtof(const char *restrict nptr, char **restrict endptr);
 char *strndup(const char *s1, size_t n);

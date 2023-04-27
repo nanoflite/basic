@@ -1,20 +1,27 @@
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
+#include <signal.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-#include <string.h>
-#include <signal.h>
-#include <stdbool.h>
 #include "../arch.h"
-#include "../include/parser.h"
+#include "../../src/io.h"
+#include "../../src/tokenizer.h"
+#include "../../src/parser.h"
 
 
 extern bool __RUNNING;
 extern bool __STOPPED;
 
-static void sigint_handler(int signum)
+
+static
+void sigint_handler(int signum)
 {
   signal(SIGINT, sigint_handler);
+
   if(__RUNNING){
     __RUNNING = false;
     __STOPPED = true;
@@ -23,9 +30,11 @@ static void sigint_handler(int signum)
   }
 }
 
-static char *readline_gets ()
+
+static char *
+readline_gets(void)
 {
-  char * line_read = readline ("");
+  char *line_read = readline ("");
 
   if (line_read && *line_read) {
      add_history (line_read);
@@ -34,18 +43,25 @@ static char *readline_gets ()
   return line_read;
 }
 
-int out(int ch)
+
+int
+out(int ch)
 {
   putchar(ch);
+
   return 1;
 }
 
-int in(void)
+
+int
+in(void)
 {
   return getchar();
 }
 
-void repl(void)
+
+void
+repl(void)
 {
   puts(" _               _      ");
   puts("| |__   __ _ ___(_) ___ ");
@@ -77,7 +93,10 @@ void repl(void)
   clear_history();
 }
 
-void run(char *file_name){
+
+void
+run(char *file_name)
+{
   FILE* file = fopen(file_name, "r");
 
   if (file == NULL) {
@@ -99,7 +118,9 @@ void run(char *file_name){
   basic_run();
 }
 
-int main(int argc, char *argv[])
+
+int
+main(int argc, char *argv[])
 {
   signal(SIGINT, sigint_handler);
 

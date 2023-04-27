@@ -1,7 +1,6 @@
 #ifndef __CALLBACK_H__
 #define __CALLBACK_H__
 
-#include <stdbool.h>
 
 typedef struct
 error

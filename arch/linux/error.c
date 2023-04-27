@@ -1,16 +1,16 @@
+#include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <execinfo.h>
-#include <stdint.h>
 #include "../arch.h"
-// or inttypes.h
 
 
 extern uint16_t __line;
-
 const char *last_error = NULL;
 
-  void
+
+void
 error(const char *error_msg)
 {
 #ifdef _DEBUG

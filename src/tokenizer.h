@@ -1,7 +1,6 @@
 #ifndef __TOKENIZER_H__
 #define __TOKENIZER_H__
 
-#include <stdlib.h>
 
 #define tokenizer_string_length 64 
 #define tokenizer_variable_length 8

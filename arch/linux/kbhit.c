@@ -1,4 +1,6 @@
+#include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <sys/select.h>
 #include <sys/ioctl.h>
@@ -6,9 +8,11 @@
 #include "../arch.h"
 
 
-int kbhit(void) {
+int kbhit(void)
+{
   static const int STDIN = 0;
   static bool initialized = false;
+  int bytesWaiting;
 
   if (! initialized) {
     // Use termios to turn off line buffering
@@ -20,7 +24,7 @@ int kbhit(void) {
     initialized = true;
   }
 
-  int bytesWaiting;
   ioctl(STDIN, FIONREAD, &bytesWaiting);
+
   return bytesWaiting;
 }

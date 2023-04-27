@@ -1,7 +1,6 @@
 #ifndef __VARIABLES_H__
 #define __VARIABLES_H__
 
-#include <stdbool.h>
 
 typedef enum {
   variable_type_unknown,

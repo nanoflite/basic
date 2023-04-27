@@ -1,9 +1,11 @@
+#include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
-//#include <sys/select.h>
-//#include <sys/ioctl.h>
-//#include <termios.h>
 
-int kbhit(void) {
-	return getchar();
+
+int
+kbhit(void)
+{
+//FIXME: we could use _kbhit() here ..
+  return getchar();
 }

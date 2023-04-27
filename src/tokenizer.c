@@ -1,16 +1,18 @@
+#include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include <stdio.h>
-#include <stdbool.h>
-
 #include "../arch/arch.h"
 #include "tokenizer.h"
 #include "hexdump.h"
 #include "array.h"
 
-static array* token_array = NULL;
+
+static array *token_array = NULL;
+
 
 add_token( T_ERROR, NULL );
 add_token( T_EOF, NULL );
@@ -41,7 +43,9 @@ char tokenizer_actual_char;
 char tokenizer_actual_string[tokenizer_string_length];
 char tokenizer_actual_variable[tokenizer_variable_length];
 
-void tokenizer_setup(void)
+
+void
+tokenizer_setup(void)
 {
   token_array = array_new(sizeof(token_entry));
   tokenizer_register_token( &_T_ERROR);
@@ -64,13 +68,17 @@ void tokenizer_setup(void)
   tokenizer_register_token( &_T_COMMA);
 }
 
-void tokenizer_init(char *input)
+
+void
+tokenizer_init(char *input)
 {
   tokenizer_line = input;
   tokenizer_p = tokenizer_next_p = tokenizer_line;
 }
 
-char* tokenizer_char_pointer(char* set)
+
+char *
+tokenizer_char_pointer(char *set)
 {
   if ( set != NULL )
   {
@@ -84,6 +92,7 @@ char* tokenizer_char_pointer(char* set)
   } 
   return tokenizer_p;
 }
+
 
 static bool
 isvarchar(char c)
@@ -104,7 +113,9 @@ isvarchar(char c)
   return false;
 }
 
-token _find_registered(void)
+
+token
+_find_registered(void)
 {
 
   // printf("_find registered\n");
@@ -130,7 +141,9 @@ token _find_registered(void)
   return T_THE_END;
 }
 
-token tokenizer_get_next_token(void)
+
+token
+tokenizer_get_next_token(void)
 {
   if ( ! *tokenizer_p ) {
     return T_EOF;
@@ -232,23 +245,33 @@ token tokenizer_get_next_token(void)
   return T_ERROR; 
 }
 
-float tokenizer_get_number(void)
+
+float
+tokenizer_get_number(void)
 {
   return tokenizer_actual_number;
 }
 
-char *tokenizer_get_string(void)
+
+char *
+tokenizer_get_string(void)
 {
   return tokenizer_actual_string;
 }
 
-void tokenizer_get_variable_name(char *name)
+
+void
+tokenizer_get_variable_name(char *name)
 {
-  strncpy(name, tokenizer_actual_variable, sizeof(tokenizer_actual_variable));
+  int i = sizeof(tokenizer_actual_variable);
+
+  //NOTE: this is just to silence the warning!
+  strncpy(name, tokenizer_actual_variable, i);
 }
 
-  void
-tokenizer_register_token( token_entry* entry )
+
+void
+tokenizer_register_token(token_entry *entry)
 {
   /*
   // Create space for token_entry
@@ -264,7 +287,8 @@ tokenizer_register_token( token_entry* entry )
   array_push(token_array, entry);
 }
 
-  void
+
+void
 tokenizer_free_registered_tokens(void)
 {
   array_destroy(token_array);
@@ -274,4 +298,3 @@ tokenizer_free_registered_tokens(void)
   registered_tokens_ptr = NULL;
   */
 }
-

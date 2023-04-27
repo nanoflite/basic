@@ -1,5 +1,7 @@
-#include <stdio.h>
+#include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 //#include <dirent.h>
 #include <sys/stat.h>
@@ -18,13 +20,16 @@ static char*
 _get_path(void)
 {
   static char* _path = NULL;
+  
   _path = getenv("BASIC_PATH");
   if (_path == NULL) {
     _path = ".";
   }
+  
   if(_path[strlen(_path)-1] == '/'){
     _path[strlen(_path)-1] = '\0';
   }
+  
   return _path;
 }  
 
@@ -32,32 +37,38 @@ _get_path(void)
 int
 arch_load(char* name, arch_load_out_cb cb, void* context)
 {
-  char* filename = malloc(256);
-  sprintf(&filename, "%s/%s.bas", _get_path(), name);
+  char line[256];
+  char *filename = malloc(256);
+  
+  sprintf(filename, "%s/%s.bas", _get_path(), name);
   FILE* fp = fopen(filename, "r");
   if(!fp){
     return 1;
   }
-  char line[256];
+  
   while(fgets(line, 256, fp) != NULL) {
     cb(line, context);
   }
+  
   fclose(fp);
   free(filename);
+  
   return 0;
 }
 
 int
 arch_save(char* name, arch_save_cb cb, void* context)
 {
-  char* line;
-  char* filename = malloc(256);
-  sprintf(&filename, "%s/%s.bas", _get_path(), name);
+  char *line;
+  char *filename = malloc(256);
+  
+  sprintf(filename, "%s/%s.bas", _get_path(), name);
  
   FILE* fp = fopen(filename, "w"); 
   if(!fp){
     return 1;
   }
+  
   for(;;){
     uint16_t number = cb(&line, context);
     if (line == NULL){
@@ -103,10 +114,13 @@ arch_dir(arch_dir_out_cb cb, void* context)
 
 
 int
-arch_delete(char* name){
+arch_delete(char *name)
+{
   char* filename = malloc(256);
-  sprintf(&filename, "%s/%s.bas", _get_path(), name);
+
+  sprintf(filename, "%s/%s.bas", _get_path(), name);
   remove(filename);
   free(filename);
+
   return 0;
 }

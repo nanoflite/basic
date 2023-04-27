@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "../arch.h"

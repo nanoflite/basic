@@ -1,7 +1,6 @@
 #ifndef __IO_H__
 #define __IO_H__
 
-#include <stdlib.h>
 
 typedef int (*basic_putchar)(int ch);
 typedef int (*basic_getchar)(void);

@@ -1,10 +1,11 @@
+#include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
-#include <string.h>
-
 #include <stdio.h>
-
+#include <string.h>
+#include "../arch/arch.h"
 #include "array.h"
-#include "usingwin.h"
+
 
 struct array {
   size_t element_size;
@@ -12,7 +13,8 @@ struct array {
   char* ptr;
 };
 
-  array*
+
+array*
 array_new(size_t element_size)
 {
   // printf("array size: %ld\n", sizeof(array));
@@ -23,7 +25,8 @@ array_new(size_t element_size)
   return a;
 }
 
-  array*
+
+array*
 array_alloc(array* array, size_t size)
 {
   array->size = size;
@@ -33,14 +36,16 @@ array_alloc(array* array, size_t size)
   return array;
 }
 
-  void
+
+void
 array_destroy(array* array)
 {
   free(array->ptr);
   free(array);
 }
 
-  void*
+
+void*
 array_push(array* array, void* value)
 {
   array->size++;
@@ -50,13 +55,15 @@ array_push(array* array, void* value)
   return element;
 }
 
-  void*
+
+void*
 array_get(array* array, size_t index)
 {
   return array->ptr + index * array->element_size;
 }
 
-  void*
+
+void*
 array_set(array* array, size_t index, void* value)
 {
   void* element = array_get(array, index);
@@ -64,7 +71,8 @@ array_set(array* array, size_t index, void* value)
   return element;
 }
 
-  size_t
+
+size_t
 array_size(array* array)
 {
   return array->size;

@@ -1,11 +1,16 @@
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include "../arch/arch.h"
 
-  void
-hexdump (char *desc, void *addr, int len)
+
+void
+hexdump(char *desc, void *addr, int len)
 {
+  uint8_t buff[17];
+  uint8_t *pc = (uint8_t*)addr;
   int i;
-  unsigned char buff[17];
-  unsigned char *pc = (unsigned char*) addr;
 
   if (desc != NULL)
   {

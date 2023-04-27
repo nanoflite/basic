@@ -1,9 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
-#if ARCH == ARCH_XMEGA
-# include <util/delay.h>
-#endif
+#include <util/delay.h>
 #include "../arch.h"
 
 

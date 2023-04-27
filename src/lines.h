@@ -1,8 +1,6 @@
 #ifndef __LINES_H__
 #define __LINES_H__
 
-#include <stdbool.h>
-#include <stdint.h>
 
 typedef struct line line;
 

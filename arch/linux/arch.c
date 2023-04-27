@@ -1,20 +1,26 @@
-#include <stdio.h>
+#include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <dirent.h>
 #include <sys/stat.h>
 #include "../arch.h"
 
 
-int arch_init(void)
+int
+arch_init(void)
 {
   // stub
   return 0;
 }
 
-static char* _get_path(void)
+
+static char *
+_get_path(void)
 {
-  static char* _path = NULL;
+  static char *_path = NULL;
+
   _path = getenv("BASIC_PATH");
   if (_path == NULL) {
     _path = ".";
@@ -22,33 +28,43 @@ static char* _get_path(void)
   if(_path[strlen(_path)-1] == '/'){
     _path[strlen(_path)-1] = '\0';
   }
+
   return _path;
 }  
 
-int arch_load(char* name, arch_load_out_cb cb, void* context)
+
+int
+arch_load(char *name, arch_load_out_cb cb, void *context)
 {
-  char* filename;
+  char line[256];
+  char *filename;
+  FILE *fp;
+
   asprintf(&filename, "%s/%s.bas", _get_path(), name);
-  FILE* fp = fopen(filename, "r");
+  fp = fopen(filename, "r");
   if(!fp){
     return 1;
   }
-  char line[256];
   while(fgets(line, 256, fp) != NULL) {
     cb(line, context);
   }
   fclose(fp);
   free(filename);
+
   return 0;
 }
 
-int arch_save(char* name, arch_save_cb cb, void* context)
+
+int
+arch_save(char *name, arch_save_cb cb, void *context)
 {
-  char* line;
-  char* filename;
+  char *filename;
+  char *line;
+  FILE *fp; 
+
   asprintf(&filename, "%s/%s.bas", _get_path(), name);
  
-  FILE* fp = fopen(filename, "w"); 
+  fp = fopen(filename, "w"); 
   if(!fp){
     return 1;
   }
@@ -66,15 +82,18 @@ int arch_save(char* name, arch_save_cb cb, void* context)
   return 0;
 }
 
-int arch_dir(arch_dir_out_cb cb, void* context)
+
+int
+arch_dir(arch_dir_out_cb cb, void *context)
 {
   char out[512];
-  snprintf(out, sizeof(out), "dir: %s", _get_path());
-  cb(out, 0, true, context);
-
   struct stat stats;
   struct dirent *ent;
   DIR *dir;
+
+  snprintf(out, sizeof(out), "dir: %s", _get_path());
+  cb(out, 0, true, context);
+
   dir = opendir(_get_path());
   while ((ent = readdir(dir)) != NULL) {
     char* name = ent->d_name;
@@ -93,12 +112,15 @@ int arch_dir(arch_dir_out_cb cb, void* context)
   return 0;
 }
 
-int arch_delete(char* name){
-  char* filename;
+
+int
+arch_delete(char *name)
+{
+  char *filename;
+
   asprintf(&filename, "%s/%s.bas", _get_path(), name);
   remove(filename);
   free(filename);
+
   return 0;
 }
-
-
