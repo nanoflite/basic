@@ -1,3 +1,4 @@
+.gitignore
 .DS_Store
 profile
 patches/
@@ -9,6 +10,7 @@ patches/
 *.pbxuser
 *.xcworkspace
 xcuserdata
+.depends-*
 .svn
 CVS
 .vs/
