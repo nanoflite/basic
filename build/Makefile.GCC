@@ -3,9 +3,9 @@
 #
 #		This file is part of the VARCem Project.
 #
-#		Makefile for Windows using Visual Studio 2019.
+#		Makefile for UNIX-like systems using the GCC environment.
 #
-# Version:	@(#)Makefile.MSVC	1.1.0	2023/05/01
+# Version:	@(#)Makefile.GCC	1.1.0	2023/05/01
 #
 # Author:	Fred N. van Kempen, <waltje@varcem.com>
 #
@@ -42,7 +42,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-
 ifndef ARCH
  ARCH		:= x86
 endif
@@ -52,7 +51,7 @@ ifndef DEBUG
 endif
 
 
-DEFS	:= #-DUSE_READLINE
+DEFS	:= -DPLATFORM=2 -DUSE_READLINE
 
 
 #########################################################################
@@ -60,152 +59,115 @@ DEFS	:= #-DUSE_READLINE
 #########################################################################
 
 # Definitions for this enivonment.
-DEVENV		:= msvc
+DEVENV		:= gcc
 DEPS		= -MMD -MF $*.d
 DEPFILE		:= .depends-$(DEVENV)
 
 
-# Compilation for Windows X86.
+# Compilation for X86.
 ifeq ($(ARCH), x86)
- MACH		:= /MACHINE:$(ARCH)
+ TARGET		:= 32
+ PREFIX		:=
+ RCTARGET	:= pe-i386
 
- # Allow for WinXP-SP3 builds in 32-bit mode.
- LOPTS_OS	:= ,5.01
-
+ AFLAGS		:= -msse2 -mfpmath=sse
  ifeq ($(OPTIM), y)
-  AFLAGS	:= /arch:AVX2
+  DFLAGS	:= -march=native
  else
-  AFLAGS	:= /arch:SSE2
+  DFLAGS	:= -march=i686
  endif
 endif
 
-# Compilation for Windows X64.
+# Compilation for X64.
 ifeq ($(ARCH), x64)
- MACH		:= /MACHINE:$(ARCH)
- LOPTS_OS	:=
+ TARGET		:= 64
+ PREFIX		:=
+ RCTARGET	:= pe-x86-64
+
+ ifeq ($(OPTIM), y)
+  DFLAGS	:= -march=native
+ endif
 endif
 
-# Compilation for Windows ARM.
-ifeq ($(ARCH), arm)
- MACH		:= /MACHINE:arm
- LOPTS_OS	:=
- # Static-link the VC runtime to avoid DLL problems on Windows RT.
- VCRUNTIME	:= MT
+# Compilation for ARM.
+ifeq ($(ARCH), armv7)
+ error Target ARM7 not supported yet !
 endif
 
-# Compilation for Windows ARM64.
-ifeq ($(ARCH), arm64)
- MACH		:= /MACHINE:arm64
- LOPTS_OS	:=
-
- # fatal error LNK1322: cannot avoid potential ARM hazard (Cortex-A53
- # MPCore processor bug #843419) in section #3; please consider using
- # compiler option /Gy if it was not used.
- COPTS		+= /Gy
+# Compilation for ARM64.
+ifeq ($(ARCH), aarch64)
+ error Target ARM64 not supported yet !
 endif
 
 
 # The various toolchain programs.
-CC		:= cl.exe /nologo
-CXX		:= cl.exe /nologo
-CPP		:= cl.exe /nologo /EP
-LINK		:= link.exe /NOLOGO
-WINDRES		:= rc.exe /NOLOGO
-AR		:= lib.exe /NOLOGO $(MACH)
+CC		:= gcc -m$(TARGET)
+CXX		:= g++ -m$(TARGET)
+CPP		:= cpp -P
+LINK		:= gcc -m$(TARGET)
+AR		:= ar
+RANLIB		:= ranlib
+STRIP		:= strip
 ifndef CAT
  CAT		:= cat
 endif
 
 # Set up the correct toolchain flags.
-OPTS		:= /DARCH=$(ARCH) \
-		   /D_CRT_SECURE_NO_WARNINGS \
-		   /D_CRT_NONSTDC_NO_DEPRECATE \
-		   /D_USE_MATH_DEFINES \
-		   /D_WINSOCK_DEPRECATED_NO_WARNINGS
-COPTS		+= /W3
-CXXOPTS		+= /EHsc
-LOPTS		:= $(MACH)
-ifndef VCRUNTIME
- VCRUNTIME	:= MD
-endif
-ARFLAGS		:=
-LFLAGS		:=
-RCOPTS		:= /r /n /dRC_INVOKED /d_MSC_VER /fo
-
+OPTS		:= -DARCH=$(ARCH) \
+		   -D_CRT_NON_CONFORMING_SWPRINTFS
+AOPTS		:= r
+LOPTS		:=
 
 # General build options.
 ifeq ($(DEBUG), y)
- OPTS		+= -D_DEBUG
- VCRUNTIME	:= $(VCRUNTIME)d
- DOPTS		= /Gs /Zi
- RCOPTS		:= -D_DEBUG $(RCOPTS)
- LOPTS		+= /DEBUG
+ DFLAGS		+= -ggdb -D_DEBUG
+ AOPTIM		:=
  ifndef COPTIM
-  COPTIM	:= /Od /Ob3
+  COPTIM	:= -Og
  endif
 else
- LOPTS		+= /DEBUG:NONE #/LTCG
- DOPTS		= #/GL
- ifndef COPTIM
-  COPTIM	:= /Ox /Ob3
+ ifeq ($(OPTIM), y)
+  AOPTIM	:= -mtune=native
+  ifndef COPTIM
+   COPTIM	:= -O3
+  endif
+ else
+  ifndef COPTIM
+   COPTIM	:= -O3
+  endif
  endif
 endif
-COPTS		+= /$(VCRUNTIME)
+OPTS		+=
 ifeq ($(PROFILER), y)
- LOPTS		+= /MAP
+ LOPTS		+= -Xlinker -Map=$(PROG).map
 endif
-MSVC_API_SHARED	:= -DSHARED
-MSVC_API_STATIC	:= -DSTATIC
 
-
-ifndef MSVC_NO_ISO_WIDE_SPECIFIERS
- OPTS		+= /D_CRT_STDIO_ISO_WIDE_SPECIFIERS
-endif
 
 # Final versions of the toolchain flags.
 CFLAGS		= $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
-		  $(AFLAGS) $(INCS) $(DEFS)
-LFLAGS		:= $(LOPTS) $(DFLAGS) $(LDIR)
-ARFLAGS		:= $(AOPTS)
-RCFLAGS		= $(RCOPTS)
+		  $(AFLAGS) $(INCS) $(DEFS) -mstackrealign \
+		  -fomit-frame-pointer -fno-strict-aliasing \
+		  -Wall -Wundef #-Wmissing-declarations
+LDFLAGS		= $(LOPTS) $(DFLAGS) $(LDIR)
+ARFLAGS		= $(AOPTS)
 
 
 # Build module rules.
-.SUFFIXES:	.c .cpp .obj .rc .res
+.SUFFIXES:	.c .cpp .o
 
 ifeq ($(AUTODEP), y)
-%.obj:		%.c
-		@$(CC) $(CFLAGS) -Fo$@ $(MSVC_API_SHARED) -c $<
-
-%.dbj:		%.c
-		@$(CC) $(CFLAGS) -Fo$@ $(MSVC_API_STATIC) -c $<
-
-%.obj:		%.cpp
-		@$(CXX) $(CXXFLAGS) -Fo$@ $(MSVC_API_SHARED) -c $<
-
-%.dbj:		%.cpp
-		@$(CXX) $(CXXFLAGS) -Fo$@ $(MSVC_API_STATIC) -c $<
+%.o:		%.c
+		@echo Compiling $<
+		@$(CC) $(CFLAGS) $(DEPS) -c $<
 else
-%.obj:		%.c
-		@$(CC) $(CFLAGS) -Fo$@ $(MSVC_API_SHARED) -c $<
-
-%.dbj:		%.c
-		@$(CC) $(CFLAGS) -Fo$@ $(MSVC_API_STATIC) -c $<
-
-%.obj:		%.cpp
-		@$(CXX) $(CXXFLAGS) -Fo$@ $(MSVC_API_SHARED) -c $<
-
-%.dbj:		%.cpp
-		@$(CXX) $(CXXFLAGS) -Fo$@ $(MSVC_API_STATIC) -c $<
+%.o:		%.c
+		@echo Compiling $<
+		@$(CC) $(CFLAGS) -c $<
 
 %.d:		%.c $(wildcard $*.d)
-		@$(CXX) $(CXXFLAGS) -Fo$@ $(MSVC_API_SHARED) -c $<
+		@echo Compiling $<
+		@$(CC) $(CFLAGS) $(DEPS) -E $< >NUL
 endif
-
-# For systems that use these, compile a resource file.
-.rc.res:	$<
-		@echo Processing $<
-		@$(WINDRES) $(RCFLAGS) $@ $<
 
 
 #########################################################################
@@ -213,51 +175,63 @@ endif
 #########################################################################
 
 # Final fixups.
-INCS		+= -I../../src/arch/win32
+INCS		+= -I../src/arch/linux
 
-VPATH		:= ../../src/arch/win32 ../../src
+VPATH		:= ../src/arch/linux ../src
 
+#LIBS		:=
+#LOBJ		:=
 
-PROG		:= basic.exe
-SYSOBJ		:= basic.res getopt.obj opendir.obj
+PROG		:= basic
+SYSOBJ		:=
 OBJ		:= $(SYSOBJ) \
-		   arch.obj array.obj dict.obj expr.obj func.obj io.obj \
-		   lines.obj stmt.obj token.obj vars.obj basic.obj \
-		   main.obj
-LDLIBS		+= #advapi32.lib shell32.lib user32.lib kernel32.lib winmm.lib
+		   arch.o array.o dict.o expr.o func.o io.o lines.o \
+		   stmt.o token.o vars.o basic.o \
+		   main.o
+LDLIBS		+= -lreadline -lhistory -lm
 
 
-all:		$(PROG)
+all:		$(LIBS) $(PROG)
 
 
-basic.exe:	$(SYSOBJ) $(OBJ)
+libfoo.dll.a libfoo.so:	$(LOBJ)
+		@echo Linking shared library $@ ..
+		@$(LINK) $(LDFLAGS) -shared -o $@ \
+			$(LOBJ)
+		$(if $(filter $(DEBUG),y),,@$(STRIP) --strip-unneeded $@)
+
+libfoo.a:	$(LOBJ)
+		@echo Creating static library $@ ..
+		@$(AR) $(ARFLAGS) $@ $(LOBJ)
+		@$(RANLIB) $@
+
+basic:		$(OBJ)
 		@echo Linking $@ ..
-		@$(LINK) $(LFLAGS) /SUBSYSTEM:CONSOLE$(LOPTS_OS) \
-			-OUT:$@ $(OBJ) $(LIBS) $(LDLIBS)
+		@$(LINK) $(LDFLAGS) -o $@ $(OBJ) $(LIBS) $(LDLIBS)
+		$(if $(filter $(DEBUG),y),,@$(STRIP) $@)
+
 
 clean:
 		@echo Cleaning objects..
-		@-del *.obj 2>NUL
-		@-del *.d 2>NUL
+		@-rm -f *.o
+		@-rm -f *.d
 		@echo Cleaning resources..
-		@-del *.res 2>NUL
 
 
 clobber:	clean
 		@echo Removing executables..
-		@-del *.exe 2>NUL
+		@-rm -f $(PROG)
 		@echo Cleaning libraries..
-#		@-del *.dll 2>NUL
-		@-del *.lib 2>NUL
-		@-del *.manifest 2>NUL
-#		@-del $(DEPFILE) 2>NUL
+		@-rm -f *.so
+		@-rm -f *.a
+#		@-rm -f $(DEPFILE)
 
 depclean:
 		@-del $(DEPFILE)
 		@echo Creating dependencies..
 		@echo # Run "make depends" to re-create this file. >$(DEPFILE)
 
-depends:	DEPOBJ=$(OBJ:%.obj=%.d)
+depends:	DEPOBJ=$(OBJ:%.o=%.d)
 depends:	depclean $(DEPOBJ)
 		@$(CAT) $(DEPOBJ) >>$(DEPFILE)
 		@-del $(DEPOBJ)
@@ -275,4 +249,4 @@ else
 endif
 
 
-# End of Makefile.MSVC.
+# End of Makefile.GCC.

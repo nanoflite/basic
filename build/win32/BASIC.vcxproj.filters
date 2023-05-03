@@ -15,13 +15,19 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\basic.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\array.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\dictionary.c">
+    <ClCompile Include="..\..\src\dict.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\hexdump.c">
+    <ClCompile Include="..\..\src\expr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\func.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\io.c">
@@ -30,64 +36,48 @@
     <ClCompile Include="..\..\src\lines.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\parser.c">
+    <ClCompile Include="..\..\src\stmt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\tokenizer.c">
+    <ClCompile Include="..\..\src\token.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\variables.c">
+    <ClCompile Include="..\..\src\vars.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\arch\windows\arch.c">
+    <ClCompile Include="..\..\src\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\arch\windows\error.c">
+    <ClCompile Include="..\..\src\arch\win32\arch.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\arch\windows\kbhit.c">
+    <ClCompile Include="..\..\src\arch\win32\opendir.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\arch\windows\main.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\arch\windows\sleep.c">
+    <ClCompile Include="..\..\src\arch\win32\getopt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\array.h">
+    <ClInclude Include="..\..\src\private.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\callback.h">
+    <ClInclude Include="..\..\src\basic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\dictionary.h">
+    <ClInclude Include="..\..\src\arch\win32\opendir.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\error.h">
+    <ClInclude Include="..\..\src\arch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\hexdump.h">
+    <ClInclude Include="..\..\src\arch\win32\getopt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\io.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\kbhit.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\lines.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\parser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\tokenizer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\variables.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="basic.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

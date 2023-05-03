@@ -154,7 +154,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../arch</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src/arch/win32</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
@@ -168,7 +168,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../arch</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src/arch/win32</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
@@ -184,7 +184,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../arch</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src/arch/win32</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -201,7 +201,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../arch</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src/arch/win32</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -216,7 +216,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../arch</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src/arch/win32</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -229,7 +229,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../arch</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src/arch/win32</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -244,7 +244,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../arch</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src/arch/win32</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -261,7 +261,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../arch</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src/arch/win32</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -271,32 +271,30 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\arch\windows\arch.c" />
-    <ClCompile Include="..\..\arch\windows\error.c" />
-    <ClCompile Include="..\..\arch\windows\kbhit.c" />
-    <ClCompile Include="..\..\arch\windows\main.c" />
-    <ClCompile Include="..\..\arch\windows\sleep.c" />
+    <ClCompile Include="..\..\src\arch\win32\arch.c" />
+    <ClCompile Include="..\..\src\arch\win32\getopt.c" />
+    <ClCompile Include="..\..\src\arch\win32\opendir.c" />
     <ClCompile Include="..\..\src\array.c" />
-    <ClCompile Include="..\..\src\dictionary.c" />
-    <ClCompile Include="..\..\src\hexdump.c" />
+    <ClCompile Include="..\..\src\dict.c" />
+    <ClCompile Include="..\..\src\expr.c" />
+    <ClCompile Include="..\..\src\func.c" />
     <ClCompile Include="..\..\src\io.c" />
     <ClCompile Include="..\..\src\lines.c" />
-    <ClCompile Include="..\..\src\parser.c" />
-    <ClCompile Include="..\..\src\tokenizer.c" />
-    <ClCompile Include="..\..\src\variables.c" />
+    <ClCompile Include="..\..\src\stmt.c" />
+    <ClCompile Include="..\..\src\token.c" />
+    <ClCompile Include="..\..\src\vars.c" />
+    <ClCompile Include="..\..\src\basic.c" />
+    <ClCompile Include="..\..\src\main.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\array.h" />
-    <ClInclude Include="..\..\src\callback.h" />
-    <ClInclude Include="..\..\src\dictionary.h" />
-    <ClInclude Include="..\..\src\error.h" />
-    <ClInclude Include="..\..\src\hexdump.h" />
-    <ClInclude Include="..\..\src\io.h" />
-    <ClInclude Include="..\..\src\kbhit.h" />
-    <ClInclude Include="..\..\src\lines.h" />
-    <ClInclude Include="..\..\src\parser.h" />
-    <ClInclude Include="..\..\src\tokenizer.h" />
-    <ClInclude Include="..\..\src\variables.h" />
+    <ClInclude Include="..\..\src\arch\win32\getopt.h" />
+    <ClInclude Include="..\..\src\arch\win32\opendir.h" />
+    <ClInclude Include="..\..\src\arch.h" />
+    <ClInclude Include="..\..\src\private.h" />
+    <ClInclude Include="..\..\src\basic.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\src\arch\win32\basic.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

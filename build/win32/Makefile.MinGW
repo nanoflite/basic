@@ -1,14 +1,11 @@
 #
-# VASM		VARCem Multi-Target Assembler.
-#		A simple table-driven assembler for several 8-bit target
-#		devices, like the 6502, 6800, 80x, Z80 et al series. The
-#		code originated from Bernd B”ckmann's "asm6502" project.
+# BASIC		A simple, extendable BASIC interpreter in C.
 #
 #		This file is part of the VARCem Project.
 #
 #		Makefile for Windows systems using the MinGW-w64 environment.
 #
-# Version:	@(#)Makefile.MinGW	1.1.0	2023/04/26
+# Version:	@(#)Makefile.MinGW	1.1.0	2023/05/01
 #
 # Author:	Fred N. van Kempen, <waltje@varcem.com>
 #
@@ -50,7 +47,7 @@ ifndef ARCH
 endif
 
 ifndef DEBUG
- DEBUG		:= n
+ DEBUG		:= y
 endif
 
 
@@ -199,16 +196,17 @@ endif
 #########################################################################
 
 # Final fixups.
-INCS		+= -I../../arch
+INCS		+= -I../../src/arch/win32
 
-VPATH		:= ../../arch/windows ../../src
+VPATH		:= ../../src/arch/win32 ../../src
 
 PROG		:= basic.exe
-SYSOBJ		:= basic.res #getopt.o
+SYSOBJ		:= basic.res getopt.o
 OBJ		:= $(SYSOBJ) \
-		   arch.o error.o kbhit.o main.o sleep.o \
-		   array.o dictionary.o hexdump.o io.o lines.o \
-		   parser.o tokenizer.o variables.o
+		   arch.o opendir.o \
+		   array.o dict.o expr.o func.o io.o lines.o stmt.o \
+		   token.o vars.o basic.o \
+		   main.o
 
 
 all:		$(PROG)

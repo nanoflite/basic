@@ -1,17 +1,18 @@
 /*
- * BASIC	A simple, extendable BASIC interpreter in C.
+ * VARCem	Virtual ARchaeological Computer EMulator.
+ *		An emulator of (mostly) x86-based PC systems and devices,
+ *		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
+ *		spanning the era between 1981 and 1995.
  *
  *		This file is part of the VARCem Project.
  *
- *		Handle arrays.
+ *		Definitions for the platform OpenDir module.
  *
- * Version:	@(#)array.c	1.1.0	2023/05/01
+ * Version:	@(#)win_opendir.h	1.0.6	2021/06/08
  *
- * Authors:	Fred N. van Kempen, <waltje@varcem.com>
- *		Johan Van den Brande <johan@vandenbrande.com>
+ * Author:	Fred N. van Kempen, <waltje@varcem.com>
  *
- *		Copyright 2023 Fred N. van Kempen.
- *		Copyright 2015,2016 Johan Van den Brande.
+ *		Copyright 2017-2022 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -43,90 +44,57 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include "arch.h"
-#include "basic.h"
-#include "private.h"
+#ifndef WIN_OPENDIR_H
+# define WIN_OPENDIR_H
 
 
-struct array {
-    size_t	element_size;
-    size_t	size;
-    char	*ptr;
+#ifdef UNICODE
+# define XCHAR		wchar_t
+#else
+# define XCHAR		char
+#endif
+
+#ifdef _MAX_FNAME
+# define MAXNAMLEN	_MAX_FNAME
+#else
+# define MAXNAMLEN	255
+#endif
+#define MAXDIRLEN	255
+
+
+struct direct {
+    long		d_ino;
+    unsigned short 	d_reclen;
+    unsigned short	d_off;
+    XCHAR		d_name[MAXNAMLEN+1];
 };
+#define	d_namlen	d_reclen
 
 
-array *
-array_new(size_t element_size)
-{
-    array *a = malloc(sizeof(array));  
-
-    a->element_size = element_size;
-    a->size = 0;
-    a->ptr = NULL;
-
-    return a;
-}
+typedef struct {
+    short	flags;			/* internal flags		*/
+    short	offset;			/* offset of entry into dir	*/
+    intptr_t	handle;			/* open handle to Win32 system	*/
+    short	sts;			/* last known status code	*/
+    char	*dta;			/* internal work data		*/
+    XCHAR	dir[MAXDIRLEN+1];	/* open dir			*/
+    struct direct dent;			/* actual directory entry	*/
+} DIR;
 
 
-array *
-array_alloc(array *array, size_t size)
-{
-    array->size = size;
-    array->ptr = realloc(array->ptr, array->element_size * array->size);
-
-    // Always clear arrays
-    memset(array->ptr, 0, array->element_size * array->size);
-
-    return array;
-}
+/* Directory routine flags. */
+#define DIR_F_LOWER	0x0001		/* force to lowercase		*/
+#define DIR_F_SANE	0x0002		/* force this to sane path	*/
+#define DIR_F_ISROOT	0x0010		/* this is the root directory	*/
 
 
-void
-array_destroy(array *array)
-{
-    free(array->ptr);
-    free(array);
-}
+/* Function prototypes. */
+extern DIR		*opendir(const XCHAR *);
+extern struct direct	*readdir(DIR *);
+extern long		telldir(DIR *);
+extern void		seekdir(DIR *, long);
+#define rewinddir(dirp)	seekdir(dirp, 0L)
+extern int		closedir(DIR *);
 
 
-void *
-array_push(array *array, void *value)
-{
-    array->size++;
-    array->ptr = realloc(array->ptr, array->element_size * array->size);
-    void *element = array->ptr + array->element_size * (array->size - 1);
-    memcpy(element, value, array->element_size);
-
-    return element;
-}
-
-
-void *
-array_get(array *array, size_t index)
-{
-    return array->ptr + index * array->element_size;
-}
-
-
-void *
-array_set(array *array, size_t index, void *value)
-{
-    void *element = array_get(array, index);
-
-    memcpy(element, value, array->element_size);
-
-    return element;
-}
-
-
-size_t
-array_size(array *array)
-{
-    return array->size;
-}
-
+#endif	/*WIN_OPENDIR_H*/

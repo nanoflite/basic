@@ -6,7 +6,7 @@ A from-scratch BASIC interpreter with a focus on being easy to extend and port.
 
 # Introduction
 
-This is a BASIC interpreter written from scratch in C. For the moment two architectures are supported, POSIX and AVR XMega via the avr-gcc toolchain.
+This is a BASIC interpreter written from scratch in C. It runs on Windows, Linux, OSX and a number of microcontroller platforms.
 
 Most of the common BASIC keywords are supported:
 
@@ -28,7 +28,7 @@ Most of the common BASIC keywords are supported:
 
 # Extend
 
-It should be easy to register a new BASIC function, as shown here with a `sleep` function for the XMEGA.
+Extending the language is easy - you can register a new BASIC function, as shown here with a `sleep` function for the XMEGA:
 
 ```C
 register_function_1(basic_function_type_keyword, "SLEEP", do_sleep, kind_numeric);
@@ -136,6 +136,15 @@ It is easy to embed the interpreter into your own application.
 On OSX/POSIX you can use the 'BASIC\_PATH' environment variable to set the folder used for loading and saving BASIC programs. The 'BASIC\_PATH' defaults to '.'.
 BASIC programs are expected to end with '.bas'. You can use LOAD, SAVE, DELETE and DIR.
 
+# Authors and Credits
+
+The original code was written for the AVR X/Mega platform by Johan Van
+den Brande, who also made that work on Apple's OSX. Support for the Linux
+platform was added by clarking <clarkaaron@hotmail.com> in August of 2022,
+and the project was revived and merged into the VARCem emulator project
+by Fred van Kempen in 2023.
+
 # Copyright
 
-(c) 2015 - 2016 Johan Van den Brande
+Copyright 2023 Fred N. van Kempen, The VARCem Group LLC
+Copyright 2015-2016 Johan Van den Brande
