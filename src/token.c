@@ -5,7 +5,7 @@
  *
  *		Handle the tokenizing stuff.
  *
- * Version:	@(#)token.c	1.1.0	2023/05/01
+ * Version:	@(#)token.c	1.1.1	2023/05/05
  *
  * Authors:	Fred N. van Kempen, <waltje@varcem.com>
  *		Johan Van den Brande <johan@vandenbrande.com>
@@ -56,35 +56,53 @@
 
 
 static array	*__tokens = NULL;
-static token	token_id = TOKEN_TYPE_END + 1000;
-static char 	*tokenizer_p = NULL;
+static token	token_id;
+static char 	*tokenizer_p;
+static bool	is_blocked;
 static float	actual_number;
 static char	actual_string[BASIC_STR_LEN+1];
 static char	actual_variable[BASIC_VAR_LEN+1];
 
-
-#define add_token(t, k) \
-static const token_entry _##t = { t, k };
-
-add_token(T_ERROR, NULL);
-add_token(T_EOL, NULL);
-add_token(T_NUMBER, NULL);
-add_token(T_STRING, NULL);
-add_token(T_VARIABLE_STRING, NULL);
-add_token(T_VARIABLE_NUMBER, NULL);
-add_token(T_PLUS, "+");
-add_token(T_MINUS, "-");
-add_token(T_MULTIPLY, "*");
-add_token(T_DIVIDE, "/");
-add_token(T_POWER, "^");
-add_token(T_LEFT_BANANA, "(");
-add_token(T_RIGHT_BANANA, ")");
-add_token(T_COLON, ":");
-add_token(T_SEMICOLON, ";");
-add_token(T_COMMA, ",");
-add_token(T_EQUALS, "=");
-add_token(T_LESS, "<");
-add_token(T_GREATER, ">");
+static const token_entry tokens[] = {
+  { T_ERROR, NULL		},
+  { T_EOL, NULL			},
+  { T_NUMBER, NULL		},
+  { T_STRING, NULL		},
+  { T_VARIABLE_STRING, NULL	},
+  { T_VARIABLE_NUMBER, NULL	},
+  { T_PLUS, "+"			},
+  { T_MINUS, "-"		},
+  { T_MULTIPLY, "*"		},
+  { T_DIVIDE, "/"		},
+  { T_MODULO, "%"		},
+  { T_POWER, "^"		},
+  { T_LEFT_BANANA, "("		},
+  { T_RIGHT_BANANA, ")"		},
+  { T_COLON, ":"		},
+  { T_SEMICOLON, ";"		},
+  { T_COMMA, ","		},
+  { T_EXCL, "!"			},
+  { T_EQUAL, "="		},
+  { T_LESS, "<"			},
+  { T_GREATER, ">"		},
+  { T_BLACK, "BLACK"		},
+  { T_WHITE, "WHITE"		},
+  { T_RED, "RED"		},
+  { T_GREEN, "GREEN"		},
+  { T_BLUE, "BLUE"		},
+  { T_CYAN, "CYAN"		},
+  { T_MAGENTA, "MAGENTA"	},
+  { T_BROWN, "BROWN"		},
+  { T_GRAY, "GRAY"		},
+  { T_LIGHTGRAY, "LTGRAY"	},
+  { T_LIGHTBLUE, "LTBLUE"	},
+  { T_LIGHTGREEN, "LTGREEN"	},
+  { T_LIGHTCYAN, "LTCYAN"	},
+  { T_LIGHTRED, "LTRED"		},
+  { T_LIGHTMAGENTA, "LTMAGENTA"	},
+  { T_YELLOW, "YELLOW"		},
+  { 0				}
+};
 
 
 static bool
@@ -128,27 +146,16 @@ _find_registered(void)
 void
 tokenizer_setup(void)
 {
+    const token_entry *ent;
+
+    token_id = TOKEN_TYPE_END;
+    tokenizer_p = NULL;
+    is_blocked = false;
+
     __tokens = array_new(sizeof(token_entry));
 
-    tokenizer_register_token(&_T_ERROR);
-    tokenizer_register_token(&_T_EOL);
-    tokenizer_register_token(&_T_NUMBER);
-    tokenizer_register_token(&_T_STRING);
-    tokenizer_register_token(&_T_VARIABLE_STRING);
-    tokenizer_register_token(&_T_VARIABLE_NUMBER);
-    tokenizer_register_token(&_T_PLUS);			// +
-    tokenizer_register_token(&_T_MINUS);		// -
-    tokenizer_register_token(&_T_MULTIPLY);		// *
-    tokenizer_register_token(&_T_DIVIDE);		// /
-    tokenizer_register_token(&_T_POWER);		// ^
-    tokenizer_register_token(&_T_LEFT_BANANA);		// (
-    tokenizer_register_token(&_T_RIGHT_BANANA);		// )
-    tokenizer_register_token(&_T_COLON);		// :
-    tokenizer_register_token(&_T_SEMICOLON);		// ;
-    tokenizer_register_token(&_T_COMMA);		// ,
-    tokenizer_register_token(&_T_EQUALS);		// =
-    tokenizer_register_token(&_T_LESS);			// <
-    tokenizer_register_token(&_T_GREATER);		// >
+    for (ent = tokens; ent->token != 0; ent++)
+	tokenizer_register_token(ent);
 }
 
 
@@ -157,6 +164,9 @@ tokenizer_register_token(const token_entry *entry)
 {
     token_entry ent;
     token tok;
+
+    if (__tokens == NULL)
+	tokenizer_setup();
 
     tok = entry->token;
 
@@ -175,7 +185,10 @@ tokenizer_register_token(const token_entry *entry)
 void
 tokenizer_free_registered_tokens(void)
 {
-    array_destroy(__tokens);
+    if (__tokens != NULL) {
+	array_destroy(__tokens);
+	__tokens = NULL;
+    }
 }
 
 
@@ -183,6 +196,7 @@ void
 tokenizer_init(char *input)
 {
     tokenizer_p = input;
+    is_blocked = false;
 }
 
 
@@ -202,6 +216,13 @@ tokenizer_char_pointer(char *set)
 }
 
 
+void
+tokenizer_block(void)
+{
+    is_blocked = true;
+}
+
+
 token
 tokenizer_get_next_token(void)
 {
@@ -210,7 +231,7 @@ tokenizer_get_next_token(void)
     size_t l = 0;
     float f;
 
-    if (*tokenizer_p == '\0')
+    if (is_blocked || *tokenizer_p == '\0')
 	return T_EOL;
 
     // Skip white space
@@ -289,6 +310,41 @@ tokenizer_get_next_token(void)
     }
 
     return T_ERROR; 
+}
+
+
+/* Grab the raw string until EOL. */
+char *
+tokenizer_get_raw(void)
+{
+    char *next_p;
+    size_t l = 0;
+
+    /* Unblock the tokenizer. */
+    is_blocked = false;
+
+    if (*tokenizer_p == '\0')
+	return NULL;
+
+    // Skip white space
+    while (*tokenizer_p && isspace(*tokenizer_p))
+	tokenizer_p++;
+
+    next_p = tokenizer_p;
+    while (*next_p != '\0' && *next_p != ':') {
+	l++;
+	next_p++;
+    }
+
+    if (l > BASIC_STR_LEN)
+	return NULL;
+
+    memcpy(actual_string, tokenizer_p, l);
+    actual_string[l] = '\0';
+   
+    tokenizer_p = next_p;
+
+    return actual_string; 
 }
 
 

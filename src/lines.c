@@ -5,7 +5,7 @@
  *
  *		Implement and handle "lines" of BASIC code.
  *
- * Version:	@(#)lines.c	1.1.0	2023/05/01
+ * Version:	@(#)lines.c	1.1.1	2023/05/04
  *
  * Authors:	Fred N. van Kempen, <waltje@varcem.com>
  *		Johan Van den Brande <johan@vandenbrande.com>
@@ -49,9 +49,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "arch.h"
-#ifdef _DEBUG
-//# include "hexdump.h"
-#endif
 #include "basic.h"
 #include "private.h"
 
@@ -104,7 +101,6 @@ lines_init(void)
 
     __memory_end = __memory;
 
-    // Signal end
     l = (line *)__memory;
     l->number = 0;
     l->length = 0;
@@ -115,15 +111,12 @@ size_t
 lines_memory_used(void)
 {
     char *p = __memory;
-    line *start = (line*)p;
+    line *start = (line *)p;
     line *end = _find_end(start);
 
     end = _next(end);
 
-    char *m_start = (char *)start;
-    char *m_end = (char *)end;
-
-    return m_end - m_start;
+    return (uintptr_t)end - (uintptr_t)start;
 }
 
 
@@ -140,40 +133,40 @@ lines_store(uint16_t number, const char *contents)
     char *p = __memory;
     line *l = (line *)p;
     line *end, *next, *ins;
-    size_t sz;
+    char *m_src, *m_end, *m_dst;
+    size_t m_size, sz;
     char *foo;
 
     while (! _is_end(l)) {
 	next = _next(l);
 
-	// Find line that is to be inserted after.
-	// That line has a line number < insert and the next line has a >
+	/*
+	 * Find line that is to be inserted after.
+	 * That line has a line number < insert and the next line has a >
+	 */
 	if (l->number < number && next->number > number) {
-		// We need to insert
-		// printf("insert %d\n", number);
-
-		// The address of the insert is the same as the next line
+		/* Address of the insert is same as next line. */
 		ins = next;
 
-		// Need to move the memory block holding the rest to the right.
+		/* Move memory block holding the rest to the right. */
 		end = _find_end(ins);
 
-		// Move to next empty slot (we keep the sentinel in the copy)
+		/* Move to next empty slot (keep sentinel in the copy.) */
 		end = _next(end);
 
-		// We have the end*,  calculate size to move
-		char *m_src = (char *)ins;
-		char *m_end = (char *)end;
-		size_t m_size = m_end - m_src;
+		/* We have the end*, calculate size to move. */
+		m_src = (char *)ins;
+		m_end = (char *)end;
+		m_size = m_end - m_src;
 
-		// Calculate offset to move 
+		/* Calculate offset to move . */
 		sz = sizeof(line) - 1 + strlen(contents) + 1;
-		char *m_dst = m_src + sz;
+		m_dst = m_src + sz;
 
-		// Move the memory block
+		/* Move the memory block. */
 		memmove(m_dst, m_src, m_size);
 
-		// Set the data of the insert
+		/* Set the data of the insert. */
 		ins->number = number;
 		ins->length = (uint8_t)strlen(contents) + 1;
 
@@ -197,37 +190,34 @@ lines_store(uint16_t number, const char *contents)
 		foo += ((uintptr_t)&ins->contents - (uintptr_t)ins);
 		strcpy(foo, contents);
 #endif
-//		hexdump("insert", __memory, 256);
 
 		return true;
 	}
 
-	// Replace
 	if (l->number == number) {
-//		printf("replace %d\n", number);
-
-		// We need to shift the memory to the new offset determined
-		// by the size of the line to be inserted
+		/*
+		 * Shift the memory to the new offset determined
+		 * by the size of the line to be inserted.
+		 */
 		end = _find_end(l);
 
-		// Move to next empty slot (we keep the sentinel in the copy)
+		/* Move to next empty slot (keep sentinel in the copy.) */
 		end = _next(end);
 
-		// Calculate size of bloack
-		char *m_src = (char *)next;
-		char *m_end = (char *)end;
-		size_t m_size = m_end - m_src;
+		/* Calculate size of block. */
+		m_src = (char *)next;
+		m_end = (char *)end;
+		m_size = m_end - m_src;
 
-		// Calculate offset to move 
+		/* Calculate offset to move . */
 		sz = sizeof(line) - 1 + strlen(contents) + 1;
 		size_t act_size = sizeof(line) - 1 + strlen(&l->contents) + 1;
-		int offset = (int)(sz - act_size);
-		char *m_dst = m_src + offset;
+		m_dst = m_src + (sz - act_size);
 
-		// Move the memory block
+		/* Move the memory block. */
 		memmove(m_dst, m_src, m_size);
 
-		// Set the data of the replace
+		/* Set the data of the replace. */
 		l->length = (uint8_t)strlen(contents) + 1;
 #if 0
 		strcpy(&l->contents, contents);
@@ -236,37 +226,33 @@ lines_store(uint16_t number, const char *contents)
 		foo += ((uintptr_t)&l->contents - (uintptr_t)l);
 		strcpy(foo, contents);
 #endif
-//		hexdump("replace", __memory, 256);
 
 		return true;
 	}
 
-	// Prepend
 	if (l->number > number) {
-//		printf("prepend %d\n", number);
-
-		// The address of the insert is the same as the actual line
+		/* Address of the insert is the same as the actual line.. */
 		ins = l;
 
-		// But we need to move the memory block holding the rest to the right.
+		/* .. but move memory block holding the rest to the right. */
 		end = _find_end(ins);
 
-		// Move to next empty slot (we keep the sentinel in the copy)
+		/* Move to next empty slot (keep sentinel in the copy.) */
 		end = _next(end);
 
-		// We have the end*,  calculate size to move
-		char *m_src = (char *)ins;
-		char *m_end = (char *)end;
-		size_t m_size = m_end - m_src;
+		/* We have the end*, calculate size to move. */
+		m_src = (char *)ins;
+		m_end = (char *)end;
+		m_size = m_end - m_src;
 
-		// Calculate offset to move
+		/* Calculate offset to move. */
 		sz = sizeof(line) - 1 + strlen(contents) + 1;
-		char *m_dst = m_src + sz;
+		m_dst = m_src + sz;
 
-		// Move the memory block
+		/* Move the memory block. */
 		memmove(m_dst, m_src, m_size);
 
-		// Set the data of the insert
+		/* Set the data of the insert. */
 		ins->number = number;
 		ins->length = (uint8_t)strlen(contents) + 1;
 #if 0
@@ -276,7 +262,6 @@ lines_store(uint16_t number, const char *contents)
 		foo += ((uintptr_t)&ins->contents - (uintptr_t)ins);
 		strcpy(foo, contents);
 #endif
-//		hexdump("prepend", __memory, 256);
  
 		return true;
 	}
@@ -285,7 +270,7 @@ lines_store(uint16_t number, const char *contents)
     }
 
     l->number = number;
-    l->length = (uint8_t)strlen(contents) + 1; // Length is offset to next line
+    l->length = (uint8_t)strlen(contents) + 1;	// offset to next line
 #if 0
     strcpy(&l->contents, contents);
 #else
@@ -293,7 +278,6 @@ lines_store(uint16_t number, const char *contents)
     foo += ((uintptr_t)&l->contents - (uintptr_t)l);
     strcpy(foo, contents);
 #endif
-//  hexdump("append", __memory, 256);
 
     end = _next(l);
     end->number = 0;
@@ -306,48 +290,40 @@ lines_store(uint16_t number, const char *contents)
 bool
 lines_delete(uint16_t number)
 {
-    line *l, *next;
+    line *l, *next, *lend;
+    char *dst, *end, *src;
+    size_t size;
 
-//  printf("delete line %i\n", number);
-
-    // find the line
     l = (line *)__memory;
-
     while (! _is_end(l) && l->number != number)
 	l = _next(l);
 
-    if (_is_end(l)) {
-//	printf("line %i not found\n", number);
+    if (_is_end(l))
 	return false;
-    }
 
-    // l is the line to delete
-    // check if this is the last line
+    /*
+     * l is the line to delete.
+     * Check if this is the last line.
+     */
     next = _next(l);
     if (_is_end(next)) {
-	// printf("delete last line\n");
 	memset(l, 0x00, sizeof(line) - 1 + strlen(&l->contents) + 1);
 	l->number = 0;
 	l->length = 0;
-	strcpy(&l->contents, "");
     } else {
-	// printf("delete not last line\n");
-	char *dst = (char *)l;
-	char *src = (char *)next;
- 
-	line *lend = _find_end(next);
+	dst = (char *)l;
+	src = (char *)next;
+	lend = _find_end(next);
 
-	// Move to next empty slot (we keep the sentinel in the copy)
+	/* Move to next empty slot (keep sentinel in the copy.) */
 	lend = _next(lend);
-	char *end = (char *)lend;
-	size_t size = (char*)end - src;
+	end = (char *)lend;
+	size = end - src;
 	memmove(dst, src, size);
 
-	size_t rest = src - dst;
-	memset(end - rest, 0x00, rest);
+	size = src - dst;
+	memset(end - size, 0x00, size);
     }
-
-//  hexdump("delete", __memory, 256);
 
     return true;
 }
@@ -392,12 +368,10 @@ lines_clear(void)
 {
     char *end = (char *)_next(_find_end((line *)__memory));
 
-    memset( __memory, 0x00, end - __memory );
+    memset(__memory, 0x00, end - __memory);
     line *l = (line *)__memory;
     l->number = 0;
     l->length = 0;
-
-//  hexdump("clear", __memory, 256);
 }
 
 

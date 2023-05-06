@@ -5,7 +5,7 @@
  *
  *		Define things for the platform-support modules.
  *
- * Version:	@(#)arch.h	1.1.0	2023/05/01
+ * Version:	@(#)arch.h	1.1.1	2023/05/05
  *
  * Authors:	Fred N. van Kempen, <waltje@varcem.com>
  *		Johan Van den Brande <johan@vandenbrande.com>
@@ -82,11 +82,17 @@ extern char	*strndup(const char *s1, size_t n);
 #endif
 
 extern int	arch_init(void);
+extern void	arch_exit(void);
 extern int	arch_load(const char *, arch_load_cb, void *);
 extern int	arch_save(const char *, arch_save_cb, void *);
-extern int	arch_dir(arch_dir_cb, void *);
 extern int	arch_delete(const char *);
+extern int	arch_dir(arch_dir_cb, void *);
 extern void	arch_sleep(int milliseconds);
+extern int	arch_getc(int);
+extern int	arch_putc(int);
+extern void	arch_cls(void);
+extern void	arch_locate(int, int);
+extern void	arch_color(int, int);
 
 
 #endif	/*ARCH_H*/

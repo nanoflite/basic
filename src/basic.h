@@ -5,7 +5,7 @@
  *
  *		Public (API) definitions for the program.
  *
- * Version:	@(#)basic.h	1.1.0	2023/05/01
+ * Version:	@(#)basic.h	1.1.1	2023/05/05
  *
  * Authors:	Fred N. van Kempen, <waltje@varcem.com>
  *		Johan Van den Brande <johan@vandenbrande.com>
@@ -67,6 +67,16 @@ typedef enum {
     KIND_STRING
 } var_kind;
 
+typedef enum {
+    OP_NOP,
+    OP_LT,
+    OP_LE,
+    OP_EQ,
+    OP_GE,
+    OP_GT,
+    OP_NE
+} relop;
+
 typedef union {
     float	number;
     char	*string;
@@ -79,36 +89,18 @@ typedef struct {
     value	value;
 } basic_var;
 
-typedef enum {
-    OP_NOP,
-    OP_LT,
-    OP_LE,
-    OP_EQ,
-    OP_GE,
-    OP_GT,
-    OP_NE
-} relop;
-
 typedef unsigned short token;
 
 typedef int (*function_0)(basic_var *);
-typedef int (*function_1)(basic_var *, basic_var *);
-typedef int (*function_2)(basic_var *, basic_var *, basic_var *);
-typedef int (*function_3)(basic_var *, basic_var *, basic_var *, basic_var *);
-typedef int (*function_4)(basic_var *, basic_var *, basic_var *, basic_var *, basic_var *);
-typedef int (*function_5)(basic_var *, basic_var *, basic_var *, basic_var *, basic_var *, basic_var *);
+typedef int (*function_1)(basic_var *, const basic_var *);
+typedef int (*function_2)(basic_var *, const basic_var *, const basic_var *);
+typedef int (*function_3)(basic_var *, const basic_var *, const basic_var *, const basic_var *);
+typedef int (*function_4)(basic_var *, const basic_var *, const basic_var *, const basic_var *, const basic_var *);
+typedef int (*function_5)(basic_var *, const basic_var *, const basic_var *, const basic_var *, const basic_var *, const basic_var *);
 
 typedef void (*error_t)(const char *);
 typedef void (*ready_t)(const char *);
-typedef int (*putchar_t)(int ch);
-typedef int (*getchar_t)(void);
 
-
-extern error_t		__error;
-extern ready_t		__ready;
-extern putchar_t	__putch;
-extern getchar_t	__getch;
-extern getchar_t	__kbhit;
 
 #ifdef _DEBUG
 extern volatile bool	__DEBUG;
@@ -128,15 +120,13 @@ extern "C" {
 #endif
 
 /* Standard BASIC interface functions. */
-extern void	basic_init(size_t memory_size, size_t stack_size);
+extern void	basic_init(size_t, size_t, error_t, ready_t);
 extern void	basic_destroy(void);
-extern void	basic_register(error_t, ready_t,
-			       putchar_t, getchar_t, getchar_t);
-extern char	*basic_readline(const char *prompt, char *, size_t);
-extern void	basic_eval(const char *line);
 extern void	basic_start(void);
 extern void	basic_stop(void);
+extern void	basic_eval(const char *line);
 extern void	basic_error(const char *msg);
+extern void	basic_ready(const char *msg);
 
 /* These are used for implementing extensions. */
 extern token	register_token(token, const char *name);

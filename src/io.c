@@ -5,7 +5,7 @@
  *
  *		Handle (console) input and output.
  *
- * Version:	@(#)io.c	1.1.0	2023/05/01
+ * Version:	@(#)io.c	1.1.1	2023/05/05
  *
  * Authors:	Fred N. van Kempen, <waltje@varcem.com>
  *		Johan Van den Brande <johan@vandenbrande.com>
@@ -46,60 +46,121 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
+#include <stdio.h>
 #include "arch.h"
-#if PLATFORM == PLATFORM_XMEGA
-# include <ctype.h>
-#endif
 #include "basic.h"
 #include "private.h"
 
 
+/* Write one character to the BASIC console. */
 void
-basic_io_print(const char *buffer)
+bputc(int c)
 {
-    while (*buffer != '\0')
-	__putch(*buffer++);
-}  
+    arch_putc(c);
+}
 
 
+/* Write one string to the BASIC console, followed by a newline. */
+void
+bputs(const char *ptr)
+{
+    if (ptr == NULL) {
+#ifndef _WIN32
+	fflush(stdout);
+#endif
+	return;
+    }
+
+    while (*ptr != '\0')
+	arch_putc(*ptr++);
+
+    arch_putc('\n');
+}
+
+
+/* Write a formatted string to the BASIC console. */
+int
+bprintf(const char *fmt, ...)
+{
+    char temp[1024];
+    char *p = temp;
+    va_list args;
+    int i = 0;
+
+    if (fmt == NULL) {
+	fflush(stdout);
+	return i;
+    }
+
+    va_start(args, fmt);
+    i = vsprintf(temp, fmt, args);
+
+    while (*p != '\0')
+	arch_putc(*p++);
+
+    return i;
+}
+
+
+/* Read one character from the BASIC console. Wait for it if so requested. */
+int
+bgetc(int wait)
+{
+    int ch;
+
+    ch = arch_getc(wait);
+    if (ch == 0) {
+	/*
+	 * Virtual keys are indicated by first returning
+	 * a 0 code, and then the real (virtual) keycode.
+	 *
+	 * Since we do not need those keys, we just drop
+	 * them.
+	 */
+	(void)arch_getc(wait);
+    }
+
+    /* Force NEWLINE to CR. */
+    if (ch == '\n')
+	ch = '\r';
+
+    return ch;
+}
+
+
+/* Read a string from the BASIC console. */
 char *
-basic_io_readline(const char *prompt, char *buffer, size_t buffer_size)
+bgets(char *buffer, size_t buffer_size)
 {
     size_t len = 0;
     char ch;
 
-    basic_io_print(prompt);
-
-    while ((ch = __getch()) != '\n' && len < buffer_size - 1) {
-#if PLATFORM == PLATFORM_XMEGA
-	ch = toupper(ch);
-#endif    
-#ifdef USE_READLINE_ECHO
-	__putch(ch);
-#endif
+    while ((ch = bgetc(1)) != '\r' && len < buffer_size - 1) {
+	/* Special keys return a 0x00 first. */
+	if (ch == 0x00)
+		ch = arch_getc(1);
 
 	switch (ch) {
 		case '\b':
+		case 127:
 			if (len > 0) {
 				buffer[--len] = '\0';
-#ifdef USE_READLINE_ECHO
-				__putch(' ');
-				__putch('\b');
-#endif
+				arch_putc('\b');
+				arch_putc(' ');
+				arch_putc('\b');
 			}  
 			break;
 
 		default:
 			buffer[len++] = ch;
+			arch_putc(ch);
 	}
     }
-
-#ifdef USE_READLINE_ECHO
-    __putch('\n');
-#endif  
-
     buffer[len] = '\0';
+
+    arch_putc('\n');
 
     return buffer;
 }

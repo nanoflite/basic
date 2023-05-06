@@ -5,7 +5,7 @@
  *
  *		Implement the various BASIC functions.
  *
- * Version:	@(#)func.c	1.1.0	2023/05/01
+ * Version:	@(#)func.c	1.1.1	2023/05/05
  *
  * Authors:	Fred N. van Kempen, <waltje@varcem.com>
  *		Johan Van den Brande <johan@vandenbrande.com>
@@ -50,17 +50,20 @@
 #include <string.h>
 #include <ctype.h>
 #ifdef _MSC_VER
-# define _USE_MATH_DEFINES
+# ifndef _USE_MATH_DEFINES
+#  define _USE_MATH_DEFINES
+# endif
 #endif
 #include <math.h>
 #include <time.h>
 #include "arch.h"
 #include "basic.h"
 #include "private.h"
+#include "version.h"
 
 
 static int
-f_abs(basic_var *rv, basic_var *n)
+f_abs(basic_var *rv, const basic_var *n)
 {
     rv->kind = KIND_NUMERIC;
     rv->value.number = (float)fabs(n->value.number);
@@ -70,7 +73,7 @@ f_abs(basic_var *rv, basic_var *n)
 
 
 static int
-str_asc(basic_var *rv, basic_var *str)
+str_asc(basic_var *rv, const basic_var *str)
 {
     rv->kind = KIND_NUMERIC;
     rv->value.number = (float)str->value.string[0];
@@ -80,7 +83,7 @@ str_asc(basic_var *rv, basic_var *str)
 
 
 static int
-f_atn(basic_var *rv, basic_var *n)
+f_atn(basic_var *rv, const basic_var *n)
 {
     rv->kind = KIND_NUMERIC;
     rv->value.number = atanf(n->value.number);
@@ -90,17 +93,12 @@ f_atn(basic_var *rv, basic_var *n)
 
 
 static int
-str_chr(basic_var *rv, basic_var *n)
+str_chr(basic_var *rv, const basic_var *n)
 {
     rv->kind = KIND_STRING;
-    char *chr;
+    char *chr = (char *)malloc(16);
 
-#ifdef _WIN32
-    chr = malloc(16);
     sprintf(chr, "%c", (int)n->value.number);
-#else
-    asprintf(&chr, "%c", (int) n->value.number);
-#endif
     rv->value.string = chr;
     rv->mallocd = true;
 
@@ -109,7 +107,7 @@ str_chr(basic_var *rv, basic_var *n)
 
 
 static int
-f_cos(basic_var *rv, basic_var *n)
+f_cos(basic_var *rv, const basic_var *n)
 {
     rv->kind = KIND_NUMERIC;
     rv->value.number = cosf(n->value.number);
@@ -129,7 +127,7 @@ v_datestr(basic_var *rv)
     (void)time(&now);
     tm = localtime(&now);
 
-    str = malloc(13);
+    str = (char *)malloc(13);
     if (str == NULL)
 	return 1;
     sprintf(str, "%02u/%02u/%04u",
@@ -155,7 +153,7 @@ v_errlin(basic_var *rv)
 
 
 static int
-f_exp(basic_var *rv, basic_var *n)
+f_exp(basic_var *rv, const basic_var *n)
 {
     rv->kind = KIND_NUMERIC;
     rv->value.number = expf(n->value.number);
@@ -165,7 +163,7 @@ f_exp(basic_var *rv, basic_var *n)
 
 
 static int
-f_free(basic_var *rv, basic_var *n)
+f_free(basic_var *rv, const basic_var *n)
 {
     rv->kind = KIND_NUMERIC;
     if (n->value.number)
@@ -178,7 +176,7 @@ f_free(basic_var *rv, basic_var *n)
 
 
 static int
-f_int(basic_var *rv, basic_var *n)
+f_int(basic_var *rv, const basic_var *n)
 {
     int i = (int)n->value.number;  
 
@@ -190,7 +188,7 @@ f_int(basic_var *rv, basic_var *n)
 
 
 static int
-str_left(basic_var *rv, basic_var *str, basic_var *length)
+str_left(basic_var *rv, const basic_var *str, const basic_var *length)
 {
     rv->kind = KIND_STRING;
     rv->value.string = C_STRDUP(str->value.string);
@@ -202,7 +200,7 @@ str_left(basic_var *rv, basic_var *str, basic_var *length)
 
 
 static int
-str_len(basic_var *rv, basic_var *str)
+str_len(basic_var *rv, const basic_var *str)
 {
     rv->kind = KIND_NUMERIC;
     rv->value.number = (float)strlen(str->value.string);
@@ -223,7 +221,7 @@ v_line(basic_var *rv)
 
 
 static int
-f_log(basic_var *rv, basic_var *n)
+f_log(basic_var *rv, const basic_var *n)
 {
     rv->kind = KIND_NUMERIC;
     rv->value.number = logf(n->value.number);
@@ -233,7 +231,7 @@ f_log(basic_var *rv, basic_var *n)
 
 
 static int
-str_mid(basic_var *rv, basic_var *str, basic_var *start, basic_var *length)
+str_mid(basic_var *rv, const basic_var *str, const basic_var *start, const basic_var *length)
 {
     rv->kind = KIND_STRING;
     char *source = str->value.string;
@@ -273,7 +271,7 @@ v_pi(basic_var *rv)
 
 
 static int
-f_pow(basic_var *rv, basic_var *x, basic_var *y)
+f_pow(basic_var *rv, const basic_var *x, const basic_var *y)
 {
     rv->kind = KIND_NUMERIC;
     rv->value.number = powf(x->value.number, y->value.number);
@@ -283,7 +281,7 @@ f_pow(basic_var *rv, basic_var *x, basic_var *y)
 
 
 static int
-str_right(basic_var *rv, basic_var *str, basic_var *length)
+str_right(basic_var *rv, const basic_var *str, const basic_var *length)
 {
     char *source = str->value.string;
 
@@ -297,7 +295,7 @@ str_right(basic_var *rv, basic_var *str, basic_var *length)
 
 
 static int
-f_rnd(basic_var *rv, basic_var *n)
+f_rnd(basic_var *rv, const basic_var *n)
 {
     struct tm *tm;
     time_t now;
@@ -331,7 +329,7 @@ f_rnd(basic_var *rv, basic_var *n)
 
 
 static int
-f_sgn(basic_var *rv, basic_var *n)
+f_sgn(basic_var *rv, const basic_var *n)
 {
     rv->kind = KIND_NUMERIC;
     if (n->value.number < 0.0) {
@@ -347,7 +345,7 @@ f_sgn(basic_var *rv, basic_var *n)
 
 
 static int
-f_sin(basic_var *rv, basic_var *n)
+f_sin(basic_var *rv, const basic_var *n)
 {
     rv->kind = KIND_NUMERIC;
     rv->value.number = sinf(n->value.number);
@@ -357,7 +355,7 @@ f_sin(basic_var *rv, basic_var *n)
 
 
 static int
-f_sqr(basic_var *rv, basic_var *n)
+f_sqr(basic_var *rv, const basic_var *n)
 {
     rv->kind = KIND_NUMERIC;
     rv->value.number = (float)sqrt((double) n->value.number);
@@ -367,15 +365,11 @@ f_sqr(basic_var *rv, basic_var *n)
 
 
 static int
-str_str(basic_var *rv, basic_var *number)
+str_str(basic_var *rv, const basic_var *n)
 {
     rv->kind = KIND_STRING;
-#ifdef _WIN32
-    rv->value.string = calloc(16, 1);
-    sprintf(rv->value.string, "%f", number->value.number);
-#else
-    asprintf(&rv->value.string, "%f", number->value.number);
-#endif
+    rv->value.string = (char *)malloc(16);
+    sprintf(rv->value.string, "%f", n->value.number);
     rv->mallocd = true;
 
     return 0;
@@ -383,7 +377,7 @@ str_str(basic_var *rv, basic_var *number)
 
 
 static int
-f_tan(basic_var *rv, basic_var *n)
+f_tan(basic_var *rv, const basic_var *n)
 {
     rv->kind = KIND_NUMERIC;
     rv->value.number = tanf(n->value.number);
@@ -403,7 +397,7 @@ v_timestr(basic_var *rv)
     (void)time(&now);
     tm = localtime(&now);
 
-    str = malloc(9);
+    str = (char *)malloc(9);
     if (str == NULL)
 	return 1;
     sprintf(str, "%02i:%02i:%02i", tm->tm_hour, tm->tm_min, tm->tm_sec);
@@ -417,7 +411,7 @@ v_timestr(basic_var *rv)
 
 
 static int
-str_val(basic_var *rv, basic_var *str)
+str_val(basic_var *rv, const basic_var *str)
 {
     rv->kind = KIND_NUMERIC;
     rv->value.number = (float)atof(str->value.string);
@@ -431,7 +425,7 @@ static int
 v_version(basic_var *rv)
 {
     rv->kind = KIND_STRING;
-    rv->value.string = "1.0.1";
+    rv->value.string = APP_VERSION;
 
     return 0;
 }

@@ -5,7 +5,7 @@
  *
  *		Implement (most of) the BASIC statements.
  *
- * Version:	@(#)stmt.c	1.1.0	2023/05/01
+ * Version:	@(#)stmt.c	1.1.1	2023/05/05
  *
  * Authors:	Fred N. van Kempen, <waltje@varcem.com>
  *		Johan Van den Brande <johan@vandenbrande.com>
@@ -94,20 +94,9 @@ typedef struct {
 
 
 static token	t_kw_data;
-static token	t_kw_for;
 static token	t_kw_gosub;
 static token	t_kw_goto;
-static token	t_kw_if;
-static token	t_kw_next;
-static token	t_kw_on;
 static token	t_kw_rem;
-static token	t_kw_step;
-static token	t_kw_then;
-static token	t_kw_to;
-#if 0
-static token	t_kw_def;
-static token	t_kw_fn;
-#endif
 
 static data_ptr	__data;
 
@@ -122,9 +111,7 @@ do_clear(basic_var *rv)
     vars_destroy();
     vars_init();
 
-    basic_ready(NULL);
-
-    return 0;
+    return 1;
 }
 
 
@@ -132,17 +119,52 @@ do_clear(basic_var *rv)
 static int
 do_cls(basic_var *rv)
 {
-#if PLATFORM == PLATFORM_XMEGA
-    basic_io_print("\x1b");
-    basic_io_print("E");
+#ifdef _WIN32
+    arch_cls();
+#else
+# if PLATFORM == PLATFORM_XMEGA
+    printf("\x1bE");
+# else
+    printf("\033[2J");
+# endif
+    arch_locate(0, 0);
 #endif
 
-#ifdef _WIN32
-    basic_io_print("\014");
-#else
-    basic_io_print("\033[2J");
-    basic_io_print("\033[0;0H");
-#endif
+    rv->kind = KIND_NUMERIC;
+    rv->value.number = 0;
+
+    return 0;
+}
+
+
+/* Perform the "COLOR [fg][, bg]" statement. */
+static int
+do_color(basic_var *rv)
+{
+    int fg = -1, bg = -1;
+
+    if (sym >= T_BLACK && sym <= T_WHITE) {
+	/* Must be color name. */
+	fg = (int)(sym - T_BLACK);
+	accept(sym);
+    } else if (sym != T_COMMA) {
+	fg = (int)numeric_expression();
+    }
+
+    if (sym == T_COMMA) {
+	accept(T_COMMA);
+
+	if (sym >= T_BLACK && sym <= T_WHITE) {
+		/* Must be color name. */
+		bg = (int)(sym - T_BLACK);
+		accept(sym);
+	} else if (sym != T_COMMA) {
+		bg = (int)numeric_expression();
+	} else
+		basic_error("COMMA NOT EXPECTED");
+    }
+
+    arch_color(fg, bg);
 
     rv->kind = KIND_NUMERIC;
     rv->value.number = 0;
@@ -160,9 +182,7 @@ do_cont(basic_var* rv)
     else
 	basic_error("PROGRAM WAS NOT STOPPED");
 
-    basic_ready(NULL);
-
-    return 0; 
+    return 1; 
 }
 
 
@@ -176,23 +196,68 @@ do_data(basic_var *rv)
 }
 
 
-#if 0
+/* Perform the "DEF FNx(var) = expr" statement. */
 static int
-do_def_fn(basic_var *rv)
+do_def(basic_var *rv)
 {
-    if (sym != t_kw_fn) {
+    char fn[BASIC_VAR_LEN+1];
+    char name[BASIC_VAR_LEN+1];
+    char *str;
+
+    if (sym != T_FN) {
 	basic_error("EXPECTED FN");
 	return 0;
     }
+    accept(T_FN);
 
-    // Find 'X' between '(', ')'.
-  
-    // Associate 'X' with the location of the expression (string pointer).
-    // When 'evalled', use the string pointer to run the expression valuator.
+    /* Find function name before '('. */
+    if (sym == T_VARIABLE_NUMBER) {
+	tokenizer_get_variable_name(fn);
+	if (strlen(fn) != 1) {
+		basic_error("FN NAME CAN BE ONLY SINGLE CHARACTER");
+		return 0;
+	}
+    } else {
+	basic_error("EXPECTED VAR");
+	return 0;
+    }
+    accept(sym);	// swallow token (for function name)
+
+    /* Find variable name between '(', ')'. */
+    expect(T_LEFT_BANANA); 
+
+    if (sym != T_VARIABLE_NUMBER) {
+	basic_error("EXPECTED VAR");
+	return 0;
+    } else
+	tokenizer_get_variable_name(name);
+    accept(sym);	// swallow token (for function argument)
+
+    expect(T_RIGHT_BANANA); 
+
+    /* Stop the tokenizer from parsing the part after the =. */
+    tokenizer_block();
+
+    expect(T_EQUAL); 
+
+    /* Get the "raw" string (no quotes present!) until EOL or : */
+    str = tokenizer_get_raw();
+    accept(sym);
+
+    /*
+     * We now have the three pieces of information we need to
+     * be able to implement the FN keyword inside the expression
+     * handler. For that, we should add this current definition
+     * to an(other..) array of function definitions so we can
+     * look it up later.
+     */
+#ifdef _DEBUG
+// FIXME: not done yet!
+    printf("DEF FN='%s', VAR='%s', EXPR='%s'\n", fn, name, str);
+#endif
 
     return 0;
 }  
-#endif
 
 
 /* Perform the "DELETE "filename"" command. */
@@ -210,9 +275,7 @@ do_delete(basic_var *rv)
     accept(T_STRING);
     arch_delete(filename);
 
-    basic_ready(NULL);
-
-    return 0;
+    return 1;
 }
 
 
@@ -252,12 +315,12 @@ static void
 do_dir_cb(const char *name, size_t size, bool label, void *context)
 {
     if (label) {
-	printf("-- %-13s --\n", name);
+	bprintf("-- %-13s --\n", name);
     } else {
 #if PLATFORM == PLATFORM_XMEGA
-	printf("> %-8s : %6d\n", name, size);
+	bprintf("> %-8s : %6d\n", name, size);
 #else
-	printf("> %-8s : %6lu\n", name, (unsigned long)size);
+	bprintf("> %-8s : %6lu\n", name, (unsigned long)size);
 #endif
     }
 }  
@@ -269,9 +332,7 @@ do_dir(basic_var *rv)
 {
     arch_dir(do_dir_cb, NULL);
 
-    basic_ready(NULL);
-
-    return 0;
+    return 1;
 }
 
 
@@ -280,8 +341,6 @@ static void
 do_dump_cb(const variable *var, void *context)
 {
     vars_dump(var);
-
-    basic_ready(NULL);
 }
 
 
@@ -291,7 +350,7 @@ do_dump(basic_var *rv)
 {
     vars_each(do_dump_cb, NULL);
 
-    return 0;
+    return 1;
 }
 #endif
 
@@ -321,22 +380,22 @@ do_for(basic_var *rv)
     tokenizer_get_variable_name(name);
 
     get_sym();
-    expect(T_EQUALS);
+    expect(T_EQUAL);
     value = numeric_expression();
     vars_set_numeric(name, value);
 
-    expect(t_kw_to);
+    expect(T_TO);
     end_value = numeric_expression();
 
     step = 1.0;
     if (sym != T_EOL && sym != T_COLON) {
-	expect(t_kw_step);
+	expect(T_STEP);
 	step = numeric_expression();
     }  
 
     f = (stack_frame_for *)&(__stack[__stack_p]);
     if (f->type == FRAME_TYPE_FOR && !strcmp(name, f->var_name)) {
-	// overwrite the current loop for the same variable
+	/* FIXME: overwrite the current loop for the same variable. */
     } else {
 	if (__stack_p < sizeof(stack_frame_for)) {
 		basic_error("STACK FULL");
@@ -364,7 +423,7 @@ static int
 do_get(basic_var *rv)
 {
     char name[BASIC_VAR_LEN+1];
-    char c[4] = "";
+    char c[4] = { 0 };
     int ch;
 
     if (sym != T_VARIABLE_STRING) {
@@ -375,12 +434,9 @@ do_get(basic_var *rv)
 
     accept(T_VARIABLE_STRING);
 
-    if (__kbhit && __kbhit()) {
-	ch = __getch();
-	if (ch == 10)
-		ch = 13;
+    ch = bgetc(0);
+    if (ch > 0)
 	snprintf(c, sizeof(c), "%c", ch);
-    }
 
     vars_set_string(name, c);
 
@@ -484,25 +540,31 @@ do_if(basic_var *rv)
 		result = result || next;
     }
 
-    if (sym != t_kw_then) {
+    if (sym != T_THEN) {
 	basic_error("IF WITHOUT THEN");
 	return 0;
     } 
   
-    //FIXME: should we not accept(t_kw_then) here?
+    accept(T_THEN);
 
     if (result) {
-	get_sym();	//FIXME: see above, this can then go
-
 	if (sym == T_NUMBER) {
+		/* Shorthand for "GOTO linenr". */
 		float line_number = tokenizer_get_number();
 		accept(T_NUMBER);
-		set_line( (uint16_t)line_number );
+		set_line((uint16_t)line_number);
 	} else 
 		parse_line();
     } else {
-//FIXME: set expect for ELSE here?
-	move_to_next_line();
+	/* Skip the "THEN" part, see if we have an ELSE here. */
+	move_to_next_statement();
+	if (sym == T_COLON)
+		accept(sym);
+
+	if (sym == T_ELSE)
+		get_sym();
+	else
+		move_to_next_line();
     }
 
     return 0;
@@ -520,12 +582,10 @@ do_input(basic_var *rv)
     char *t, *p;
     float value;
 
-    if (sym != T_VARIABLE_NUMBER && sym != T_VARIABLE_STRING) {
+    if (sym == T_STRING) {
 	expression(&expr);
-	if (sym == T_COMMA || sym == T_SEMICOLON)
-		get_sym();
-	else
-		basic_error("UNEXPECTED TOKEN");
+
+	expect(T_SEMICOLON);
 
 	prompt = true;
     }
@@ -552,9 +612,10 @@ do_input(basic_var *rv)
 		free(expr.value.string);
 	}
     }
+    bputc('?');
+    bputc(' ');
 
-//FIXME: "prompt" is the optional first arg of the INPUT statement!?!?
-    basic_io_readline((prompt ? " " : "? "), line, sizeof(line)); 
+    bgets(line, sizeof(line));
 
     if (type == T_VARIABLE_NUMBER) {
 	p = line;
@@ -562,12 +623,12 @@ do_input(basic_var *rv)
 	vars_set_numeric(name, value);
 
 	while (sym == T_COMMA) {
-		// find ',' in input
+		/* Find ',' in input. */
 		while (*p && *p != ',' && *p != ' ')
-			++p;
-		if (!*p)
+			p++;
+		if (*p == '\0')
 			basic_error("EXPECTED COMMA IN INPUT");
-		++p;
+		p++;
 
 		get_sym();
 		if (type == T_VARIABLE_NUMBER) {
@@ -615,7 +676,7 @@ do_let(basic_var *rv)
 	expect(T_RIGHT_BANANA);
     }
 
-    expect(T_EQUALS);
+    expect(T_EQUAL);
   
     if (type == T_VARIABLE_NUMBER) {
 	float value = numeric_expression();
@@ -721,17 +782,37 @@ do_load(basic_var *rv)
 
     if (sym != T_STRING) {
 	basic_error("EXPECTED LITERAL STRING");
-	return 0;
+	return 1;
     }
 
     filename = tokenizer_get_string();
     accept(T_STRING);
 
+    /* FIXME: not sure, do we have to? Others do not.. (chaining!) */
     lines_clear();
 
     arch_load(filename, do_load_cb, NULL);
 
-    basic_ready(NULL);
+    return 1;
+}
+
+
+/* Perform the "LOCATE row, col" statement. */
+static int
+do_locate(basic_var *rv)
+{
+    int col, row;
+
+    row = (int)numeric_expression();
+
+    expect(T_COMMA);
+
+    col = (int)numeric_expression();
+
+    arch_locate(row, col);
+
+    rv->kind = KIND_NUMERIC;
+    rv->value.number = 0;
 
     return 0;
 }
@@ -746,9 +827,7 @@ do_new(basic_var *rv)
     vars_destroy();
     vars_init();
 
-    basic_ready(NULL);
-
-    return 0;
+    return 1;
 }
 
 
@@ -757,6 +836,7 @@ static int
 do_next(basic_var *rv)
 {
     char var_name[BASIC_VAR_LEN];
+    char temp[40];
     stack_frame_for *f;
     float value;
 
@@ -771,14 +851,14 @@ do_next(basic_var *rv)
 	accept(T_VARIABLE_NUMBER);
 	//printf("NEXT var=%s stack=%s p=%d\n", var_name, f->var_name, (int)__stack_p);
 	if (strcmp(var_name, f->var_name) != 0) {
-		char _error[40];
-		snprintf(_error, sizeof(_error), "EXPECTED NEXT WITH %s, GOT %s", var_name, f->var_name);
-		basic_error(_error);
+		snprintf(temp, sizeof(temp),
+			"EXPECTED NEXT WITH %s, GOT %s", var_name, f->var_name);
+		basic_error(temp);
 		return 0;
 	}
     }
 
-    // check end condition 
+    /* Check end condition . */
     value = vars_get_numeric(f->var_name) + f->step;
     if ((f->step > 0 && value > f->end_value) || (f->step < 0 && value < f->end_value)) {
 	__stack_p += sizeof(stack_frame_for);
@@ -823,11 +903,11 @@ do_on_goto(basic_var *rv)
     size_t list[20], size;
     uint16_t line_number;
     stack_frame_gosub *g;
+    token what = T_EOL;
     int index;
 
     index = (int)numeric_expression();
 
-    token what = T_EOL;
     if (sym == t_kw_goto){
 	what = t_kw_goto;
     } else if (sym == t_kw_gosub){
@@ -838,7 +918,7 @@ do_on_goto(basic_var *rv)
     }
     accept(what);
 
-    size = get_list(list, 20);
+    size = get_list(list, sizeof(list)/sizeof(list[0]));
     if (index > (int)size){
 	basic_error("ON OUT OF BOUNDS");
 	return 0;
@@ -873,24 +953,22 @@ do_on_goto(basic_var *rv)
 static void
 do_print_expr(const expr_result *expr)
 {
-    char buffer[16];
-    float val;
     long ival;
 
     if (expr->type == EXPR_TYPE_STRING) {
-        basic_io_print(expr->value.string);
+	if (expr->value.string)
+        	bprintf("%s", expr->value.string);
     } else if (expr->type == EXPR_TYPE_NUMERIC) {
-        val = expr->value.numeric;
-        ival = (long)val;
-        if (ival == val) {
-                snprintf(buffer, sizeof(buffer), "%li", ival);
-                basic_io_print(buffer);
-        } else {
-                snprintf(buffer, sizeof(buffer), "%f", val);
-                basic_io_print(buffer);
-        }
+	ival = (long)expr->value.numeric;
+        if (ival == expr->value.numeric)
+                bprintf("%li", ival);
+        else
+                bprintf("%f", expr->value.numeric);
     } else
         basic_error("UNKNOWN EXPRESSION");
+
+    /* Flush output if needed. */
+    bprintf(NULL);
 }
 
 
@@ -902,7 +980,7 @@ do_print(basic_var *rv)
 
     if (sym == T_EOL || sym == T_COLON) {
 	/* Just an empty print statement. */
-	__putch('\n');
+	bputc('\n');
     } else {
 	while (sym != T_EOL && sym != T_COLON) {
 		if (! dispatch_function(sym, FUNC_PRINT, rv)) {
@@ -913,22 +991,23 @@ do_print(basic_var *rv)
 			do_print_expr(&expr);
 
 			if (expr.type == EXPR_TYPE_STRING) {
-				if (expr.value.string != &__dummy)
+				if (expr.value.string != NULL)
 					free(expr.value.string);
 			}
 		}
 
 		if (sym == T_COMMA) {
 			accept(T_COMMA);
-			__putch('\t');
+			bputc('\t');
 		} else if (sym == T_SEMICOLON) {
 			accept(T_SEMICOLON);
 		} else
-			__putch('\n');
+			bputc('\n');
 	}
     }
 
-    fflush(stdout);
+    /* Flush output if needed. */
+    bprintf(NULL);
 
     return 0;
 }
@@ -937,10 +1016,7 @@ do_print(basic_var *rv)
 static void
 do_list_cb(uint16_t number, const char *contents)
 {
-    char buffer[BASIC_STR_LEN];
-
-    snprintf(buffer, sizeof(buffer), "%i %s\n", number, contents);
-    basic_io_print(buffer);
+    bprintf("%i %s\n", number, contents);
 }
 
 
@@ -965,9 +1041,7 @@ do_list(basic_var *rv)
 
     lines_list(start, end, do_list_cb);
 
-    basic_ready(NULL);
-
-    return 0;
+    return 1;
 }
 
 
@@ -987,17 +1061,14 @@ _data_number(void)
 static bool
 _data_find(var_type type, value *value)
 {
-//  printf("data find\n");
     tokenizer_init(__data.cursor);
     tokenizer_char_pointer(__data.char_pointer);
 
     while (__data.cursor) {
 	get_sym();
 	while (sym != T_EOL) {
-		if (sym == t_kw_rem) {
-			//FIXME: why? Cant we just skip over it??
+		if (sym == t_kw_rem)
 			break;
-		}
 
 		if (sym == t_kw_data) {
 			accept(sym);
@@ -1028,7 +1099,6 @@ static bool
 _data_read(var_type type, value *value)
 {
     bool rv = false;
-//  printf("data read\n");
 
     tokenizer_init(__data.cursor);
     tokenizer_char_pointer(__data.char_pointer);
@@ -1036,11 +1106,11 @@ _data_read(var_type type, value *value)
     get_sym();
     if (sym != T_EOL) {
 	accept(T_COMMA);	// separated by commas
-	if (type == VAR_TYPE_STRING) {
+
+	if (type == VAR_TYPE_STRING)
 		value->string = tokenizer_get_string();
-	} else {
+	else
 		value->number = _data_number();
-	}
 
 	__data.char_pointer = tokenizer_char_pointer(NULL);
 	rv = true; 
@@ -1091,20 +1161,22 @@ static int
 do_read(basic_var *rv)
 {
     char name[BASIC_VAR_LEN+1];
-    bool is_array = false;
     int vector[MAX_VECTOR];
+    bool is_array = false;
     value v;
     int l;
 
-    // if not initialized data_ptr, find first data statement
-    // while not end of variable list
-    //  read data, put in variable
-    //  proceed to next data statement
+    /*
+     * if not initialized data_ptr, find first data statement
+     * while not end of variable list
+     *  read data, put in variable
+     *  proceed to next data statement
+     */
     while (sym != T_EOL && sym != T_COLON) {
 	if (sym == T_VARIABLE_NUMBER || sym == T_VARIABLE_STRING) {
 		var_type type = (sym == T_VARIABLE_STRING) ? VAR_TYPE_STRING : VAR_TYPE_NUMERIC;
-		tokenizer_get_variable_name(name);
 
+		tokenizer_get_variable_name(name);
 		accept(sym);
 		if (sym == T_LEFT_BANANA) {
 			is_array = true;
@@ -1115,11 +1187,8 @@ do_read(basic_var *rv)
 			get_vector(vector, MAX_VECTOR);
 			expect(T_RIGHT_BANANA);
 		}
-//		printf("do_read variable name: %s\n", name);
 
-		bool read_ok = _do_data_read(type, &v);
-//		printf("READ %f\n", v.number);
-		if (! read_ok) {
+		if (! _do_data_read(type, &v)) {
 			basic_error("READ WITHOUT DATA");
 			return 0;
 		}
@@ -1136,7 +1205,6 @@ do_read(basic_var *rv)
 		}
 	}
 
-	//get_sym();
 	accept(T_COMMA);
     }
 
@@ -1163,7 +1231,7 @@ do_return(basic_var *rv)
     stack_frame_gosub *g;
     frame_type t;
 
-    // skip unfinished fors
+    /* Skip any unfinished FORs. */
     t = *(frame_type *)&(__stack[__stack_p]);
     while (t == FRAME_TYPE_FOR) {
 	__stack_p += sizeof(stack_frame_for);
@@ -1216,9 +1284,7 @@ do_run(basic_var* rv)
     /* Run the program. */
     basic_run();
  
-    basic_ready(NULL); 
-
-    return 0; 
+    return 1; 
 }
 
 
@@ -1259,15 +1325,13 @@ do_save(basic_var *rv)
 
     arch_save(filename, do_save_cb, &ctx);
 
-    basic_ready(NULL);
-
-    return 0;
+    return 1;
 }
 
 
 /* Perform the "SLEEP {msec}" statement. */
 static int
-do_sleep(basic_var *rv, basic_var *delay)
+do_sleep(basic_var *rv, const basic_var *delay)
 {
     int milliseconds = (int)delay->value.number;
  
@@ -1282,10 +1346,12 @@ do_sleep(basic_var *rv, basic_var *delay)
 
 /* Perform the SPC() statement. */
 static int
-do_spc(basic_var *rv, basic_var *n)
+do_spc(basic_var *rv, const basic_var *n)
 {
-    for (size_t i = 0; i < n->value.number; i++)
-	__putch(' ');
+    size_t i;
+
+    for (i = 0; i < n->value.number; i++)
+	bputc(' ');
  
     rv->kind = KIND_NUMERIC;
     rv->value.number = 0;
@@ -1304,18 +1370,19 @@ do_stop(basic_var *rv)
     /* Signal the stop (so we can CONTinue later.) */
     basic_stop();
 
-    basic_ready(NULL);
-
     return 0;
 }
 
 
 /* Perform the TAB() statement. */
 static int
-do_tab(basic_var *rv, basic_var *n)
+do_tab(basic_var *rv, const basic_var *n)
 {
-    for (size_t i = 0;  i <n->value.number; i++)
-	__putch(' ');
+    size_t i;
+
+//FIXME: wrong, we need to skip to the next TAB stop
+    for (i = 0;  i < n->value.number; i++)
+	bputc(' ');
 
     rv->kind = KIND_NUMERIC;
     rv->value.number = 0;
@@ -1347,35 +1414,32 @@ stmt_init(void)
     register_function(FUNC_KEYWORD, "DIR", do_dir);
     register_function(FUNC_KEYWORD, "LIST", do_list);
     register_function(FUNC_KEYWORD, "LOAD", do_load);
-    register_function(FUNC_KEYWORD, "NEW", do_clear);
+    register_function(FUNC_KEYWORD, "NEW", do_new);
     register_function(FUNC_KEYWORD, "RUN", do_run);
     register_function(FUNC_KEYWORD, "SAVE", do_save);
 
     /* BASIC statements. */
     register_function(FUNC_KEYWORD, "CLS", do_cls);
+    register_function(FUNC_KEYWORD, "COLOR", do_color);
     t_kw_data = register_function(FUNC_KEYWORD, "DATA", do_data);
-#if 0
-    t_kw_def = register_function(FUNC_KEYWORD, "DEF", do_def_fn);
-#endif
+    register_function(FUNC_KEYWORD, "DEF", do_def);
     register_function(FUNC_KEYWORD, "DIM", do_dim);
 #ifdef _DEBUG
     register_function(FUNC_KEYWORD, "DUMP", do_dump);
 #endif
     register_function(FUNC_KEYWORD, "END", do_end);
-#if 0
-    t_kw_else = register_token(T_ELSE, "ELSE");
-    t_kw_fn = register_token(T_FN, "FN");
-#endif
-    t_kw_for = register_function(FUNC_KEYWORD, "FOR", do_for);
+    register_token(T_ELSE, "ELSE");
+    register_token(T_FN, "FN");
+    register_function(FUNC_KEYWORD, "FOR", do_for);
     register_function(FUNC_KEYWORD, "GET", do_get);
     t_kw_gosub = register_function(FUNC_KEYWORD, "GOSUB", do_gosub); 
     t_kw_goto = register_function(FUNC_KEYWORD, "GOTO", do_goto);
-    t_kw_if = register_function(FUNC_KEYWORD, "IF", do_if);
+    register_function(FUNC_KEYWORD, "IF", do_if);
     register_function(FUNC_KEYWORD, "INPUT", do_input);
     register_function(FUNC_KEYWORD, "LET", do_let);
-    register_function(FUNC_KEYWORD, "NEW", do_new);
-    t_kw_next = register_function(FUNC_KEYWORD, "NEXT", do_next);
-    t_kw_on = register_function(FUNC_KEYWORD, "ON", do_on_goto);
+    register_function(FUNC_KEYWORD, "LOCATE", do_locate);
+    register_function(FUNC_KEYWORD, "NEXT", do_next);
+    register_function(FUNC_KEYWORD, "ON", do_on_goto);
 #if 0
     register_function_1(FUNC_KEYWORD, "ONERR", do_onerr);
 #endif
@@ -1387,11 +1451,11 @@ stmt_init(void)
     register_function(FUNC_KEYWORD, "RESTORE", do_restore); 
     register_function_1(FUNC_KEYWORD, "SLEEP", do_sleep, KIND_NUMERIC);
     register_function_1(FUNC_PRINT, "SPC", do_spc, KIND_NUMERIC);
-    t_kw_step = register_token(T_AUTO, "STEP");		// FIXME: T_STEP
+    register_token(T_STEP, "STEP");
     register_function(FUNC_KEYWORD, "STOP", do_stop);
     register_function_1(FUNC_PRINT, "TAB", do_tab, KIND_NUMERIC);
-    t_kw_then = register_token(T_AUTO, "THEN");		// FIXME: T_THEN
-    t_kw_to = register_token(T_AUTO, "TO");		// FIXME: T_TO
+    register_token(T_THEN, "THEN");
+    register_token(T_TO, "TO");
 
 #if 0
     /* These are for the "files I/O" support module. */
@@ -1410,6 +1474,7 @@ bool
 do_stmt(void)
 {
     basic_var rv;
+    int i;
 
     switch (sym) {
 	case T_ERROR:
@@ -1421,8 +1486,10 @@ do_stmt(void)
 		break;
 
 	default:
-		if (dispatch_function(sym, FUNC_KEYWORD, &rv))
+		if ((i = dispatch_function(sym, FUNC_KEYWORD, &rv)) == -1)
 			do_let(NULL);
+		else if (i == 1)
+			basic_ready(NULL);
 		break;
     }
 

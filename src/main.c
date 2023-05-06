@@ -9,7 +9,7 @@
  *
  * Usage:	basic [-qd] [-C] [-m memsize] [-s stacksize] [file]
  *
- * Version:	@(#)main.c	1.1.0	2023/05/01
+ * Version:	@(#)main.c	1.1.1	2023/05/05
  *
  * Authors:	Fred N. van Kempen, <waltje@varcem.com>
  *		Johan Van den Brande <johan@vandenbrande.com>
@@ -54,12 +54,8 @@
 #include <string.h>
 #include <getopt.h>
 #include <signal.h>
-#ifdef _WIN32
-# include <conio.h>
-#else
-# include <sys/select.h>
-# include <sys/ioctl.h>
-# include <termios.h>
+#ifndef _WIN32
+# include <unistd.h>
 #endif
 #ifdef USE_READLINE
 # include <readline/readline.h>
@@ -67,6 +63,7 @@
 #endif
 #include "arch.h"
 #include "basic.h"
+#include "private.h"		// TBR! need API cleanup!
 #include "version.h"
 
 
@@ -87,68 +84,24 @@ sigint_handler(int signum)
 
 
 static void
-_error(const char *msg)
+my_error(const char *msg)
 {
     last_error = msg;
 
-    printf("--- ERROR: ");
+    bprintf("--- ERROR: ");
     if (__line != 0)
-	printf("%i ", __line);
-    printf("%s\n", msg);
+	bprintf("%i ", __line);
+    bprintf("%s\n", msg);
 }
 
 
 static void
-_ready(const char *msg)
+my_ready(const char *msg)
 {
     if (msg == NULL)
 	msg = "READY.";
 
-    puts(msg);
-}
-
-
-static int
-_putc(int ch)
-{
-    putchar(ch);
-
-    return 1;
-}
-
-
-static int
-_getc(void)
-{
-    return getchar();
-}
-
-
-static int
-_xkbhit(void)
-{
-#ifdef _WIN32
-    return _kbhit();
-#else
-    static const int STDIN = 0;
-    static bool initialized = false;
-    int bytesWaiting;
-
-    if (! initialized) {
-	// Use termios to turn off line buffering
-	struct termios term;
-	tcgetattr(STDIN, &term);
-	term.c_lflag &= ~ICANON;
-	tcsetattr(STDIN, TCSANOW, &term);
-
-	setbuf(stdin, NULL);
-	initialized = true;
-    }
-
-    ioctl(STDIN, FIONREAD, &bytesWaiting);
-
-    return bytesWaiting;
-#endif
+    bputs(msg);
 }
 
 
@@ -181,21 +134,21 @@ repl(void)
     char *input;
  
     if (! opt_q) {
-	printf("%s version %s\n", APP_TITLE, APP_VERSION);
-	printf("Copyright 2015-2016 Johan Van den Brande\n");
-	printf("Copyright 2023 Fred N. van Kempen\n");
-	printf(" _               _      \n");
-	printf("| |__   __ _ ___(_) ___ \n");
-	printf("| '_ \\ / _` / __| |/ __|\n");
-	printf("| |_) | (_| \\__ \\ | (__ \n");
-	printf("|_.__/ \\__,_|___/_|\\___|\n\n");
+	bprintf("%s version %s\n", APP_TITLE, APP_VERSION);
+	bprintf("Copyright 2015-2016 Johan Van den Brande\n");
+	bprintf("Copyright 2023 Fred N. van Kempen\n");
+	bprintf(" _               _      \n");
+	bprintf("| |__   __ _ ___(_) ___ \n");
+	bprintf("| '_ \\ / _` / __| |/ __|\n");
+	bprintf("| |_) | (_| \\__ \\ | (__ \n");
+	bprintf("|_.__/ \\__,_|___/_|\\___|\n\n");
     }
 
 #ifdef USE_READLINE
     using_history();
 #endif
 
-    _ready(NULL);
+    my_ready(NULL);
 
     for (;;) {
 #ifdef USE_READLINE
@@ -204,12 +157,9 @@ repl(void)
 		break;
 #else
 	memset(line, 0, sizeof(line));
-	input = fgets(line, sizeof(line), stdin);
-	if (ferror(stdin) || feof(stdin))
-		break;
+	input = bgets(line, sizeof(line));
 	if (input == NULL)
 		continue;
-	line[strlen(line) - 1] = '\0';
 #endif
 
 	if (opt_C)
@@ -230,7 +180,7 @@ repl(void)
 		basic_eval(input);
 
 		if (last_error != NULL) {
-			printf("ERROR: %s\n", last_error);
+			bprintf("ERROR: %s\n", last_error);
 			last_error = NULL;
 		}
 	} else
@@ -323,8 +273,7 @@ main(int argc, char *argv[])
     }
 
     /* Create an instance of the interpreter. */
-    basic_init(mem*1024, stk*1024);
-    basic_register(_error, _ready, _putc, _getc, _xkbhit);
+    basic_init(mem*1024, stk*1024, my_error, my_ready);
 
 #if 0
     /* These are for platforms that (can) implement them. */

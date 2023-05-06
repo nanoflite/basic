@@ -5,7 +5,7 @@
 #
 #		Makefile for UNIX-like systems using the GCC environment.
 #
-# Version:	@(#)Makefile.GCC	1.1.0	2023/05/01
+# Version:	@(#)Makefile.GCC	1.1.1	2023/05/05
 #
 # Author:	Fred N. van Kempen, <waltje@varcem.com>
 #
@@ -51,7 +51,7 @@ ifndef DEBUG
 endif
 
 
-DEFS	:= -DPLATFORM=2 -DUSE_READLINE
+DEFS	:= -DPLATFORM=2 #-DUSE_READLINE
 
 
 #########################################################################
@@ -185,7 +185,8 @@ VPATH		:= ../src/arch/linux ../src
 PROG		:= basic
 SYSOBJ		:=
 OBJ		:= $(SYSOBJ) \
-		   arch.o array.o dict.o expr.o func.o io.o lines.o \
+		   arch.o console.o \
+		   array.o dict.o expr.o func.o io.o lines.o \
 		   stmt.o token.o vars.o basic.o \
 		   main.o
 LDLIBS		+= -lreadline -lhistory -lm

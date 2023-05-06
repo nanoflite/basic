@@ -3,9 +3,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Version information.
+ *		Definitions for the console driver.
  *
- * Version:	@(#)version.h	1.1.1	2023/05/05
+ * Version:	@(#)console.h	1.1.0	2023/05/05
  *
  * Author:	Fred N. van Kempen, <waltje@varcem.com>
  *
@@ -41,36 +41,44 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef VERSION_H
-# define VERSION_H
+#ifndef ARCH_CONSOLE_H
+# define ARCH_CONSOLE_H
 
 
-/* Application name. */
-#define APP_NAME	"BASIC"
-#define APP_TITLE	"VARCem BASIC Interpreter"
-
-/* Version info. */
-#define APP_VER_MAJOR	1
-#define APP_VER_MINOR	1
-#define APP_VER_REV	1
-#define APP_VER_PATCH	0
-
-
-/* Standard C preprocessor macros. */
-#define STR_STRING(x)	#x
-#define STR(x)		STR_STRING(x)
-#define STR_RC(a,e)	a ## , ## e
-
-
-/* These are used in the application. */
-#define APP_VER_NUM	APP_VER_MAJOR.APP_VER_MINOR.APP_VER_REV
-#if defined(APP_VER_PATCH) && APP_VER_PATCH > 0
-# define APP_VER_NUM_4	APP_VER_MAJOR.APP_VER_MINOR.APP_VER_REV.APP_VER_PATCH
-#else
-# define APP_VER_NUM_4	APP_VER_MAJOR.APP_VER_MINOR.APP_VER_REV.0
-#endif
-#define APP_VERSION	STR(APP_VER_NUM)
-#define APP_VERSION_4	STR(APP_VER_NUM_4)
+typedef enum Color {
+    C_OFF = -1,
+    C_BLACK = 0,		// RGB: 0,0,0
+    C_BLUE,			// RGB: 0,0,128
+    C_GREEN,			// RGB: 0,128,0
+    C_CYAN,			// RGB: 0,128,128
+    C_RED,			// RGB: 128,0,0
+    C_MAGENTA,			// RGB: 128,0,128
+    C_BROWN,			// RGB: 128,128,0
+    C_GRAY,			// RGB: 128,128,128
+    C_LIGHTGRAY,		// RGB: 0,0,0+I
+    C_LIGHTBLUE,		// RGB: 0,0,128+I
+    C_LIGHTGREEN,		// RGB: 0,128+I,0
+    C_LIGHTCYAN,		// RGB: 0,128+I,128+I
+    C_LIGHTRED,			// RGB: 128+I,0,0
+    C_LIGHTMAGENTA,		// RGB: 128+I,0,128+I
+    C_YELLOW,			// RGB: 128+I,128+I,0
+    C_WHITE,			// RGB: 128+I,128+I,128+I
+  
+    C_MAX
+} color_t;
 
 
-#endif	/*VERSION_H*/
+extern int	con_init(void);
+extern void	con_close(void);
+extern int	con_getc(int);
+extern int	con_putc(int);
+extern int	con_printf(const char *, ...);
+extern void	con_cls(void);
+extern void	con_locate(int, int);
+extern void	con_colors(color_t, color_t);
+extern void	con_nocolors(void);
+
+extern void	con_demo(void);
+
+
+#endif	/*ARCH_CONSOLE_H*/

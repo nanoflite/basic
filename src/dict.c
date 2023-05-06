@@ -5,7 +5,7 @@
  *
  *		Handle dictionaries.
  *
- * Version:	@(#)dict.c	1.1.0	2023/05/01
+ * Version:	@(#)dict.c	1.1.1	2023/05/05
  *
  * Authors:	Fred N. van Kempen, <waltje@varcem.com>
  *		Johan Van den Brande <johan@vandenbrande.com>
@@ -67,12 +67,12 @@ typedef struct entry {
     void	*value;
 } entry;
 
-struct dictionary {
+struct dict {
     entry	*hashtab[HASHSIZE];
 };
 
 typedef struct {
-    dictionary	*d;
+    dict	*d;
     dictionary_each_cb cb;
 } _free_s;
 
@@ -91,7 +91,7 @@ hash(const char *name)
 
 
 static entry *
-_get(const dictionary *d, const char *name)
+_get(const dict *d, const char *name)
 {
     entry *entry;
 
@@ -105,7 +105,7 @@ _get(const dictionary *d, const char *name)
 
 
 void *
-dict_get(dictionary *d, const char *name)
+dict_get(dict *d, const char *name)
 {
     entry *entry = _get(d, name);
   
@@ -117,7 +117,7 @@ dict_get(dictionary *d, const char *name)
 
 
 bool
-dict_has(dictionary *d, const char *name)
+dict_has(dict *d, const char *name)
 {
     entry *entry = _get(d, name);
 
@@ -129,7 +129,7 @@ dict_has(dictionary *d, const char *name)
 
 
 void
-dict_put(dictionary *d, const char *name, void *value)
+dict_put(dict *d, const char *name, void *value)
 {
     entry *element;
     unsigned int hashval;
@@ -149,7 +149,7 @@ dict_put(dictionary *d, const char *name, void *value)
 
 
 void *
-dict_del(dictionary *d, const char *name)
+dict_del(dict *d, const char *name)
 {
     entry *root = d->hashtab[hash(name)];
 
@@ -186,7 +186,7 @@ dict_del(dictionary *d, const char *name)
 
 
 void
-dict_each(dictionary *d, dictionary_each_cb cb, void *context)
+dict_each(dict *d, dictionary_each_cb cb, void *context)
 {
     entry *next_entry = NULL;
     size_t i;
@@ -208,10 +208,10 @@ dict_each(dictionary *d, dictionary_each_cb cb, void *context)
 }
 
 
-dictionary *
+dict *
 dict_new(void)
 {
-    dictionary *d = (dictionary *)malloc(sizeof(dictionary));
+    dict *d = (dict *)malloc(sizeof(dict));
     size_t i;
 
     if (d == NULL)
@@ -228,13 +228,13 @@ static void
 destroy_cb_pass_1(const char *name, void *value, void *context)
 {
     _free_s *ctx = (_free_s *)context;
-//  dictionary *d = ctx->d;
+//  dict *d = ctx->d;
 
     dictionary_each_cb free_cb = ctx->cb;
 
     free_cb(name, value, NULL); 
 
-//  dictionary_del(d, name);
+//  dict_del(d, name);
 }
 
 
@@ -242,7 +242,7 @@ static void
 destroy_cb_pass_2(const char *name, void *value, void *context)
 {
     _free_s *ctx = (_free_s *)context;
-    dictionary *d = ctx->d;
+    dict *d = ctx->d;
 
 //  dictionary_each_cb free_cb = ctx->cb;
 //  free_cb(name, value, NULL); 
@@ -252,7 +252,7 @@ destroy_cb_pass_2(const char *name, void *value, void *context)
 
 
 void
-dict_destroy(dictionary *d, dictionary_each_cb free_cb)
+dict_destroy(dict *d, dictionary_each_cb free_cb)
 {
     _free_s ctx = {
 	.d = d,

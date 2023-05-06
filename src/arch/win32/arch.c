@@ -5,7 +5,7 @@
  *
  *		Platform support for Windows.
  *
- * Version:	@(#)arch.c	1.1.0	2023/05/01
+ * Version:	@(#)arch.c	1.1.1	2023/05/05
  *
  * Authors:	Fred N. van Kempen, <waltje@varcem.com>
  *		Johan Van den Brande <johan@vandenbrande.com>
@@ -57,13 +57,7 @@
 #include <sys/stat.h>
 #include "../../arch.h"
 #include "opendir.h"
-
-
-int
-arch_init(void)
-{
-    return 0;
-}
+#include "console.h"
 
 
 static char *
@@ -71,15 +65,33 @@ _get_path(void)
 {
     static char *_path = NULL;
   
-    _path = getenv("BASIC_PATH");
-    if (_path == NULL)
-	_path = ".";
+    if (_path == NULL) {
+	_path = getenv("BASIC_PATH");
+	if (_path == NULL)
+		_path = ".";
   
-    if (_path[strlen(_path) - 1] == '/')
-	_path[strlen(_path)-1] = '\0';
-  
+	if (_path[strlen(_path) - 1] == '/' || _path[strlen(_path) - 1] == '\\')
+		_path[strlen(_path)-1] = '\0';
+    }
+
     return _path;
 }  
+
+
+int
+arch_init(void)
+{
+    con_init();
+
+    return 0;
+}
+
+
+void
+arch_exit(void)
+{
+    con_close();
+}
 
 
 int
@@ -132,6 +144,19 @@ arch_save(const char *name, arch_save_cb cb, void* context)
 
 
 int
+arch_delete(const char *name)
+{
+    char path[1024];
+
+    sprintf(path, "%s/%s.bas", _get_path(), name);
+
+    (void)remove(path);
+
+    return 0;
+}
+
+
+int
 arch_dir(arch_dir_cb cb, void *context)
 {
     char out[256];
@@ -163,21 +188,43 @@ arch_dir(arch_dir_cb cb, void *context)
 }
 
 
-int
-arch_delete(const char *name)
-{
-    char path[1024];
-
-    sprintf(path, "%s/%s.bas", _get_path(), name);
-
-    (void)remove(path);
-
-    return 0;
-}
-
-
 void
 arch_sleep(int msec)
 {
     Sleep(msec);
+}
+
+
+int
+arch_getc(int wait)
+{
+    return con_getc(wait);
+}
+
+
+int
+arch_putc(int ch)
+{
+    return con_putc(ch);
+}
+
+
+void
+arch_cls(void)
+{
+    con_cls();
+}
+
+
+void
+arch_locate(int row, int col)
+{
+    con_locate(row, col);
+}
+
+
+void
+arch_color(int fg, int bg)
+{
+    con_colors(fg, bg);
 }

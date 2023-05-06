@@ -5,7 +5,7 @@
  *
  *		Handle variables.
  *
- * Version:	@(#)vars.c	1.1.0	2023/05/01
+ * Version:	@(#)vars.c	1.1.1	2023/05/05
  *
  * Authors:	Fred N. van Kempen, <waltje@varcem.com>
  *		Johan Van den Brande <johan@vandenbrande.com>
@@ -59,7 +59,7 @@ typedef union {
 } var_value;
 
 typedef struct variable {
-    char	*name;
+    const char	*name;
     var_type	type;
     var_value	value;
     bool	is_array;
@@ -69,42 +69,9 @@ typedef struct variable {
 } variable;
 
 
-static dictionary	*_dict = NULL;
+static dict		*_dict = NULL;
 static const char	*E_INDEX_OUT_OF_BOUNDS = "INDEX OUT OF BOUNDS";
 static const char	*E_VAR_NOT_FOUND = "VAR NOT FOUND";
-
-
-#if PLATFORM != PLATFORM_XMEGA
-static void
-calc_vector(const variable *var, int index, int *vector)
-{
-    int i, product = 1;
-
-    for (i = 1; i < var->nr_dimensions; ++i)
-	product *= var->dimensions[i];
-
-    for (i = 0; i < var->nr_dimensions; ++i) {
-	vector[i] = index / product;
-	index %= product;
-	if ((i+1) < var->nr_dimensions)
-		product /= var->dimensions[i+1];
-    }
-}  
-
-
-static void
-vector_print(int *vector, int dimensions)
-{
-    int i;
-
-    for (i = 0; i < dimensions; i++) {
-	printf("%i", vector[i]);
-
-	if (i < dimensions - 1)
-		printf(",");
-    }
-}
-#endif
 
 
 bool
@@ -130,7 +97,7 @@ destroy_cb(const char *name, void *value, void *context)
 	array_destroy(var->array); 
 
     if (var->name != NULL)
-	free(var->name);
+	free((char *)var->name);
 
     free(var);
 }
@@ -153,7 +120,6 @@ vars_get(const char *name)
 char *
 vars_get_string(const char *name)
 {
-//  printf("Var name: '%s'\n", name);
     variable *var = dict_get(_dict, name);
 
     if (var == NULL)
@@ -166,11 +132,10 @@ vars_get_string(const char *name)
 variable *
 vars_set_string(const char *name, const char *value)
 {
-//  printf("set var '%s' to '%s'\n", name, value); 
     variable *var = dict_get(_dict, name);
 
     if (var == NULL) {
-	var = (variable*)malloc(sizeof(variable));
+	var = (variable *)malloc(sizeof(variable));
 
 	var->name = C_STRDUP(name);
 	var->type = VAR_TYPE_STRING;
@@ -191,7 +156,6 @@ vars_set_string(const char *name, const char *value)
 float
 vars_get_numeric(const char *name)
 {
-//  printf("Var name: '%s'\n", name);
     variable *var = dict_get(_dict, name);
 
     if (var == NULL)
@@ -204,11 +168,10 @@ vars_get_numeric(const char *name)
 variable *
 vars_set_numeric(const char *name, float value)
 {
-//  printf("set var '%s' to %f\n", name, value); 
     variable *var = dict_get(_dict, name);
 
     if (var == NULL) {
-	var = (variable*)malloc(sizeof(variable));
+	var = (variable *)malloc(sizeof(variable));
 	var->name = C_STRDUP(name);
 	var->type = VAR_TYPE_NUMERIC;
 	var->is_array = false;
@@ -230,7 +193,6 @@ vars_get_type(const char *name)
 }
 
 
-// Calculates array size
 static size_t
 calc_size(variable *var)
 {
@@ -238,8 +200,6 @@ calc_size(variable *var)
 
     for (i = 0; i < var->nr_dimensions; ++i)
 	size *= var->dimensions[i];
-
-//  printf("array size %s = %i\n", var->name, size);
 
     return size;
 }
@@ -251,15 +211,11 @@ check_in_bounds(variable *var, int *vector)
     int vector_i;
     int i;
 
-//  printf("check in bounds\n");
-//  printf("dimensions %i\n", var->nr_dimensions);
-
     for (i = 0; i < var->nr_dimensions; i++) {
 	vector_i = vector[i];
-//	printf("vector_%i = %i\n", i, vector_i);
-//	printf("dimension_%i = %i\n", i, var->dimensions[i]); 
 
 //	DIM A(3) -> A(1), A(2), A(3)
+//	FIXME: are we 0-based or 1-based ?
 	if (vector_i > var->dimensions[i])
 		return false;
     }
@@ -294,12 +250,10 @@ calc_index(variable *var, int *vector)
 {
     int i, j, index = 0;
 
-//  printf("calc_index\n");
-//  vars_dump(var);
-
     for (i = 0; i < var->nr_dimensions; ++i) {
-//	int product = vector[i] - 1;
-	int product = vector[i];
+//FIXME: ?
+	int product = vector[i] - 1;
+//	int product = vector[i];
 
 	for (j = i+1; j < var->nr_dimensions; ++j)
 		product *= var->dimensions[j];
@@ -431,7 +385,6 @@ vars_array_get_numeric(const char *name, int *vector)
 variable *
 vars_array_set_numeric(const char *name, float value, int *vector)
 {
-//  printf("set numeric %s, %f, %i\n", name, value, vector[0]);
     var_value val;
     size_t index; 
     variable *var = dict_get(_dict, name);
@@ -446,20 +399,16 @@ vars_array_set_numeric(const char *name, float value, int *vector)
 	return NULL;
     }
 
-//  vars_dump(var);
-
     index = calc_index(var, vector); 
-//  printf("index = %i\n", index);
 
     val.num = value;
     array_set(var->array, index, &val);
 
-//  vars_dump(var);
-  
     return var;
 }
 
 
+#ifdef _DEBUG
 struct each_v_ctx {
     variables_each_cb cb;
     void	*context;
@@ -488,40 +437,72 @@ vars_each(variables_each_cb each, void *context)
 }
 
 
-void
-vars_dump(const variable *var)
+static void
+calc_vector(const variable *var, int index, int *vector)
+{
+    int i, product = 1;
+
+    for (i = 1; i < var->nr_dimensions; ++i)
+	product *= var->dimensions[i];
+
+    for (i = 0; i < var->nr_dimensions; ++i) {
+	vector[i] = index / product;
+	index %= product;
+	if ((i+1) < var->nr_dimensions)
+		product /= var->dimensions[i+1];
+    }
+}  
+
+
+static void
+vector_print(int *vector, int dimensions)
 {
     int i;
 
-    printf("-- variable\n" 
+    for (i = 0; i < dimensions; i++) {
+	printf("%i", vector[i]);
+
+	if (i < dimensions - 1)
+		printf(",");
+    }
+}
+
+
+void
+vars_dump(const variable *var)
+{
+    int vector[MAX_VECTOR];
+    var_value *val;
+    int i;
+
+    bprintf("-- variable\n" 
 	   "\tname:'%s'\n"
 	   "\ttype: %s\n",
 	var->name,
 	(var->type == VAR_TYPE_NUMERIC) ? "number" : "string");
 
     if (var->is_array) {
-	printf("\tdimensions: %i\n", var->nr_dimensions);
+	bprintf("\tdimensions: %i\n", var->nr_dimensions);
 	for (i = 0; i < var->nr_dimensions; i++)
-		printf("\tdim %i size = %i\n", i, (int)var->dimensions[i]);
-	printf("\tarray size: %i\n", (int)array_size(var->array));
+		bprintf("\tdim %i size = %i\n", i, (int)var->dimensions[i]);
+	bprintf("\tarray size: %i\n", (int)array_size(var->array));
 	for (i = 0; i < (int)array_size(var->array); i++) {
-		int vector[5];
-		var_value *val;
 
 		calc_vector(var, i, vector);
-		printf("\t%3i %s", i, var->name);
+		bprintf("\t%3i %s", i, var->name);
 		vector_print(vector, var->nr_dimensions);
-		printf(") = ");
+		bprintf(") = ");
 		val = array_get(var->array, i);
 		if (var->type == VAR_TYPE_STRING)
-			printf("%s\n", (val->string) ? val->string : "");
+			bprintf("%s\n", (val->string) ? val->string : "");
 		else
-			printf("%f\n", val->num); 
+			bprintf("%f\n", val->num); 
 	}
     } else {
 	if (var->type == VAR_TYPE_STRING)
-		printf("\tvalue: '%s'\n", var->value.string);
+		bprintf("\tvalue: '%s'\n", var->value.string);
 	else
-		printf("\tvalue: %f\n", var->value.num);
+		bprintf("\tvalue: %f\n", var->value.num);
     }
 }
+#endif

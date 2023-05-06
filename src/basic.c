@@ -86,7 +86,7 @@
  *  relation-operator = ( "<" | "<=" | "=" | ">=" | ">" )
  *---------------------------------------------------------------------------
  *
- * Version:	@(#)basic.c	1.1.0	2023/05/01
+ * Version:	@(#)basic.c	1.1.1	2023/05/05
  *
  * Authors:	Fred N. van Kempen, <waltje@varcem.com>
  *		Johan Van den Brande <johan@vandenbrande.com>
@@ -160,16 +160,6 @@ typedef struct {
 } function_t;
 
 
-static array	*_tokens = NULL;
-static array	*_functions = NULL;
-
-
-error_t		__error;
-ready_t		__ready;
-putchar_t	__putch;
-getchar_t	__getch;
-getchar_t	__kbhit;
-
 #ifdef _DEBUG
 volatile bool	__DEBUG;
 #endif
@@ -190,7 +180,11 @@ uint16_t	__line,				// current program line
 char		*__cursor,			// current position on line
 		*__cursor_saved;
 token		sym;				// current input token
-char		__dummy = 0;			// TBR
+
+static array	*_tokens = NULL;
+static array	*_functions = NULL;
+static error_t	__error;
+static ready_t	__ready;
 
 
 void
@@ -233,8 +227,8 @@ get_relop(void)
 {
     if (sym == T_LESS) {
 	accept(T_LESS);
-	if (sym == T_EQUALS) {
-		accept(T_EQUALS);
+	if (sym == T_EQUAL) {
+		accept(T_EQUAL);
 		return OP_LE;
 	} else if (sym == T_GREATER) {
 		accept(T_GREATER);
@@ -244,16 +238,27 @@ get_relop(void)
 	return OP_LT;
     }
 
-    if (sym == T_EQUALS) {
-	accept(T_EQUALS);
+    if (sym == T_EQUAL) {
+	accept(T_EQUAL);
 
 	return OP_EQ;
     }
 
+    if (sym == T_EXCL) {
+	accept(T_EXCL);
+	if (sym == T_EQUAL) {
+		accept(T_EQUAL);
+		return OP_NE;
+	}
+
+	/* False alarm. Wish we had "sym_unget()" or "sym_peek()" ... */
+	return OP_NOP;
+    }
+
     if (sym == T_GREATER) {
 	accept(T_GREATER);
-	if (sym == T_EQUALS) {
-		accept(T_EQUALS);
+	if (sym == T_EQUAL) {
+		accept(T_EQUAL);
 		return OP_GE;
 	}
 
@@ -368,6 +373,7 @@ dispatch_function(token tok, func_type type, basic_var *rv)
     basic_var v[6];	//FIXME: was 5, warning on overflow in get_param below
     function_t *f;
     size_t i;
+    int ret;
 
     /* Find the function we need. */
     f = NULL;
@@ -380,7 +386,7 @@ dispatch_function(token tok, func_type type, basic_var *rv)
 
     /* If not found, give up. */
     if (f == NULL)
-	return 1;
+	return -1;
 
     if (f->nr_arguments > MAX_ARGUMENT) {
 	basic_error("MAX ARGUMENTS");
@@ -393,9 +399,9 @@ dispatch_function(token tok, func_type type, basic_var *rv)
     /* Is this a statement without (declared) arguments? */
     if (f->nr_arguments == 0 /*&& f->type == FUNC_TYPE_KEYWORD*/) {
 	/* Yep, just execute it. */
-	f->function.function(rv);
+	ret = f->function.function(rv);
 
-	return 0;
+	return ret;
     }
 
     /* Looks like a function, go bananas. */
@@ -611,12 +617,23 @@ basic_destroy(void)
 
     free(__stack);
     free(__memory);
+
+    arch_exit();
 }
 
 
 void
-basic_init(size_t memory_size, size_t stack_size)
+basic_init(size_t memory_size, size_t stack_size, error_t err, ready_t rdy)
 {
+    __error = err;
+    __ready = rdy;
+
+    __RUNNING = false;
+    __EVALUATING = false;
+    __REPL = true;
+    __STOPPED = false;
+    __ERROR = false;
+
     __memory_size = memory_size;
     __memory = malloc(__memory_size);
     if (__memory == NULL) {
@@ -636,6 +653,7 @@ basic_init(size_t memory_size, size_t stack_size)
     __stack_p = __stack_size;
 
     lines_init();
+    __line = __errline = 0;
 
     vars_init();
 
@@ -649,26 +667,6 @@ basic_init(size_t memory_size, size_t stack_size)
     func_init();
 
     arch_init();
-}
-
-
-void
-basic_register(error_t err, ready_t rdy,
-	       putchar_t pc, getchar_t gc, getchar_t kbh)
-{
-    __error = err;
-    __ready = rdy;
-    __putch = pc;
-    __getch = gc;
-    __kbhit = kbh;
-
-    __RUNNING = false;
-    __EVALUATING = false;
-    __REPL = true;
-    __STOPPED = false;
-    __ERROR = false;
-
-    __line = __errline = 0;
 }
 
 

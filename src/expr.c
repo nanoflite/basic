@@ -5,7 +5,7 @@
  *
  *		Handle the expressions.
  *
- * Version:	@(#)expr.c	1.1.0	2023/05/01
+ * Version:	@(#)expr.c	1.1.1	2023/05/05
  *
  * Authors:	Fred N. van Kempen, <waltje@varcem.com>
  *		Johan Van den Brande <johan@vandenbrande.com>
@@ -77,6 +77,48 @@ op_or(float a, float b)
 }
 
 
+static float
+user_func(void)
+{
+    char name[BASIC_VAR_LEN+1];
+    float number;
+
+    /* Find function name before '('. */
+    if (sym == T_VARIABLE_NUMBER) {
+	tokenizer_get_variable_name(name);
+	if (strlen(name) != 1) {
+		basic_error("FN NAME CAN BE ONLY SINGLE CHARACTER");
+		return 0;
+	}
+    } else {
+	basic_error("EXPECTED VAR");
+	return 0;
+    }
+    accept(sym);        // swallow token (for function name)
+
+    /* Get the expression argument. */
+    expect(T_LEFT_BANANA);
+    number = numeric_expression();
+    expect(T_RIGHT_BANANA);
+
+    /*
+     * FIXME: we now have the function name and the
+     *        argument to pass along to it. Go look
+     *        up the function.
+     */
+#ifdef _DEBUG
+printf(">> FN='%s', ARG=%f\n", name, number);
+#endif
+
+     /*
+      * Now "execute" the expression from the function
+      * definition, with the argument we fetched above.
+      */
+
+    return number;
+}
+
+
 static char *
 string_term(void)
 {
@@ -102,9 +144,6 @@ string_term(void)
 			accept(T_LEFT_BANANA);
 			get_vector(vector, MAX_VECTOR);
 			string = C_STRDUP(vars_array_get_string(var_name, vector));
-			if (string == NULL)
-				string = &__dummy;
-
 			expect(T_RIGHT_BANANA);
 		} else {
 			string = C_STRDUP(vars_get_string(var_name));
@@ -290,8 +329,9 @@ term(void)
     float f1 = power_term();
     float f2;
     token op;
+    int i;
 
-    while (sym == T_MULTIPLY || sym == T_DIVIDE || sym == T_AND) {
+    while (sym == T_MULTIPLY || sym == T_DIVIDE || sym == T_MODULO || sym == T_AND) {
 	op = sym;
 	get_sym();
 	f2 = power_term();
@@ -303,6 +343,11 @@ term(void)
 
 		case T_DIVIDE:
 			f1 = f1 / f2;
+			break;
+
+		case T_MODULO:
+			i = (int)(f1 / f2);
+			f1 = f1 - (f2 * i);
 			break;
 
 		case T_AND:
@@ -329,7 +374,13 @@ numeric_expression(void)
 	get_sym();
     }
 
-    t1 = term();
+    if (sym == T_FN) {
+	/* User-defined function. Call it. */
+	get_sym();
+	t1 = user_func();
+    } else
+	t1 = term();
+
     if (op == T_MINUS)
 	t1 = -1 * t1;
 

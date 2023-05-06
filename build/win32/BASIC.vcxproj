@@ -274,6 +274,7 @@
     <ClCompile Include="..\..\src\arch\win32\arch.c" />
     <ClCompile Include="..\..\src\arch\win32\getopt.c" />
     <ClCompile Include="..\..\src\arch\win32\opendir.c" />
+    <ClCompile Include="..\..\src\arch\win32\console.c" />
     <ClCompile Include="..\..\src\array.c" />
     <ClCompile Include="..\..\src\dict.c" />
     <ClCompile Include="..\..\src\expr.c" />
@@ -289,6 +290,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\arch\win32\getopt.h" />
     <ClInclude Include="..\..\src\arch\win32\opendir.h" />
+    <ClInclude Include="..\..\src\arch\win32\console.h" />
     <ClInclude Include="..\..\src\arch.h" />
     <ClInclude Include="..\..\src\private.h" />
     <ClInclude Include="..\..\src\basic.h" />

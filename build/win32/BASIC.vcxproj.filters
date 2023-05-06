@@ -51,10 +51,13 @@
     <ClCompile Include="..\..\src\arch\win32\arch.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\arch\win32\getopt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\arch\win32\opendir.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\arch\win32\getopt.c">
+    <ClCompile Include="..\..\src\arch\win32\console.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -65,13 +68,16 @@
     <ClInclude Include="..\..\src\basic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\arch\win32\getopt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\arch\win32\opendir.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\arch.h">
+    <ClInclude Include="..\..\src\arch\win32\console.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\arch\win32\getopt.h">
+    <ClInclude Include="..\..\src\arch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

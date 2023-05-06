@@ -5,7 +5,7 @@
  *
  *		Platform support for Linux (and similar *IX-ish systems.)
  *
- * Version:	@(#)arch.c	1.1.0	2023/05/01
+ * Version:	@(#)arch.c	1.1.1	2023/05/05
  *
  * Authors:	Fred N. van Kempen, <waltje@varcem.com>
  *		Aaron Clarking, <clarkaaron@hotmail.com>
@@ -55,13 +55,7 @@
 #include <sys/stat.h>
 #include "../../arch.h"
 #include "../../basic.h"
-
-
-int
-arch_init(void)
-{
-    return 0;
-}
+#include "console.h"
 
 
 static char *
@@ -77,6 +71,22 @@ _get_path(void)
 
     return _path;
 }  
+
+
+int
+arch_init(void)
+{
+    con_init();
+
+    return 0;
+}
+
+
+void
+arch_exit(void)
+{
+    con_close();
+}
 
 
 int
@@ -125,6 +135,19 @@ arch_save(const char *name, arch_save_cb cb, void *context)
 
 
 int
+arch_delete(const char *name)
+{
+    char filename[1024];
+
+    sprintf(filename, "%s/%s.bas", _get_path(), name);
+
+    (void)remove(filename);
+
+    return 0;
+}
+
+
+int
 arch_dir(arch_dir_cb cb, void *context)
 {
     char out[512];
@@ -159,19 +182,6 @@ arch_dir(arch_dir_cb cb, void *context)
 }
 
 
-int
-arch_delete(const char *name)
-{
-    char filename[1024];
-
-    sprintf(filename, "%s/%s.bas", _get_path(), name);
-
-    (void)remove(filename);
-
-    return 0;
-}
-
-
 void
 arch_sleep(int msec)
 {
@@ -180,4 +190,39 @@ arch_sleep(int msec)
     ts.tv_sec = msec / 1000;
     ts.tv_nsec = (msec % 1000) * 1000000;
     nanosleep(&ts, NULL);
+}
+
+
+int
+arch_getc(int wait)
+{
+    return con_getc(wait);
+}
+
+
+int
+arch_putc(int ch)
+{
+    return con_putc(ch);
+}
+
+
+void
+arch_cls(void)
+{
+    con_cls();
+}
+
+
+void
+arch_locate(int row, int col)
+{
+    con_locate(row, col);
+}
+
+
+void
+arch_color(int fg, int bg)
+{
+    con_colors(fg, bg);
 }
