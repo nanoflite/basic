@@ -1,0 +1,278 @@
+#
+# BASIC		A simple, extendable BASIC interpreter in C.
+#
+#		This file is part of the VARCem Project.
+#
+#		Makefile for Windows using Visual Studio 2019.
+#
+# Version:	@(#)Makefile.MSVC	1.1.0	2023/05/05
+#
+# Author:	Fred N. van Kempen, <waltje@varcem.com>
+#
+#		Copyright 2023 Fred N. van Kempen.
+#
+#		Redistribution and  use  in source  and binary forms, with
+#		or  without modification, are permitted  provided that the
+#		following conditions are met:
+#
+#		1. Redistributions of  source  code must retain the entire
+#		   above notice, this list of conditions and the following
+#		   disclaimer.
+#
+#		2. Redistributions in binary form must reproduce the above
+#		   copyright  notice,  this list  of  conditions  and  the
+#		   following disclaimer in  the documentation and/or other
+#		   materials provided with the distribution.
+#
+#		3. Neither the  name of the copyright holder nor the names
+#		   of  its  contributors may be used to endorse or promote
+#		   products  derived from  this  software without specific
+#		   prior written permission.
+#
+# THIS SOFTWARE  IS  PROVIDED BY THE  COPYRIGHT  HOLDERS AND CONTRIBUTORS
+# "AS IS" AND  ANY EXPRESS  OR  IMPLIED  WARRANTIES,  INCLUDING, BUT  NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE  ARE  DISCLAIMED. IN  NO  EVENT  SHALL THE COPYRIGHT
+# HOLDER OR  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL  DAMAGES  (INCLUDING,  BUT  NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE  GOODS OR SERVICES;  LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED  AND ON  ANY
+# THEORY OF  LIABILITY, WHETHER IN  CONTRACT, STRICT  LIABILITY, OR  TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+
+ifndef ARCH
+ ARCH		:= x86
+endif
+
+ifndef DEBUG
+ DEBUG		:= n
+endif
+
+
+DEFS	:= #-DUSE_READLINE
+
+
+#########################################################################
+#		Nothing should need changing from here on..		#
+#########################################################################
+
+# Definitions for this enivonment.
+DEVENV		:= msvc
+DEPS		= -MMD -MF $*.d
+DEPFILE		:= .depends-$(DEVENV)
+
+
+# Compilation for Windows X86.
+ifeq ($(ARCH), x86)
+ MACH		:= /MACHINE:$(ARCH)
+
+ # Allow for WinXP-SP3 builds in 32-bit mode.
+ LOPTS_OS	:= ,5.01
+
+ ifeq ($(OPTIM), y)
+  AFLAGS	:= /arch:AVX2
+ else
+  AFLAGS	:= /arch:SSE2
+ endif
+endif
+
+# Compilation for Windows X64.
+ifeq ($(ARCH), x64)
+ MACH		:= /MACHINE:$(ARCH)
+ LOPTS_OS	:=
+endif
+
+# Compilation for Windows ARM.
+ifeq ($(ARCH), arm)
+ MACH		:= /MACHINE:arm
+ LOPTS_OS	:=
+ # Static-link the VC runtime to avoid DLL problems on Windows RT.
+ VCRUNTIME	:= MT
+endif
+
+# Compilation for Windows ARM64.
+ifeq ($(ARCH), arm64)
+ MACH		:= /MACHINE:arm64
+ LOPTS_OS	:=
+
+ # fatal error LNK1322: cannot avoid potential ARM hazard (Cortex-A53
+ # MPCore processor bug #843419) in section #3; please consider using
+ # compiler option /Gy if it was not used.
+ COPTS		+= /Gy
+endif
+
+
+# The various toolchain programs.
+CC		:= cl.exe /nologo
+CXX		:= cl.exe /nologo
+CPP		:= cl.exe /nologo /EP
+LINK		:= link.exe /NOLOGO
+WINDRES		:= rc.exe /NOLOGO
+AR		:= lib.exe /NOLOGO $(MACH)
+ifndef CAT
+ CAT		:= cat
+endif
+
+# Set up the correct toolchain flags.
+OPTS		:= /DARCH=$(ARCH) \
+		   /D_CRT_SECURE_NO_WARNINGS \
+		   /D_CRT_NONSTDC_NO_DEPRECATE \
+		   /D_USE_MATH_DEFINES \
+		   /D_WINSOCK_DEPRECATED_NO_WARNINGS
+COPTS		+= /W3
+CXXOPTS		+= /EHsc
+LOPTS		:= $(MACH)
+ifndef VCRUNTIME
+ VCRUNTIME	:= MD
+endif
+ARFLAGS		:=
+LFLAGS		:=
+RCOPTS		:= /r /n /dRC_INVOKED /d_MSC_VER /fo
+
+
+# General build options.
+ifeq ($(DEBUG), y)
+ OPTS		+= -D_DEBUG
+ VCRUNTIME	:= $(VCRUNTIME)d
+ DOPTS		= /Gs /Zi
+ RCOPTS		:= -D_DEBUG $(RCOPTS)
+ LOPTS		+= /DEBUG
+ ifndef COPTIM
+  COPTIM	:= /Od /Ob3
+ endif
+else
+ LOPTS		+= /DEBUG:NONE #/LTCG
+ DOPTS		= #/GL
+ ifndef COPTIM
+  COPTIM	:= /Ox /Ob3
+ endif
+endif
+COPTS		+= /$(VCRUNTIME)
+ifeq ($(PROFILER), y)
+ LOPTS		+= /MAP
+endif
+MSVC_API_SHARED	:= -DSHARED
+MSVC_API_STATIC	:= -DSTATIC
+
+
+ifndef MSVC_NO_ISO_WIDE_SPECIFIERS
+ OPTS		+= /D_CRT_STDIO_ISO_WIDE_SPECIFIERS
+endif
+
+# Final versions of the toolchain flags.
+CFLAGS		= $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
+		  $(AFLAGS) $(INCS) $(DEFS)
+LFLAGS		:= $(LOPTS) $(DFLAGS) $(LDIR)
+ARFLAGS		:= $(AOPTS)
+RCFLAGS		= $(RCOPTS)
+
+
+# Build module rules.
+.SUFFIXES:	.c .cpp .obj .rc .res
+
+ifeq ($(AUTODEP), y)
+%.obj:		%.c
+		@$(CC) $(CFLAGS) -Fo$@ $(MSVC_API_SHARED) -c $<
+
+%.dbj:		%.c
+		@$(CC) $(CFLAGS) -Fo$@ $(MSVC_API_STATIC) -c $<
+
+%.obj:		%.cpp
+		@$(CXX) $(CXXFLAGS) -Fo$@ $(MSVC_API_SHARED) -c $<
+
+%.dbj:		%.cpp
+		@$(CXX) $(CXXFLAGS) -Fo$@ $(MSVC_API_STATIC) -c $<
+else
+%.obj:		%.c
+		@$(CC) $(CFLAGS) -Fo$@ $(MSVC_API_SHARED) -c $<
+
+%.dbj:		%.c
+		@$(CC) $(CFLAGS) -Fo$@ $(MSVC_API_STATIC) -c $<
+
+%.obj:		%.cpp
+		@$(CXX) $(CXXFLAGS) -Fo$@ $(MSVC_API_SHARED) -c $<
+
+%.dbj:		%.cpp
+		@$(CXX) $(CXXFLAGS) -Fo$@ $(MSVC_API_STATIC) -c $<
+
+%.d:		%.c $(wildcard $*.d)
+		@$(CXX) $(CXXFLAGS) -Fo$@ $(MSVC_API_SHARED) -c $<
+endif
+
+# For systems that use these, compile a resource file.
+.rc.res:	$<
+		@echo Processing $<
+		@$(WINDRES) $(RCFLAGS) $@ $<
+
+
+#########################################################################
+#		Nothing should need changing from here on..		#
+#########################################################################
+
+# Final fixups.
+INCS		+= -I../../src/arch/win32
+
+VPATH		:= ../../src/arch/win32 ../../src
+
+
+PROG		:= basic.exe
+SYSOBJ		:= basic.res getopt.obj opendir.obj console.obj
+OBJ		:= $(SYSOBJ) \
+		   arch.obj array.obj dict.obj expr.obj func.obj io.obj \
+		   lines.obj stmt.obj token.obj vars.obj basic.obj \
+		   main.obj
+LDLIBS		+= #advapi32.lib shell32.lib user32.lib kernel32.lib winmm.lib
+
+
+all:		$(PROG)
+
+
+basic.exe:	$(SYSOBJ) $(OBJ)
+		@echo Linking $@ ..
+		@$(LINK) $(LFLAGS) /SUBSYSTEM:CONSOLE$(LOPTS_OS) \
+			-OUT:$@ $(OBJ) $(LIBS) $(LDLIBS)
+
+clean:
+		@echo Cleaning objects..
+		@-del *.obj 2>NUL
+		@-del *.d 2>NUL
+		@echo Cleaning resources..
+		@-del *.res 2>NUL
+
+
+clobber:	clean
+		@echo Removing executables..
+		@-del *.exe 2>NUL
+		@echo Cleaning libraries..
+#		@-del *.dll 2>NUL
+		@-del *.lib 2>NUL
+		@-del *.manifest 2>NUL
+#		@-del $(DEPFILE) 2>NUL
+
+depclean:
+		@-del $(DEPFILE)
+		@echo Creating dependencies..
+		@echo # Run "make depends" to re-create this file. >$(DEPFILE)
+
+depends:	DEPOBJ=$(OBJ:%.obj=%.d)
+depends:	depclean $(DEPOBJ)
+		@$(CAT) $(DEPOBJ) >>$(DEPFILE)
+		@-del $(DEPOBJ)
+
+$(DEPFILE):
+
+
+# Module dependencies.
+ifeq ($(AUTODEP), y)
+-include *.d
+else
+ ifneq ($(wildcard $(DEPFILE)), )
+  include $(wildcard $(DEPFILE))
+ endif
+endif
+
+
+# End of Makefile.MSVC.

@@ -1,6 +1,7 @@
+.gitignore
 .DS_Store
 profile
-build/*
+patches/
 *.mode1
 *.mode1v3
 *.mode2v3
@@ -9,9 +10,13 @@ build/*
 *.pbxuser
 *.xcworkspace
 xcuserdata
+.depends-*
 .svn
 CVS
+.vs/
 *.swp
 *.o
+*.obj
+*.exe
 t/test
 TODO

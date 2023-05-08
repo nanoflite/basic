@@ -1,43 +1,74 @@
-![BASIC](./basic.png)
+![BASIC](https://github.com/waltje/basic/raw/master/basic.png)
 
-A from-scratch BASIC interpreter with a focus on being easy to extend and port.
-
-[![asciicast](https://asciinema.org/a/37018.png)](https://asciinema.org/a/37018)
+An "old-style" BASIC interpreter, written in standard C, with a focus on being easy to extend and port.
 
 # Introduction
 
-This is a BASIC interpreter written from scratch in C. For the moment two architectures are supported, POSIX and AVR XMega via the avr-gcc toolchain.
+This is a BASIC interpreter written from scratch in C. It runs on Windows, Linux, OSX and a number of microcontroller platforms. It aims to fully implement the old-style dialects of BASIC, meaning, line-number based code. It should be quite compatible with early 1980's interpreters, such as Microsoft BASIC (for 8080/8085/Z80, 6502, 6800 etc), EhBASIC, Commodore BASIC, and so on.
 
-Most of the common BASIC keywords are supported:
+Most of the common BASIC commands are supported:
 
-  * PRINT expression-list [ ; ]
-  * IF relation-expression THEN statement
-  * GOTO expression
-  * INPUT variable-list
-  * LET variable = expression
-  * GOSUB expression
-  * RETURN
-  * FOR numeric\_variable '=' numeric\_expression TO numeric_expression [ STEP number ] 
-  * CLEAR, NEW
-  * LIST
-  * RUN
-  * END
+  * CLEAR, CLR
+  * CONT
+  * DELETE filename
+  * DIR
+  * LIST linenr[-linenr]
+  * LOAD filename
+  * NEW
+  * RUN [linenr]
+  * SAVE filename
+
+Most of the common BASIC statements (instructions) are supported:
+
+  * CLS
+  * COLOR
+  * DATA
+  * DEF
   * DIM variable "(" expression ")"
-  * ABS, AND, ATN, COS, EXP, INT, LOG, NOT, OR, RND, SGN, SIN, SQR, TAN
-  * LEN, CHR$, MID$, LEFT$, RIGHT$, ASC 
+  * END
+  * FOR numeric\_variable '=' numeric\_expression TO numeric_expression [ STEP number ] 
+  * GET variable
+  * GOTO expression
+  * GOSUB expression
+  * IF relation-expression THEN statement [ELSE statement]
+  * INPUT ["prompt";] variable-list
+  * LET variable = expression
+  * LOCATE row,col
+  * NEXT [variable]
+  * ON variable { GOTO,GOSUB }
+  * PRINT expression-list [ ; , ]
+  * READ variable-list
+  * REM [text]
+  * RETURN
+  * RESTORE
+  * SLEEP milliseconds
+  * STOP
+  
+These are the functions currently implemented:
 
-# Extend
+  * ABS, ATN, COS, EXP, FRE, INT, LOG, POW, RND, SGN, SIN, SQR, TAN
+  * ASC, CHR$, LEFT$, LEN, MID$, RIGHT$, STR$, VAL
+ 
+Also, a number of system variables are implemented:
 
-It should be easy to register a new BASIC function, as shown here with a `sleep` function for the XMEGA.
+  * LINE, ERRLIN, PI
+  * DATE$, TIME$, VERSION$
+  
+
+
+# Extending the language.
+
+Extending the language is easy - you can register a new BASIC function, as shown here with a `sleep` function for the XMEGA:
 
 ```C
-register_function_1(basic_function_type_keyword, "SLEEP", do_sleep, kind_numeric);
+register_function_1(FUNC_KEYWORD, "SLEEP", do_sleep, kind_numeric);
 ...
-int do_sleep(basic_type* delay, basic_type* rv)
+static int
+do_sleep(basic_var *rv, const basic_var *delay)
 {
   delay_ms(delay->value.number);
   
-  rv->kind = kind_numeric;
+  rv->kind = KIND_NUMERIC;
   rv->value.number = 0;
 
   return 0;
@@ -47,13 +78,28 @@ int do_sleep(basic_type* delay, basic_type* rv)
 Let's use that new keyword.
 
 ```REALbasic
-10 INPUT "YOUR NAME?", NAME$
+C:\> basic
+VARCem BASIC Interpreter version 1.1.1
+Copyright 2015-2016 Johan Van den Brande
+Copyright 2023 Fred N. van Kempen
+ _               _
+| |__   __ _ ___(_) ___
+| '_ \ / _` / __| |/ __|
+| |_) | (_| \__ \ | (__
+|_.__/ \__,_|___/_|\___|
+
+READY.
+load "hello"
+READY.
+list
+10 INPUT "YOUR NAME?"; NAME$
 20 CLS
 30 FOR I=1 TO LEN(NAME$)
-40 PRINT MID$(NAME$,I,1); 
+40 PRINT MID$(NAME$,I,1);
 50 SLEEP(500)
 60 NEXT
 70 PRINT
+READY.
 ```
 
 # Port
@@ -65,12 +111,17 @@ It should be easy to port the interpreter to other architectures. As an example 
 There is a simple REPL for the BASIC interpreter. You can use it in an interactive way, just as you would do on a 80's era computer.
 
 ```
+C:\> basic
+VARCem BASIC Interpreter version 1.1.1
+Copyright 2015-2016 Johan Van den Brande
+Copyright 2023 Fred N. van Kempen
  _               _
 | |__   __ _ ___(_) ___
 | '_ \ / _` / __| |/ __|
 | |_) | (_| \__ \ | (__
 |_.__/ \__,_|___/_|\___|
-(c) 2015-2016 Johan Van den Brande
+
+READY.
 10 PRINT "HELLO"
 20 GOTO 10
 ```
@@ -126,16 +177,26 @@ $> ./examples/circle.bas
 It is easy to embed the interpreter into your own application.
 
 ```C
-  basic_init(2048, 512); // memory size, stack size
-  basic_register_io(putchar, getchar);
-  basic_eval("10 PRINT \"HELLO\"");
-  basic_eval("RUN"); 
-  basic_destroy();  
+    /* Create an instance of the interpreter. */
+    basic_init(16*1024, 2*1024, my_error, my_ready);
+
+    basic_eval("10 PRINT \"HELLO\"");
+    basic_eval("RUN"); 
+  
+    basic_destroy();  
 ```
 
+where ```my_error``` and ```my_ready``` are the local implementations of the ERROR and READY handlers.
+
 On OSX/POSIX you can use the 'BASIC\_PATH' environment variable to set the folder used for loading and saving BASIC programs. The 'BASIC\_PATH' defaults to '.'.
+
 BASIC programs are expected to end with '.bas'. You can use LOAD, SAVE, DELETE and DIR.
+
+# Authors and Credits
+
+The original code was written for the AVR X/Mega platform by Johan Van den Brande, who also made that work on Apple's OSX. Support for the Linux platform was added by clarking <clarkaaron@hotmail.com> in August of 2022, and the project was revived and merged into the VARCem emulator project by Fred van Kempen in 2023.
 
 # Copyright
 
-(c) 2015 - 2016 Johan Van den Brande
+Copyright 2023 Fred N. van Kempen, The VARCem Group LLC
+Copyright 2015-2016 Johan Van den Brande

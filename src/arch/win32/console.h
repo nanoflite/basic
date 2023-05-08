@@ -3,15 +3,13 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Handle arrays.
+ *		Definitions for the console driver.
  *
- * Version:	@(#)array.c	1.1.0	2023/05/01
+ * Version:	@(#)console.h	1.1.0	2023/05/05
  *
- * Authors:	Fred N. van Kempen, <waltje@varcem.com>
- *		Johan Van den Brande <johan@vandenbrande.com>
+ * Author:	Fred N. van Kempen, <waltje@varcem.com>
  *
  *		Copyright 2023 Fred N. van Kempen.
- *		Copyright 2015,2016 Johan Van den Brande.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -43,90 +41,44 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include "arch.h"
-#include "basic.h"
-#include "private.h"
+#ifndef ARCH_CONSOLE_H
+# define ARCH_CONSOLE_H
 
 
-struct array {
-    size_t	element_size;
-    size_t	size;
-    char	*ptr;
-};
+typedef enum Color {
+    C_OFF = -1,
+    C_BLACK = 0,		// RGB: 0,0,0
+    C_BLUE,			// RGB: 0,0,128
+    C_GREEN,			// RGB: 0,128,0
+    C_CYAN,			// RGB: 0,128,128
+    C_RED,			// RGB: 128,0,0
+    C_MAGENTA,			// RGB: 128,0,128
+    C_BROWN,			// RGB: 128,128,0
+    C_GRAY,			// RGB: 128,128,128
+    C_LIGHTGRAY,		// RGB: 0,0,0+I
+    C_LIGHTBLUE,		// RGB: 0,0,128+I
+    C_LIGHTGREEN,		// RGB: 0,128+I,0
+    C_LIGHTCYAN,		// RGB: 0,128+I,128+I
+    C_LIGHTRED,			// RGB: 128+I,0,0
+    C_LIGHTMAGENTA,		// RGB: 128+I,0,128+I
+    C_YELLOW,			// RGB: 128+I,128+I,0
+    C_WHITE,			// RGB: 128+I,128+I,128+I
+  
+    C_MAX
+} color_t;
 
 
-array *
-array_new(size_t element_size)
-{
-    array *a = malloc(sizeof(array));  
+extern int	con_init(void);
+extern void	con_close(void);
+extern int	con_getc(int);
+extern int	con_putc(int);
+extern int	con_printf(const char *, ...);
+extern void	con_cls(void);
+extern void	con_locate(int, int);
+extern void	con_colors(color_t, color_t);
+extern void	con_nocolors(void);
 
-    a->element_size = element_size;
-    a->size = 0;
-    a->ptr = NULL;
-
-    return a;
-}
-
-
-array *
-array_alloc(array *array, size_t size)
-{
-    array->size = size;
-    array->ptr = realloc(array->ptr, array->element_size * array->size);
-
-    // Always clear arrays
-    memset(array->ptr, 0, array->element_size * array->size);
-
-    return array;
-}
+extern void	con_demo(void);
 
 
-void
-array_destroy(array *array)
-{
-    free(array->ptr);
-    free(array);
-}
-
-
-void *
-array_push(array *array, void *value)
-{
-    array->size++;
-    array->ptr = realloc(array->ptr, array->element_size * array->size);
-    void *element = array->ptr + array->element_size * (array->size - 1);
-    memcpy(element, value, array->element_size);
-
-    return element;
-}
-
-
-void *
-array_get(array *array, size_t index)
-{
-    return array->ptr + index * array->element_size;
-}
-
-
-void *
-array_set(array *array, size_t index, void *value)
-{
-    void *element = array_get(array, index);
-
-    memcpy(element, value, array->element_size);
-
-    return element;
-}
-
-
-size_t
-array_size(array *array)
-{
-    return array->size;
-}
-
+#endif	/*ARCH_CONSOLE_H*/

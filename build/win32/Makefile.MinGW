@@ -1,0 +1,261 @@
+#
+# BASIC		A simple, extendable BASIC interpreter in C.
+#
+#		This file is part of the VARCem Project.
+#
+#		Makefile for Windows systems using the MinGW-w64 environment.
+#
+# Version:	@(#)Makefile.MinGW	1.1.1	2023/05/05
+#
+# Author:	Fred N. van Kempen, <waltje@varcem.com>
+#
+#		Copyright 2023 Fred N. van Kempen.
+#
+#		Redistribution and  use  in source  and binary forms, with
+#		or  without modification, are permitted  provided that the
+#		following conditions are met:
+#
+#		1. Redistributions of  source  code must retain the entire
+#		   above notice, this list of conditions and the following
+#		   disclaimer.
+#
+#		2. Redistributions in binary form must reproduce the above
+#		   copyright  notice,  this list  of  conditions  and  the
+#		   following disclaimer in  the documentation and/or other
+#		   materials provided with the distribution.
+#
+#		3. Neither the  name of the copyright holder nor the names
+#		   of  its  contributors may be used to endorse or promote
+#		   products  derived from  this  software without specific
+#		   prior written permission.
+#
+# THIS SOFTWARE  IS  PROVIDED BY THE  COPYRIGHT  HOLDERS AND CONTRIBUTORS
+# "AS IS" AND  ANY EXPRESS  OR  IMPLIED  WARRANTIES,  INCLUDING, BUT  NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE  ARE  DISCLAIMED. IN  NO  EVENT  SHALL THE COPYRIGHT
+# HOLDER OR  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL  DAMAGES  (INCLUDING,  BUT  NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE  GOODS OR SERVICES;  LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED  AND ON  ANY
+# THEORY OF  LIABILITY, WHETHER IN  CONTRACT, STRICT  LIABILITY, OR  TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+ifndef ARCH
+ ARCH		:= x86
+endif
+
+ifndef DEBUG
+ DEBUG		:= y
+endif
+
+
+DEFS	:= -DUSE_READLINE
+LDLIBS	:= -static -lreadline -lhistory -ltermcap
+
+
+#########################################################################
+#		Nothing should need changing from here on..		#
+#########################################################################
+
+# Definitions for this enivonment.
+DEVENV		:= mingw
+DEPS		= -MMD -MF $*.d
+DEPFILE		:= .depends-$(DEVENV)
+
+
+# Compilation for X86.
+ifeq ($(ARCH), x86)
+ TARGET		:= 32
+ PREFIX		:=
+ RCTARGET	:= pe-i386
+
+ AFLAGS		:= -msse2 -mfpmath=sse
+ ifeq ($(OPTIM), y)
+  DFLAGS	:= -march=native
+ else
+  DFLAGS	:= -march=i686
+ endif
+endif
+
+# Compilation for X64.
+ifeq ($(ARCH), x64)
+ TARGET		:= 64
+ PREFIX		:=
+ RCTARGET	:= pe-x86-64
+
+ ifeq ($(OPTIM), y)
+  DFLAGS	:= -march=native
+ endif
+endif
+
+# Compilation for ARM.
+ifeq ($(ARCH), armv7)
+ error Target ARM7 not supported for Windows !
+endif
+
+# Compilation for ARM64.
+ifeq ($(ARCH), aarch64)
+ error Target ARM64 not supported for Windows !
+endif
+
+
+# The various toolchain programs.
+CC		:= gcc -m$(TARGET)
+CXX		:= g++ -m$(TARGET)
+CPP		:= cpp -P
+LINK		:= gcc -m$(TARGET)
+WINDRES		:= windres
+AR		:= ar
+RANLIB		:= ranlib
+STRIP		:= strip
+ifndef CAT
+ CAT		:= cat
+endif
+
+# Set up the correct toolchain flags.
+OPTS		:= -DARCH=$(ARCH) \
+		   -D_CRT_NON_CONFORMING_SWPRINTFS \
+		   -D__USE_MINGW_ANSI_STDIO_X
+ifndef VCRUNTIME
+ # MinGW does not provide MD/MT yet.
+ VCRUNTIME	:= MD
+endif
+RCOPTS		:= --input-format=rc -O coff
+ifdef RCTARGET
+ RCOPTS		+= --target=$(RCTARGET)
+endif
+RCOPTS		+= -D RC_INVOKED -o
+AOPTS		:= r
+LOPTS		:= -mconsole
+
+# General build options.
+ifeq ($(DEBUG), y)
+ VCRUNTIME	:= $(VCRUNTIME)d
+ DFLAGS		+= -ggdb -D_DEBUG
+ RCOPTS		:= -D_DEBUG $(RCOPTS)
+ AOPTIM		:=
+ ifndef COPTIM
+  COPTIM	:= -Og
+ endif
+else
+ ifeq ($(OPTIM), y)
+  AOPTIM	:= -mtune=native
+  ifndef COPTIM
+   COPTIM	:= -O3
+  endif
+ else
+  ifndef COPTIM
+   COPTIM	:= -O3
+  endif
+ endif
+endif
+OPTS		+= #/$(VCRUNTIME)
+ifeq ($(PROFILER), y)
+ LOPTS		+= -Xlinker -Map=$(PROG).map
+endif
+
+
+# Final versions of the toolchain flags.
+CFLAGS		= $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
+		  $(AFLAGS) $(INCS) $(DEFS) \
+		  -mstackrealign \
+		  -fomit-frame-pointer -fno-strict-aliasing \
+		  -Wall -Wundef #-Wmissing-declarations
+LDFLAGS		:= $(LOPTS) $(DFLAGS) $(LDIR)
+ARFLAGS		:= $(AOPTS)
+RCFLAGS		= $(RCOPTS)
+
+
+# Build module rules.
+.SUFFIXES:	.c .cpp .o .rc .res
+
+ifeq ($(AUTODEP), y)
+%.o:		%.c
+		@echo Compiling $<
+		@$(CC) $(CFLAGS) $(DEPS) -c $<
+else
+%.o:		%.c
+		@echo Compiling $<
+		@$(CC) $(CFLAGS) -c $<
+
+%.d:		%.c $(wildcard $*.d)
+		@echo Compiling $<
+		@$(CC) $(CFLAGS) $(DEPS) -E $< >NUL
+endif
+
+# For systems that use these, compile a resource file.
+.rc.res:	$<
+		@echo Processing $<
+		@$(WINDRES) $(RCFLAGS) $@ $<
+
+
+#########################################################################
+#		Nothing should need changing from here on..		#
+#########################################################################
+
+# Final fixups.
+INCS		+= -I../../src/arch/win32
+
+VPATH		:= ../../src/arch/win32 ../../src
+
+PROG		:= basic.exe
+SYSOBJ		:= basic.res getopt.o
+OBJ		:= $(SYSOBJ) \
+		   arch.o opendir.o console.o \
+		   array.o dict.o expr.o func.o io.o lines.o stmt.o \
+		   token.o vars.o basic.o \
+		   main.o
+
+
+all:		$(PROG)
+
+
+basic.exe:	$(SYSOBJ) $(OBJ)
+		@echo Linking $@ ..
+		@$(LINK) $(LDFLAGS) -o $@ $(OBJ) $(LIBS) $(LDLIBS)
+		$(if $(filter $(DEBUG),y),,@$(STRIP) $@)
+
+
+clean:
+		@echo Cleaning objects..
+		@-del *.o 2>NUL
+		@-del *.d 2>NUL
+		@echo Cleaning resources..
+		@-del *.res 2>NUL
+
+
+clobber:	clean
+		@echo Removing executables..
+		@-del *.exe 2>NUL
+		@echo Cleaning libraries..
+		@-del *.dll 2>NUL
+		@-del *.a 2>NUL
+		@-del *.manifest 2>NUL
+#		@-del $(DEPFILE) 2>NUL
+
+depclean:
+		@-del $(DEPFILE)
+		@echo Creating dependencies..
+		@echo # Run "make depends" to re-create this file. >$(DEPFILE)
+
+depends:	DEPOBJ=$(OBJ:%.o=%.d)
+depends:	depclean $(DEPOBJ)
+		@$(CAT) $(DEPOBJ) >>$(DEPFILE)
+		@-del $(DEPOBJ)
+
+$(DEPFILE):
+
+
+# Module dependencies.
+ifeq ($(AUTODEP), y)
+-include *.d
+else
+ ifneq ($(wildcard $(DEPFILE)), )
+  include $(wildcard $(DEPFILE))
+ endif
+endif
+
+
+# End of Makefile.MinGW.

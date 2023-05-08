@@ -3,9 +3,9 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Handle arrays.
+ *		Define things for the platform-support modules.
  *
- * Version:	@(#)array.c	1.1.0	2023/05/01
+ * Version:	@(#)arch.h	1.1.1	2023/05/05
  *
  * Authors:	Fred N. van Kempen, <waltje@varcem.com>
  *		Johan Van den Brande <johan@vandenbrande.com>
@@ -43,90 +43,56 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include "arch.h"
-#include "basic.h"
-#include "private.h"
+#ifndef ARCH_H
+# define ARCH_H
 
 
-struct array {
-    size_t	element_size;
-    size_t	size;
-    char	*ptr;
-};
+/* Some compilers define or, or the other, or both.. */
+#if defined(WIN32) && !defined(_WIN32)
+# define _WIN32
+#endif
+
+#ifdef _WIN32
+# define C_STRDUP       _strdup
+#else
+# define C_STRDUP       strdup
+#endif
 
 
-array *
-array_new(size_t element_size)
-{
-    array *a = malloc(sizeof(array));  
-
-    a->element_size = element_size;
-    a->size = 0;
-    a->ptr = NULL;
-
-    return a;
-}
+#define PLATFORM_WIN32	1
+#define PLATFORM_LINUX	2
+#define PLATFORM_OSX	3
+#define PLATFORM_XMEGA	10
 
 
-array *
-array_alloc(array *array, size_t size)
-{
-    array->size = size;
-    array->ptr = realloc(array->ptr, array->element_size * array->size);
-
-    // Always clear arrays
-    memset(array->ptr, 0, array->element_size * array->size);
-
-    return array;
-}
+#ifdef _WIN32
+# define PLATFORM	PLATFORM_WIN32
+#endif
 
 
-void
-array_destroy(array *array)
-{
-    free(array->ptr);
-    free(array);
-}
+typedef void (*arch_load_cb)(const char *, void *);
+typedef uint16_t (*arch_save_cb)(char **, void *);
+typedef void (*arch_dir_cb)(const char *name, size_t, bool, void *);
 
 
-void *
-array_push(array *array, void *value)
-{
-    array->size++;
-    array->ptr = realloc(array->ptr, array->element_size * array->size);
-    void *element = array->ptr + array->element_size * (array->size - 1);
-    memcpy(element, value, array->element_size);
+#if PLATFORM == PLATFORM_XMEGA
+extern int	asprintf(char **ret, const char *format, ...);
+extern float	strtof(const char *restrict nptr, char **restrict endptr);
+extern char	*strndup(const char *s1, size_t n);
+#endif
 
-    return element;
-}
-
-
-void *
-array_get(array *array, size_t index)
-{
-    return array->ptr + index * array->element_size;
-}
-
-
-void *
-array_set(array *array, size_t index, void *value)
-{
-    void *element = array_get(array, index);
-
-    memcpy(element, value, array->element_size);
-
-    return element;
-}
+extern int	arch_init(void);
+extern void	arch_exit(void);
+extern int	arch_load(const char *, arch_load_cb, void *);
+extern int	arch_save(const char *, arch_save_cb, void *);
+extern int	arch_delete(const char *);
+extern int	arch_dir(arch_dir_cb, void *);
+extern void	arch_sleep(int milliseconds);
+extern int	arch_getc(int);
+extern int	arch_putc(int);
+extern void	arch_cls(void);
+extern void	arch_locate(int, int);
+extern void	arch_color(int, int);
 
 
-size_t
-array_size(array *array)
-{
-    return array->size;
-}
-
+#endif	/*ARCH_H*/
